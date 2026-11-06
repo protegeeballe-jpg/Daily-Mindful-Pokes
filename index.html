@@ -3,135 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Mindful Pokes | Wellness & Emotional Check</title>
-    <!-- Tailwind CSS for rapid Google Keep styling -->
+    <title>Daily Mindful Pokes | Watercolor Wellness Tracker</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti for Dopamine Bursts -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Schoolbook Serif (Lora) & Handwritten (Caveat) -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .keep-card {
-            transition: all 0.2s ease;
+        body { 
+            font-family: 'Lora', serif; 
+            background-color: #FBF9F5;
+            background-image: radial-gradient(#e5dec9 0.75px, transparent 0.75px);
+            background-size: 24px 24px;
         }
-        .keep-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        .handwritten { font-family: 'Caveat', cursive; }
+        
+        /* Watercolor Pastel Cards */
+        .card-peach { background-color: #FFF0ED; border: 2px dashed #F2C4BE; }
+        .card-sage { background-color: #F0F4ED; border: 2px dashed #C8D6C1; }
+        .card-sky { background-color: #EDF5F8; border: 2px dashed #B8D0DC; }
+        .card-yellow { background-color: #FEF9E7; border: 2px dashed #F3E5AB; }
+        .card-lavender { background-color: #F5EEF8; border: 2px dashed #D7BDE2; }
+        
+        .water-card {
+            transition: all 0.3s ease;
+        }
+        .water-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
         }
         input[type="checkbox"] {
-            accent-color: #4f46e5;
-            width: 1.2rem;
-            height: 1.2rem;
+            accent-color: #6B8E23;
+            width: 1.3rem;
+            height: 1.3rem;
+            cursor: pointer;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
+<body class="text-slate-800 min-h-screen pb-20">
 
     <!-- Header Navigation -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+    <header class="bg-white/80 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
         <div class="flex items-center space-x-3">
             <span class="text-3xl">👃✨</span>
             <div>
-                <h1 class="text-xl font-bold text-slate-900">Daily Mindful Pokes</h1>
-                <p class="text-xs text-slate-500">Analiza Balle All Rights Reserved ☁️[cite: 1, 2]</p>
+                <h1 class="text-2xl font-bold tracking-wide text-amber-900 handwritten text-3xl">Daily Mindful Pokes</h1>
+                <p class="text-xs text-amber-800/60">Analiza Balle All Rights Reserved ☁️[cite: 1, 2]</p>
             </div>
         </div>
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg">
-                <label for="currentDate" class="text-xs font-semibold text-slate-600">Date:</label>
-                <input type="date" id="currentDate" class="bg-transparent text-sm font-medium focus:outline-none" onchange="handleDateChange()">
+            <div class="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+                <label for="currentDate" class="text-xs font-semibold text-amber-900">Date:</label>
+                <input type="date" id="currentDate" class="bg-transparent text-sm font-medium focus:outline-none text-amber-900" onchange="handleDateChange()">
             </div>
-            <button onclick="resetDayData()" class="text-xs text-rose-600 hover:text-rose-800 font-medium px-3 py-1.5 border border-rose-200 rounded-lg transition">Reset Today</button>
+            <button onclick="resetDayData()" class="text-xs text-rose-700 hover:text-rose-900 font-semibold px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl transition">Reset Day</button>
         </div>
     </header>
 
-    <!-- Main Container (Google Keep Masonry Grid) -->
+    <!-- Grand Trophy Celebration Banner (Hidden by default) -->
+    <div id="trophy-banner" class="max-w-7xl mx-auto px-4 sm:px-6 mt-6 hidden">
+        <div class="bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 border-2 border-amber-400 p-6 rounded-3xl text-center shadow-lg animate-bounce">
+            <span class="text-5xl">🏆✨🎉</span>
+            <h2 class="text-2xl font-bold text-amber-900 mt-2">All Daily Routines Completed!</h2>
+            <p class="text-sm text-amber-800 mt-1">Absolute legend status unlocked. Give yourself a double good-job nose poke! 👃✨</p>
+        </div>
+    </div>
+
+    <!-- Main Container (Masonry Grid) -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         <!-- Card 0: Location Tag -->
-        <div class="keep-card bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-semibold text-amber-900 mb-3 flex items-center gap-2">📍 Where are you right now?</h2>
+        <div class="water-card card-yellow rounded-3xl p-6 shadow-sm relative">
+            <h2 class="font-bold text-amber-900 text-lg mb-3 flex items-center gap-2">📍 Where are you right now?</h2>
             <div class="grid grid-cols-2 gap-2 text-sm">
-                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-lg cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk" data-id="loc-home"> HOME</label>
-                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-lg cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk" data-id="loc-office"> OFFICE</label>
-                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-lg cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk" data-id="loc-house"> SOMEONE'S HOUSE</label>
-                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-lg cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk" data-id="loc-out"> OUT THERE</label>
+                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-loc" data-id="loc-home"> HOME</label>
+                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-loc" data-id="loc-office"> OFFICE</label>
+                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-loc" data-id="loc-house"> SOMEONE'S HOUSE</label>
+                <label class="flex items-center gap-2 p-2 bg-white/60 rounded-xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-loc" data-id="loc-out"> OUT THERE</label>
             </div>
-            <p class="text-xs text-amber-700 mt-3 italic">"Why bother? Because your well-being matters as much as your financial stability."[cite: 1]</p>
+            <p class="text-xs text-amber-800/80 mt-4 italic">"Why bother? Because your well-being matters as much as your financial stability."[cite: 1]</p>
         </div>
 
         <!-- Card 1: Before You Start Your Day -->
-        <div class="keep-card bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="water-card card-sage rounded-3xl p-6 shadow-sm relative">
             <div class="flex justify-between items-center mb-3">
-                <h2 class="font-bold text-slate-900 text-emerald-700">🌅 Before You Start (5-10 min)</h2>
+                <h2 class="font-bold text-emerald-900 text-lg">🌅 Before You Start (5-10 min)</h2>
             </div>
             <div class="space-y-3 text-sm">
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="start-1"> <span>Think of 3 things you are Grateful For (in 5 sec | Save in Mental Notes)</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="start-2"> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE version of you)</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="start-3"> <span>Gentle Stretch or Movement</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="start-4"> <span class="font-semibold text-cyan-700">DRINK YOUR WATER (Beauty Potion) 💧</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-start" data-id="start-1"> <span>Think of 3 things you are Grateful For (in 5 sec | Save in Mental Notes)[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-start" data-id="start-2"> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE version of you)[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-start" data-id="start-3"> <span>Gentle Stretch or Movement[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-start" data-id="start-4"> <span class="font-semibold text-cyan-800">DRINK YOUR WATER (Beauty Potion) 💧[cite: 1]</span></label>
+            </div>
+            <!-- Section Badge -->
+            <div id="badge-start" class="hidden mt-4 bg-emerald-200/80 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-full text-center border border-emerald-300">
+                🌱 Morning Routine Conquered! ✨
             </div>
         </div>
 
         <!-- Card 2: Mid-Day & Before Lunch -->
-        <div class="keep-card bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-bold text-slate-900 text-blue-700 mb-3">☀️ Mid-Day & Lunchbreak (10 min)</h2>
+        <div class="water-card card-sky rounded-3xl p-6 shadow-sm relative">
+            <h2 class="font-bold text-sky-900 text-lg mb-3">☀️ Mid-Day & Lunchbreak (10 min)</h2>
             <div class="space-y-3 text-sm">
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="mid-1"> <span>Posture Check & 3 Minutes Stretching</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="mid-2"> <span>1 Min Breathing Exercise (Inhale 4, Exhale 6)</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="mid-3"> <span class="font-semibold text-cyan-700">DRINK YOUR WATER 💧</span></label>
-                <hr class="border-slate-100 my-2">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">3-Min Spiritual/Emotional Check:</p>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="mid-4"> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="mid-5"> <span>Acknowledge existence & <strong>LET IT GO LIKE YOUR FART</strong> 💨</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-mid" data-id="mid-1"> <span>Posture Check & 3 Minutes Stretching[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-mid" data-id="mid-2"> <span>1 Min Breathing Exercise (Inhale 4, Exhale 6)[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-mid" data-id="mid-3"> <span class="font-semibold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
+                <hr class="border-sky-200 my-2">
+                <p class="text-xs font-semibold text-sky-800 uppercase tracking-wider">3-Min Spiritual/Emotional Check[cite: 1]:</p>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-mid" data-id="mid-4"> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-mid" data-id="mid-5"> <span>Acknowledge existence & <strong>LET IT GO LIKE YOUR FART</strong> 💨[cite: 1]</span></label>
+            </div>
+            <!-- Section Badge -->
+            <div id="badge-mid" class="hidden mt-4 bg-sky-200/80 text-sky-900 text-xs font-bold px-3 py-1.5 rounded-full text-center border border-sky-300">
+                🌤️ Midday Reset Mastered! 💨
             </div>
         </div>
 
         <!-- Card 3: End of the Day Confidence Boost -->
-        <div class="keep-card bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-bold text-slate-900 text-purple-700 mb-3">🌙 End of Day Boost (10 min)</h2>
+        <div class="water-card card-peach rounded-3xl p-6 shadow-sm relative">
+            <h2 class="font-bold text-rose-900 text-lg mb-3">🌙 End of Day Boost (10 min)[cite: 1]</h2>
             <div class="space-y-3 text-sm">
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="end-1"> <span>Journal 3 Successes (What made you proud?)</span></label>
-                <textarea id="note-success" class="text-input w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" placeholder="Type 3 successes here..." rows="2"></textarea>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-end" data-id="end-1"> <span>Journal 3 Successes (What made you proud?)[cite: 1]</span></label>
+                <textarea id="note-success" class="text-input w-full bg-white/70 border border-rose-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-rose-400" placeholder="Type 3 successes here..." rows="2"></textarea>
                 
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="end-2"> <span>Journal 3 Priorities for Tomorrow</span></label>
-                <textarea id="note-priorities" class="text-input w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" placeholder="Type tomorrow's priorities..." rows="2"></textarea>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-end" data-id="end-2"> <span>Journal 3 Priorities for Tomorrow[cite: 1]</span></label>
+                <textarea id="note-priorities" class="text-input w-full bg-white/70 border border-rose-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-rose-400" placeholder="Type tomorrow's priorities..." rows="2"></textarea>
 
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="end-3"> <span class="font-semibold text-cyan-700">DRINK YOUR WATER 💧</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="end-4"> <span>Give yourself a mindful GOOD JOB poke on your nose![cite: 1, 3] 👃✨</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-end" data-id="end-3"> <span class="font-semibold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-end" data-id="end-4"> <span>Give yourself a mindful GOOD JOB poke on your nose![cite: 1, 3] 👃✨</span></label>
+            </div>
+            <!-- Section Badge -->
+            <div id="badge-end" class="hidden mt-4 bg-rose-200/80 text-rose-900 text-xs font-bold px-3 py-1.5 rounded-full text-center border border-rose-300">
+                🌙 Confidence Boost Unlocked! 🏆
             </div>
         </div>
 
         <!-- Card 4: Before Sleeping Routine -->
-        <div class="keep-card bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-bold text-slate-900 text-indigo-700 mb-3">🛌 Before Sleeping (10-15 min)</h2>
+        <div class="water-card card-lavender rounded-3xl p-6 shadow-sm relative">
+            <h2 class="font-bold text-purple-900 text-lg mb-3">🛌 Before Sleeping (10-15 min)[cite: 1]</h2>
             <div class="space-y-3 text-sm">
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="sleep-1"> <span>Journal 3 Gratitude Points (Others)</span></label>
-                <textarea id="note-gratitude-others" class="text-input w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Small/big things others did..." rows="2"></textarea>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-sleep" data-id="sleep-1"> <span>Journal 3 Gratitude Points (Others)[cite: 1]</span></label>
+                <textarea id="note-gratitude-others" class="text-input w-full bg-white/70 border border-purple-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="Small/big things others did..." rows="2"></textarea>
 
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="sleep-2"> <span>Journal 3 Gratitude Points (God / Blessings)</span></label>
-                <textarea id="note-gratitude-god" class="text-input w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Blessings received today..." rows="2"></textarea>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-sleep" data-id="sleep-2"> <span>Journal 3 Gratitude Points (God / Blessings)[cite: 1]</span></label>
+                <textarea id="note-gratitude-god" class="text-input w-full bg-white/70 border border-purple-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="Blessings received today..." rows="2"></textarea>
 
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="sleep-3"> <span>Screen Curfew (No Screens 30 min before sleep)</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="sleep-4"> <span>Prayer / Positive Intention</span></label>
-                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk mt-0.5" data-id="sleep-5"> <span class="font-semibold text-cyan-700">DRINK YOUR WATER 💧</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-sleep" data-id="sleep-3"> <span>Screen Curfew (No Screens 30 min before sleep)[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-sleep" data-id="sleep-4"> <span>Prayer / Positive Intention[cite: 1]</span></label>
+                <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-sleep" data-id="sleep-5"> <span class="font-semibold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
+            </div>
+            <!-- Section Badge -->
+            <div id="badge-sleep" class="hidden mt-4 bg-purple-200/80 text-purple-900 text-xs font-bold px-3 py-1.5 rounded-full text-center border border-purple-300">
+                💤 Sweet Dreams Routine Complete! 🌙
             </div>
         </div>
 
         <!-- Card 5: Emotional Check | Cloud Referencing -->
-        <div class="keep-card bg-sky-50 border border-sky-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-bold text-sky-900 mb-2">☁️ Emotional Check: Cloud Referencing</h2>
-            <p class="text-xs text-sky-700 mb-3">Do not find the source. Acknowledge existence. Label it. Let it go like your fart!</p>
+        <div class="water-card card-sky rounded-3xl p-6 shadow-sm relative">
+            <h2 class="font-bold text-sky-900 text-lg mb-2">☁️ Emotional Check: Cloud Referencing[cite: 2]</h2>
+            <p class="text-xs text-sky-800/80 mb-3">Do not find the source. Acknowledge existence. Label it. Let it go like your fart[cite: 2]!</p>
             
-            <div class="space-y-3 text-xs">
-                <div class="bg-white/80 p-2.5 rounded-xl">
-                    <span class="font-semibold text-sky-900">Low-Level (Raw Emotions):</span>
-                    <p class="text-slate-600 mt-1">☁️ <strong>Cumulus:</strong> Okay, just vibing.<br>☁️ <strong>Stratus:</strong> Emotionally flatline (Grey).<br>☁️ <strong>Stratocumulus:</strong> Droplets of small thoughts, low energy.</p>
+            <div class="space-y-2.5 text-xs">
+                <div class="bg-white/80 p-2.5 rounded-2xl border border-sky-100">
+                    <span class="font-semibold text-sky-900">Low-Level (Raw Emotions)[cite: 2]:</span>
+                    <p class="text-slate-700 mt-1">☁️ <strong>Cumulus:</strong> Okay, just vibing[cite: 2].<br>☁️ <strong>Stratus:</strong> Emotionally flatline (Grey)[cite: 2].<br>☁️ <strong>Stratocumulus:</strong> Droplets of small thoughts, low energy[cite: 2].</p>
                 </div>
-                <div class="bg-white/80 p-2.5 rounded-xl">
-                    <span class="font-semibold text-sky-900">Mid-Level (Processing/Overthinking):</span>
-                    <p class="text-slate-600 mt-1">☁️ <strong>Altocumulus:</strong> Loopy thinking (same thought 42x).<br>☁️ <strong>Altostratus:</strong> Something's forming.<br>☁️ <strong>Nimbostratus:</strong> Quiet sadness, emotional drizzle.</p>
+                <div class="bg-white/80 p-2.5 rounded-2xl border border-sky-100">
+                    <span class="font-semibold text-sky-900">Mid-Level (Processing/Overthinking)[cite: 2]:</span>
+                    <p class="text-slate-700 mt-1">☁️ <strong>Altocumulus:</strong> Loopy thinking (same thought 42x)[cite: 2].<br>☁️ <strong>Altostratus:</strong> Something's forming[cite: 2].<br>☁️ <strong>Nimbostratus:</strong> Quiet sadness, emotional drizzle[cite: 2].</p>
                 </div>
-                <div class="bg-white/80 p-2.5 rounded-xl">
-                    <span class="font-semibold text-sky-900">High-Level (Zoomed-Out / Detached):</span>
-                    <p class="text-slate-600 mt-1">☁️ <strong>Cirrus:</strong> Clarity, peaceful distance.<br>☁️ <strong>Cirrocumulus:</strong> Imagination overload.<br>☁️ <strong>Cirrostratus:</strong> Spiritual static.</p>
+                <div class="bg-white/80 p-2.5 rounded-2xl border border-sky-100">
+                    <span class="font-semibold text-sky-900">High-Level (Zoomed-Out / Detached)[cite: 2]:</span>
+                    <p class="text-slate-700 mt-1">☁️ <strong>Cirrus:</strong> Clarity, peaceful distance[cite: 2].<br>☁️ <strong>Cirrocumulus:</strong> Imagination overload[cite: 2].<br>☁️ <strong>Cirrostratus:</strong> Spiritual static[cite: 2].</p>
                 </div>
             </div>
         </div>
@@ -139,14 +183,113 @@
     </main>
 
     <!-- Footer Copyright Notice -->
-    <footer class="max-w-7xl mx-auto px-6 mt-12 text-center text-xs text-slate-400">
+    <footer class="max-w-7xl mx-auto px-6 mt-16 text-center text-xs text-amber-900/40 handwritten text-base">
         <p>© 2025-2026 Analiza Balle. All rights reserved. Protected under local, international, and intergalactic IP codes[cite: 2]. Violators face public side-eye and legal action[cite: 2]. ✨</p>
     </footer>
 
-    <!-- LocalStorage Engine Script with Date Isolation Bugfix -->
+    <!-- Audio & Dopamine Engine -->
     <script>
+        // Web Audio API Sound Synthesizer (No external sound files required!)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playPopSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playFanfareSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }, index * 120);
+            });
+        }
+
+        function triggerConfetti(event) {
+            let x = 0.5, y = 0.5;
+            if (event && event.clientX) {
+                x = event.clientX / window.innerWidth;
+                y = event.clientY / window.innerHeight;
+            }
+            confetti({
+                particleCount: 40,
+                spread: 60,
+                origin: { x: x, y: y },
+                colors: ['#6B8E23', '#F2C4BE', '#B8D0DC', '#F3E5AB', '#D7BDE2']
+            });
+        }
+
         function getStorageKey(dateStr) {
             return 'mindful_pokes_data_' + dateStr;
+        }
+
+        function checkSectionCompletion() {
+            const sections = [
+                { class: 'sec-start', badge: 'badge-start' },
+                { class: 'sec-mid', badge: 'badge-mid' },
+                { class: 'sec-end', badge: 'badge-end' },
+                { class: 'sec-sleep', badge: 'badge-sleep' }
+            ];
+
+            let allTotal = true;
+            let totalCheckedCount = 0;
+            let totalCheckboxes = document.querySelectorAll('.app-chk').length;
+
+            sections.forEach(sec => {
+                const chks = document.querySelectorAll('.' + sec.class);
+                let allChecked = true;
+                chks.forEach(chk => {
+                    if (!chk.checked) allChecked = false;
+                    else totalCheckedCount++;
+                });
+
+                const badge = document.getElementById(sec.badge);
+                if (allChecked && chks.length > 0) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                    allTotal = false;
+                }
+            });
+
+            // Check if every single checkbox in the app is checked
+            const trophyBanner = document.getElementById('trophy-banner');
+            const allCheckboxes = document.querySelectorAll('.app-chk');
+            let absoluteAllChecked = true;
+            allCheckboxes.forEach(chk => {
+                if (!chk.checked) absoluteAllChecked = false;
+            });
+
+            if (absoluteAllChecked && allCheckboxes.length > 0) {
+                if (trophyBanner.classList.contains('hidden')) {
+                    trophyBanner.classList.remove('hidden');
+                    playFanfareSound();
+                    confetti({ particleCount: 150, spread: 100, origin: { y: 0.2 } });
+                }
+            } else {
+                trophyBanner.classList.add('hidden');
+            }
         }
 
         function loadData() {
@@ -154,19 +297,19 @@
             const saved = localStorage.getItem(getStorageKey(dateStr));
             const data = saved ? JSON.parse(saved) : {};
 
-            // Load Checkboxes
             document.querySelectorAll('.app-chk').forEach(chk => {
                 const id = chk.dataset.id;
                 chk.checked = data[id] !== undefined ? data[id] : false;
             });
 
-            // Load Textareas
             document.querySelectorAll('.text-input').forEach(txt => {
                 txt.value = data[txt.id] !== undefined ? data[txt.id] : '';
             });
+
+            checkSectionCompletion();
         }
 
-        function saveData() {
+        function saveData(event) {
             const dateStr = document.getElementById('currentDate').value;
             const data = {};
 
@@ -179,6 +322,13 @@
             });
 
             localStorage.setItem(getStorageKey(dateStr), JSON.stringify(data));
+
+            if (event && event.target && event.target.type === 'checkbox' && event.target.checked) {
+                playPopSound();
+                triggerConfetti(event);
+            }
+
+            checkSectionCompletion();
         }
 
         function handleDateChange() {
@@ -193,14 +343,12 @@
             }
         }
 
-        // Initialize with today's date on load
         window.onload = function() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('currentDate').value = today;
             loadData();
         };
 
-        // Event listeners for instant saving on change/input
         document.addEventListener('change', saveData);
         document.addEventListener('input', saveData);
     </script>
