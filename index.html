@@ -3,76 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Mindful Pokes | Watercolor & Pencil Wellness</title>
+    <title>Daily Mindful Pokes | Animated Wellness Wizard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <!-- Google Fonts: Schoolbook (Lora) & Cartoon Handwriting (Caveat) -->
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600&family=Lora:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         body { 
-            font-family: 'Lora', serif; 
+            font-family: 'Inter', sans-serif; 
             background-color: #FBF9F5;
             background-image: radial-gradient(#e5dec9 0.75px, transparent 0.75px);
             background-size: 24px 24px;
+            line-height: 1.6;
         }
+        .heading-font { font-family: 'Lora', serif; }
         .handwriting { font-family: 'Caveat', cursive; }
         
         /* Watercolor & Color Pencil Cards */
-        .card-peach { background-color: #FFF0ED; border: 3px dashed #F2C4BE; box-shadow: 4px 4px 0px #F2C4BE; }
-        .card-sage { background-color: #F0F4ED; border: 3px dashed #C8D6C1; box-shadow: 4px 4px 0px #C8D6C1; }
-        .card-sky { background-color: #EDF5F8; border: 3px dashed #B8D0DC; box-shadow: 4px 4px 0px #B8D0DC; }
-        .card-yellow { background-color: #FEF9E7; border: 3px dashed #F3E5AB; box-shadow: 4px 4px 0px #F3E5AB; }
-        .card-lavender { background-color: #F5EEF8; border: 3px dashed #D7BDE2; box-shadow: 4px 4px 0px #D7BDE2; }
+        .card-peach { background-color: #FFF0ED; border: 3px dashed #F2C4BE; box-shadow: 6px 6px 0px #F2C4BE; }
+        .card-sage { background-color: #F0F4ED; border: 3px dashed #C8D6C1; box-shadow: 6px 6px 0px #C8D6C1; }
+        .card-sky { background-color: #EDF5F8; border: 3px dashed #B8D0DC; box-shadow: 6px 6px 0px #B8D0DC; }
+        .card-yellow { background-color: #FEF9E7; border: 3px dashed #F3E5AB; box-shadow: 6px 6px 0px #F3E5AB; }
+        .card-lavender { background-color: #F5EEF8; border: 3px dashed #D7BDE2; box-shadow: 6px 6px 0px #D7BDE2; }
         
-        .water-card {
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .water-card:hover {
-            transform: translateY(-4px) rotate(-0.5deg);
-        }
-        
-        /* Cartoon Checkboxes */
         input[type="checkbox"] {
             accent-color: #6B8E23;
-            width: 1.3rem;
-            height: 1.3rem;
+            width: 1.4rem;
+            height: 1.4rem;
             cursor: pointer;
-            transition: transform 0.2s ease;
         }
-        input[type="checkbox"]:active {
-            transform: scale(1.3);
-        }
-
-        /* Floating Animated Clouds */
-        .cloud-item {
-            transition: all 0.6s ease;
-        }
-        .cloud-released {
-            opacity: 0;
-            transform: translateY(-40px) scale(0.8);
-            pointer-events: none;
+        input[type="checkbox"]:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
-        /* Breathing Circle Animation */
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.4); opacity: 0.3; }
+        /* Animations */
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
-        .breathe-ring {
-            animation: breathe 10s infinite ease-in-out;
+        .animate-bounce-gentle { animation: bounce-gentle 2s infinite ease-in-out; }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            15% { transform: scale(1.2); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
         }
+        .animate-heartbeat { animation: heartbeat 1.5s infinite ease-in-out; }
+
+        @keyframes breathe-circle {
+            0% { transform: scale(0.8); background-color: #93c5fd; }
+            33% { transform: scale(1.3); background-color: #3b82f6; } 
+            50% { transform: scale(1.3); background-color: #1d4ed8; } 
+            100% { transform: scale(0.8); background-color: #93c5fd; } 
+        }
+        .breathing-ball { animation: breathe-circle 12s infinite ease-in-out; }
+
+        .cloud-item { transition: all 0.6s ease; }
+        .cloud-released { opacity: 0; transform: translateY(-50px) scale(0.7); pointer-events: none; }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
-    <!-- 🔒 PIN Lock Screen View -->
+    <!-- 🔒 PIN Lock Screen -->
     <div id="view-pin" class="fixed inset-0 bg-amber-50/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4">
         <div class="card-yellow rounded-3xl p-8 max-w-sm w-full text-center">
-            <span class="text-5xl animate-bounce inline-block">👃✨</span>
+            <span class="text-5xl animate-bounce inline-block">✨</span>
             <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">Mindful Safe Gate</h2>
-            <p id="pin-instruction" class="text-xs text-amber-800/80 mt-1 mb-6">Enter your 4-digit PIN to unlock</p>
+            <p class="text-xs text-amber-800/80 mt-1 mb-6">Enter your 4-digit PIN to unlock</p>
             <div class="flex justify-center gap-3 mb-6">
                 <input type="password" maxlength="1" class="pin-box w-12 h-12 text-center text-xl font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500">
                 <input type="password" maxlength="1" class="pin-box w-12 h-12 text-center text-xl font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500">
@@ -83,28 +84,26 @@
         </div>
     </div>
 
-    <!-- 🏠 Launcher Home View (Two Big Buttons) -->
+    <!-- 🏠 Launcher Home View -->
     <div id="view-launcher" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
         <div class="text-center mb-10">
-            <span class="text-6xl">👃✨</span>
+            <span class="text-6xl animate-bounce-gentle inline-block">💧</span>
             <h1 class="text-5xl font-bold text-amber-900 handwriting mt-2">Daily Mindful Pokes</h1>
-            <p class="text-sm text-amber-800/70 italic mt-1">Analiza Balle All Rights Reserved ☁️</p>
+            <p class="text-sm text-amber-800/70 italic mt-1">Analiza Balle All Rights Reserved[cite: 1, 2]</p>
             <div class="mt-4 inline-block bg-amber-100 border-2 border-amber-300 rounded-full px-4 py-1 text-sm font-bold text-amber-900">
                 Confidence Score: <span id="launcher-score">0</span> 🏆
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl w-full">
-            <!-- Button 1: Health Checklist -->
-            <div onclick="showPage('checklist')" class="water-card card-sage rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center">
+            <div onclick="showPage('checklist')" class="card-sage rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition">
                 <span class="text-6xl mb-3">📝✨</span>
                 <h2 class="text-3xl font-bold text-emerald-900 handwriting">Daily Wellness Routine</h2>
-                <p class="text-xs text-emerald-800/80 mt-2">Checklists, hydration potions, and 6 daily animated milestones.</p>
-                <span class="mt-4 px-4 py-1.5 bg-emerald-200 text-emerald-900 font-bold text-xs rounded-full">Open Checklist ➔</span>
+                <p class="text-xs text-emerald-800/80 mt-2">Interactive animated wellness checks[cite: 1].</p>
+                <span class="mt-4 px-4 py-1.5 bg-emerald-200 text-emerald-900 font-bold text-xs rounded-full">Start Routine ➔</span>
             </div>
 
-            <!-- Button 2: Safe Space Diary -->
-            <div onclick="showPage('diary')" class="water-card card-lavender rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center">
+            <div onclick="showPage('diary')" class="card-lavender rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition">
                 <span class="text-6xl mb-3">🔒📖</span>
                 <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary</h2>
                 <p class="text-xs text-purple-800/80 mt-2">Unfiltered thoughts, voice notes, and private reflections.</p>
@@ -119,7 +118,7 @@
             <button onclick="showPage('launcher')" class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 text-sm font-bold rounded-2xl hover:bg-amber-200">← Back to Home</button>
             <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary 🔒</h2>
         </div>
-        <div class="water-card card-lavender rounded-3xl p-6 shadow-sm">
+        <div class="card-lavender rounded-3xl p-6 shadow-sm">
             <textarea id="private-diary-entry" class="w-full h-64 bg-white/80 border-2 border-purple-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Dump anything here... What you can't say out loud to others or yourself. Completely private & local-first."></textarea>
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
                 <button id="record-btn" onclick="toggleVoiceRecording()" class="px-5 py-2.5 bg-rose-400 hover:bg-rose-500 text-white font-bold text-xs rounded-2xl shadow-sm transition flex items-center gap-2">
@@ -134,15 +133,14 @@
         </div>
     </div>
 
-    <!-- 📝 Main Checklist View -->
+    <!-- 📝 Main Checklist Wizard View -->
     <div id="view-checklist" class="hidden">
-        <!-- Header -->
         <header class="bg-white/80 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
             <div class="flex items-center space-x-3 cursor-pointer" onclick="showPage('launcher')">
-                <span class="text-3xl">👃✨</span>
+                <span class="text-3xl">💧</span>
                 <div>
                     <h1 class="text-2xl font-bold text-amber-900 handwriting text-3xl">Daily Mindful Pokes</h1>
-                    <p class="text-xs text-amber-800/60">Analiza Balle All Rights Reserved ☁️[cite: 1, 2]</p>
+                    <p class="text-xs text-amber-800/60">Analiza Balle All Rights Reserved[cite: 1, 2]</p>
                 </div>
             </div>
             <div class="flex items-center gap-4">
@@ -155,74 +153,104 @@
             </div>
         </header>
 
-        <!-- Grand Trophy Celebration Banner -->
-        <div id="trophy-banner" class="max-w-7xl mx-auto px-4 sm:px-6 mt-6 hidden">
-            <div class="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 border-4 border-amber-400 p-6 rounded-3xl text-center shadow-lg relative overflow-hidden">
-                <div class="text-6xl animate-bounce">🏆👃✨</div>
-                <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">All 6 Cards Completed!</h2>
-                <p class="text-sm text-amber-800 font-semibold mt-1">"I am so proud of you!" You earned <strong>+100 Daily Confidence Points</strong> today! 💯</p>
-            </div>
-        </div>
-
-        <!-- Masonry Grid for 6 Cards -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <!-- Card 1: Location Tag -->
-            <div class="water-card card-yellow rounded-3xl p-6 relative">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-amber-900 text-lg">📍 Where are you right now?</h2>
-                    <span id="trophy-1" class="text-2xl opacity-30 transition-all duration-500">🏠</span>
+        <main class="max-w-2xl mx-auto px-4 mt-8">
+            <div class="flex justify-between items-center mb-6 bg-white/70 p-4 rounded-2xl border border-amber-200 shadow-sm">
+                <span class="text-sm font-bold text-amber-900">Step <span id="current-step-num">1</span> of 6</span>
+                <div class="flex gap-2 text-xl" id="step-dots">
+                    <span id="dot-1">📍</span>
+                    <span id="dot-2" class="opacity-30">🌅</span>
+                    <span id="dot-3" class="opacity-30">🌤️</span>
+                    <span id="dot-4" class="opacity-30">🌙</span>
+                    <span id="dot-5" class="opacity-30">💤</span>
+                    <span id="dot-6" class="opacity-30">☁️</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <label class="flex items-center gap-2 p-2.5 bg-white/70 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-home"> HOME[cite: 1]</label>
-                    <label class="flex items-center gap-2 p-2.5 bg-white/70 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-office"> OFFICE[cite: 1]</label>
-                    <label class="flex items-center gap-2 p-2.5 bg-white/70 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-house"> SOMEONE'S HOUSE[cite: 1]</label>
-                    <label class="flex items-center gap-2 p-2.5 bg-white/70 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-out"> OUT THERE[cite: 1]</label>
-                </div>
-                <p class="text-xs text-amber-800/80 mt-4 italic">"Why bother? Because your well-being matters as much as your financial stability."[cite: 1]</p>
             </div>
 
-            <!-- Card 2: Before You Start Your Day -->
-            <div class="water-card card-sage rounded-3xl p-6 relative">
+            <!-- Grand Finale Celebration Banner -->
+            <div id="trophy-banner" class="mb-6 hidden">
+                <div class="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 border-4 border-amber-400 p-6 rounded-3xl text-center shadow-lg">
+                    <div class="text-6xl animate-bounce">🏆✨</div>
+                    <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">All 6 Cards Completed!</h2>
+                    <p class="text-sm text-amber-800 font-semibold mt-1">"I am so proud of you!"[cite: 1, 3] You earned <strong>+100 Daily Confidence Points</strong> today! 💯</p>
+                </div>
+            </div>
+
+            <!-- CARD 1 -->
+            <div id="card-step-1" class="step-card card-yellow rounded-3xl p-8 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-amber-900 text-xl heading-font">📍 Where are you right now?[cite: 1]</h2>
+                    <span id="trophy-1" class="text-3xl opacity-30 transition-all">📍</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                    <label class="flex items-center gap-3 p-3 bg-white/80 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-home"> HOME[cite: 1]</label>
+                    <label class="flex items-center gap-3 p-3 bg-white/80 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-office"> OFFICE[cite: 1]</label>
+                    <label class="flex items-center gap-3 p-3 bg-white/80 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-house"> SOMEONE'S HOUSE[cite: 1]</label>
+                    <label class="flex items-center gap-3 p-3 bg-white/80 rounded-2xl cursor-pointer hover:bg-white"><input type="checkbox" class="app-chk sec-1" data-id="loc-out"> OUT THERE[cite: 1]</label>
+                </div>
+                <p class="text-xs text-amber-800/80 italic">"Why bother? Because your well-being matters as much as your financial stability."[cite: 1]</p>
+            </div>
+
+            <!-- CARD 2 -->
+            <div id="card-step-2" class="step-card card-sage rounded-3xl p-8 relative hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-emerald-900 text-xl heading-font">🌅 Before You Start (5-10 min)[cite: 1]</h2>
+                    <span id="trophy-2" class="text-3xl opacity-30 transition-all">🌅</span>
+                </div>
+                <div class="space-y-4 text-sm">
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-1"> <span>Think of 3 Grateful Things (5 sec | Mental Notes)[cite: 1]</span></label>
+                    
+                    <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl">
+                        <span>Prayer / Positive Intention[cite: 1]</span>
+                        <button onclick="openModal('prayer', 'start-2')" class="px-3 py-1.5 bg-emerald-200 text-emerald-900 rounded-xl text-xs font-bold hover:bg-emerald-300">🙏 Pray Animation</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-2" class="app-chk sec-2" data-id="start-2" disabled> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE you)[cite: 1]</span></label>
+                    
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-3"> <span>Gentle Stretch or Movement[cite: 1]</span></label>
+                    
+                    <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl">
+                        <span class="font-bold text-cyan-800">DRINK YOUR WATER (Beauty Potion)[cite: 1]</span>
+                        <button onclick="openModal('water', 'start-4')" class="px-3 py-1.5 bg-cyan-200 text-cyan-900 rounded-xl text-xs font-bold hover:bg-cyan-300">💧 Drinking Guide</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-4" class="app-chk sec-2" data-id="start-4" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER (Beauty Potion) 💧[cite: 1]</span></label>
+                </div>
+            </div>
+
+            <!-- CARD 3 -->
+            <div id="card-step-3" class="step-card card-sky rounded-3xl p-8 relative hidden">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-emerald-900 text-lg">🌅 Before You Start (5-10 min)[cite: 1]</h2>
-                    <span id="trophy-2" class="text-2xl opacity-30 transition-all duration-500">🌅</span>
+                    <h2 class="font-bold text-sky-900 text-xl heading-font">☀️ Mid-Day & Lunchbreak (10 min)[cite: 1]</h2>
+                    <span id="trophy-3" class="text-3xl opacity-30 transition-all">🌤️</span>
                 </div>
                 <div class="space-y-3 text-sm">
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-1"> <span>Think of 3 Grateful Things (5 sec | Mental Notes)[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-2"> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE you)[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-3"> <span>Gentle Stretch or Movement[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-4"> <span class="font-bold text-cyan-800">DRINK YOUR WATER (Beauty Potion) 💧[cite: 1]</span></label>
-                </div>
-            </div>
-
-            <!-- Card 3: Mid-Day & Before Lunch -->
-            <div class="water-card card-sky rounded-3xl p-6 relative">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="font-bold text-sky-900 text-lg">☀️ Mid-Day & Lunchbreak (10 min)[cite: 1]</h2>
-                    <span id="trophy-3" class="text-2xl opacity-30 transition-all duration-500">🌤️</span>
-                </div>
-                <!-- Interactive ADHD Breathing Halo -->
-                <div class="flex items-center gap-3 bg-white/60 p-2.5 rounded-2xl mb-3 border border-sky-200">
-                    <div class="w-6 h-6 rounded-full bg-sky-400 breathe-ring"></div>
-                    <span class="text-xs font-semibold text-sky-900">1-Min Breathing Anchor (Inhale 4, Exhale 6)[cite: 1]</span>
-                </div>
-                <div class="space-y-2.5 text-sm">
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-1"> <span>Posture Check & 3 Minutes Stretching[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-2"> <span>1 Min Breathing Exercise[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-3"> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
-                    <hr class="border-sky-200 my-1">
-                    <p class="text-xs font-bold text-sky-800 uppercase">3-Min Spiritual/Emotional Check[cite: 1]:</p>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-4"> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"[cite: 1]</span></label>
+                    
+                    <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl">
+                        <span class="text-xs font-semibold text-sky-900">Breathing Exercise (4-2-6 Ratio)[cite: 1]</span>
+                        <button onclick="openModal('breathing', 'mid-2')" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">🌬️ Breathing Guide</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-2" class="app-chk sec-3" data-id="mid-2" disabled> <span>1 Min Breathing Exercise[cite: 1]</span></label>
+                    
+                    <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
+                        <span class="font-bold text-cyan-800">DRINK YOUR WATER[cite: 1]</span>
+                        <button onclick="openModal('water', 'mid-3')" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-3" class="app-chk sec-3" data-id="mid-3" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
+                    
+                    <hr class="border-sky-200 my-2">
+                    <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
+                        <span class="font-bold text-sky-800">Spiritual / Emotional Check[cite: 1, 2]</span>
+                        <button onclick="openModal('feeling', 'mid-4')" class="px-2 py-1 bg-rose-200 text-rose-900 rounded-lg text-xs font-bold">💓 Feel Check</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-4" class="app-chk sec-3" data-id="mid-4" disabled> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"[cite: 1]</span></label>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-5"> <span>Acknowledge existence & <strong>LET IT GO LIKE YOUR FART</strong> 💨[cite: 1]</span></label>
                 </div>
             </div>
 
-            <!-- Card 4: End of Day Confidence Boost -->
-            <div class="water-card card-peach rounded-3xl p-6 relative">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-rose-900 text-lg">🌙 End of Day Boost (10 min)[cite: 1]</h2>
-                    <span id="trophy-4" class="text-2xl opacity-30 transition-all duration-500">🌙</span>
+            <!-- CARD 4 -->
+            <div id="card-step-4" class="step-card card-peach rounded-3xl p-8 relative hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-rose-900 text-xl heading-font">🌙 End of Day Boost (10 min)[cite: 1]</h2>
+                    <span id="trophy-4" class="text-3xl opacity-30 transition-all">🌙</span>
                 </div>
                 <div class="space-y-3 text-sm">
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-4" data-id="end-1"> <span>Journal 3 Successes (What made you proud?)[cite: 1]</span></label>
@@ -231,16 +259,21 @@
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-4" data-id="end-2"> <span>Journal 3 Priorities for Tomorrow[cite: 1]</span></label>
                     <textarea id="note-priorities" class="text-input w-full bg-white/70 border border-rose-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-rose-400" placeholder="Tomorrow's priorities..." rows="2"></textarea>
 
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-4" data-id="end-3"> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-4" data-id="end-4"> <span>Give yourself a mindful GOOD JOB poke on your nose![cite: 1, 3] 👃✨</span></label>
+                    <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
+                        <span class="font-bold text-cyan-800">DRINK YOUR WATER[cite: 1]</span>
+                        <button onclick="openModal('water', 'end-3')" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-end-3" class="app-chk sec-4" data-id="end-3" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
+                    
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-4" data-id="end-4"> <span>Give yourself a mindful GOOD JOB poke on your nose! ✨[cite: 1, 3]</span></label>
                 </div>
             </div>
 
-            <!-- Card 5: Before Sleeping Routine -->
-            <div class="water-card card-lavender rounded-3xl p-6 relative">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-purple-900 text-lg">🛌 Before Sleeping (10-15 min)[cite: 1]</h2>
-                    <span id="trophy-5" class="text-2xl opacity-30 transition-all duration-500">💤</span>
+            <!-- CARD 5 -->
+            <div id="card-step-5" class="step-card card-lavender rounded-3xl p-8 relative hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-purple-900 text-xl heading-font">🛌 Before Sleeping (10-15 min)[cite: 1]</h2>
+                    <span id="trophy-5" class="text-3xl opacity-30 transition-all">💤</span>
                 </div>
                 <div class="space-y-3 text-sm">
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-5" data-id="sleep-1"> <span>Journal 3 Gratitude Points (Others)[cite: 1]</span></label>
@@ -249,22 +282,36 @@
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-5" data-id="sleep-2"> <span>Journal 3 Gratitude Points (God / Blessings)[cite: 1]</span></label>
                     <textarea id="note-gratitude-god" class="text-input w-full bg-white/70 border border-purple-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-purple-400" placeholder="Blessings today..." rows="2"></textarea>
 
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-5" data-id="sleep-3"> <span>Screen Curfew (No Screens 30 min before sleep)[cite: 1]</span></label>
+                    <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
+                        <span class="font-bold text-purple-900">Screen Curfew Animation[cite: 1]</span>
+                        <button onclick="openModal('curfew', 'sleep-3')" class="px-2 py-1 bg-purple-200 text-purple-900 rounded-lg text-xs font-bold">📵 Curfew Guide</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-3" class="app-chk sec-5" data-id="sleep-3" disabled> <span>Screen Curfew (No Screens 30 min before sleep)[cite: 1]</span></label>
+                    
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-5" data-id="sleep-4"> <span>Prayer / Positive Intention[cite: 1]</span></label>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-5" data-id="sleep-5"> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
+                    
+                    <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
+                        <span class="font-bold text-cyan-800">DRINK YOUR WATER[cite: 1]</span>
+                        <button onclick="openModal('water', 'sleep-5')" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
+                    </div>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-5" class="app-chk sec-5" data-id="sleep-5" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧[cite: 1]</span></label>
                 </div>
             </div>
 
-            <!-- Card 6: Emotional Check | Cloud Referencing -->
-            <div class="water-card card-sky rounded-3xl p-6 relative">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="font-bold text-sky-900 text-lg">☁️ Emotional Check: Cloud Referencing[cite: 2]</h2>
-                    <span id="trophy-6" class="text-2xl opacity-30 transition-all duration-500">☁️</span>
+            <!-- CARD 6 -->
+            <div id="card-step-6" class="step-card card-sky rounded-3xl p-8 relative hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-bold text-sky-900 text-xl heading-font">☁️ Emotional Check: Cloud Referencing[cite: 2]</h2>
+                    <span id="trophy-6" class="text-3xl opacity-30 transition-all">☁️</span>
+                </div>
+                <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl mb-3">
+                    <span class="text-xs text-sky-900 font-semibold">Interactive Cloud Fart Releasing[cite: 1, 2]</span>
+                    <button onclick="openModal('clouds', 'cloud-checked')" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">☁️ Cloud Animation</button>
                 </div>
                 <p class="text-xs text-sky-800/80 mb-3 italic">Click any cloud thought to release it like your fart[cite: 1, 2]!</p>
                 
                 <div class="space-y-2.5 text-xs">
-                    <div class="bg-white/80 p-2.5 rounded-2xl border border-sky-100">
+                    <div class="bg-white/80 p-3 rounded-2xl border border-sky-100">
                         <span class="font-bold text-sky-900">Low-Level (Raw Emotions)[cite: 2]:</span>
                         <div class="mt-1 space-y-1">
                             <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Cumulus:</strong> Okay, just vibing[cite: 2].</div>
@@ -272,37 +319,56 @@
                             <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Stratocumulus:</strong> Low energy droplets[cite: 2].</div>
                         </div>
                     </div>
-                    <div class="bg-white/80 p-2.5 rounded-2xl border border-sky-100">
-                        <span class="font-bold text-sky-900">Mid-Level (Processing/Overthinking)[cite: 2]:</span>
-                        <div class="mt-1 space-y-1">
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Altocumulus:</strong> Loopy thinking (42x)[cite: 2].</div>
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Altostratus:</strong> Something forming[cite: 2].</div>
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Nimbostratus:</strong> Quiet sadness drizzle[cite: 2].</div>
-                        </div>
-                    </div>
-                    <div class="bg-white/80 p-2.5 rounded-2xl border border-sky-100">
-                        <span class="font-bold text-sky-900">High-Level (Zoomed-Out / Detached)[cite: 2]:</span>
-                        <div class="mt-1 space-y-1">
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Cirrus:</strong> Peaceful distance[cite: 2].</div>
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Cirrocumulus:</strong> Imagination overload[cite: 2].</div>
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Cirrostratus:</strong> Spiritual static[cite: 2].</div>
-                        </div>
-                    </div>
                     <label class="flex items-center gap-2 pt-2 cursor-pointer font-bold text-sky-900">
-                        <input type="checkbox" class="app-chk sec-6" data-id="cloud-checked"> Mark Cloud Check Complete
+                        <input type="checkbox" id="chk-cloud-checked" class="app-chk sec-6" data-id="cloud-checked" disabled> Mark Cloud Check Complete
                     </label>
                 </div>
             </div>
 
+            <!-- Wizard Navigation -->
+            <div class="flex justify-between items-center mt-6">
+                <button id="btn-prev" onclick="changeStep(-1)" class="px-6 py-3 bg-amber-100 border border-amber-300 text-amber-900 font-bold rounded-2xl hover:bg-amber-200 transition opacity-50 cursor-not-allowed" disabled>← Previous Card</button>
+                <button id="btn-next" onclick="changeStep(1)" class="px-6 py-3 bg-amber-400 text-amber-950 font-bold rounded-2xl hover:bg-amber-500 shadow-md transition transform active:scale-95">Next Card ➔</button>
+            </div>
         </main>
+    </div>
+
+    <!-- 🌟 ANIMATION MODAL POPUP -->
+    <div id="anim-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-content-box" class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative border-4 border-amber-300">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            
+            <div id="modal-animation-target" class="my-6 flex flex-col items-center justify-center min-h-[180px]"></div>
+            <div id="modal-instructions" class="text-sm font-semibold text-slate-700 mb-6"></div>
+
+            <button id="modal-complete-btn" onclick="completeAnimation()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-md transition transform active:scale-95">
+                Complete & Unlock Checklist! ✨
+            </button>
+        </div>
+    </div>
+
+    <!-- 🏆 GRAND FINALE CONGRATULATORY OVERLAY -->
+    <div id="grand-finale-overlay" class="fixed inset-0 bg-amber-950/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-6 text-center text-white">
+        <div class="animate-bounce text-8xl mb-4">🎉✨</div>
+        <h1 class="text-5xl font-bold handwriting mb-2">BOOP! All Cards Done!</h1>
+        <p class="text-xl max-w-md text-amber-100 mb-6">"I am so proud of you!"[cite: 1, 3]</p>
+        <div class="bg-white/10 border-2 border-amber-300 px-6 py-3 rounded-2xl text-2xl font-bold text-amber-200 mb-8">
+            +100 Confidence Points Awarded 🏆
+        </div>
+        <button onclick="closeGrandFinale()" class="px-8 py-4 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-lg rounded-2xl shadow-xl transition transform active:scale-95">
+            Claim Victory 👃✨
+        </button>
     </div>
 
     <!-- Scripts Engine -->
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentStep = 1;
+        let activeModalType = null;
+        let activeTargetCheckboxId = null;
         let mediaRecorder, audioChunks = [];
 
-        // PIN Gate Logic
+        // PIN Gate
         const defaultPin = "1234";
         document.querySelectorAll('.pin-box').forEach((box, idx, boxes) => {
             box.addEventListener('input', () => {
@@ -321,7 +387,6 @@
             }
         }
 
-        // View Navigation
         function showPage(pageId) {
             ['view-launcher', 'view-diary', 'view-checklist'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -330,14 +395,96 @@
             if (pageId === 'launcher') updateScoreDisplay();
         }
 
-        // Animated Interactive Cloud Release
+        function changeStep(direction) {
+            const nextStep = currentStep + direction;
+            if (nextStep >= 1 && nextStep <= 6) {
+                document.getElementById('card-step-' + currentStep).classList.add('hidden');
+                currentStep = nextStep;
+                document.getElementById('card-step-' + currentStep).classList.remove('hidden');
+
+                document.getElementById('current-step-num').innerText = currentStep;
+                
+                for (let i = 1; i <= 6; i++) {
+                    const dot = document.getElementById('dot-' + i);
+                    if (i <= currentStep) dot.classList.remove('opacity-30');
+                    else dot.classList.add('opacity-30');
+                }
+
+                document.getElementById('btn-prev').disabled = (currentStep === 1);
+                document.getElementById('btn-prev').classList.toggle('opacity-50', currentStep === 1);
+                document.getElementById('btn-prev').classList.toggle('cursor-not-allowed', currentStep === 1);
+
+                document.getElementById('btn-next').innerText = (currentStep === 6) ? "Finish Checklist 🏆" : "Next Card ➔";
+            }
+        }
+
+        function openModal(type, checkboxId) {
+            activeModalType = type;
+            activeTargetCheckboxId = checkboxId;
+            const target = document.getElementById('modal-animation-target');
+            const instructions = document.getElementById('modal-instructions');
+            
+            target.innerHTML = '';
+            
+            if (type === 'water') {
+                instructions.innerText = "Drink your Beauty Potion! Savor the hydration[cite: 1].";
+                target.innerHTML = `<div class="text-7xl animate-bounce-gentle">🥛💧✨</div><p class="text-xs text-cyan-700 mt-3 font-bold">Refreshing beauty potion circulating!</p>`;
+            } else if (type === 'breathing') {
+                instructions.innerText = "Follow the 4-2-6 Calming Ratio: Inhale (4s), Hold (2s), Exhale (6s)[cite: 1].";
+                target.innerHTML = `
+                    <div class="w-32 h-32 rounded-full breathing-ball flex items-center justify-center text-white font-bold text-xs shadow-inner">
+                        Breathe
+                    </div>
+                `;
+            } else if (type === 'prayer') {
+                instructions.innerText = "Be at peace with the source and set your positive intention[cite: 1].";
+                target.innerHTML = `<div class="text-7xl animate-pulse">🙏✨</div><p class="text-xs text-emerald-700 mt-3 font-bold">Peace and positive intention flowing.</p>`;
+            } else if (type === 'feeling') {
+                instructions.innerText = "Acknowledge the existence of your emotions without judgment[cite: 2].";
+                target.innerHTML = `<div class="text-7xl animate-heartbeat">💓</div><p class="text-xs text-rose-700 mt-3 font-bold">Heartbeat steady and mindful.</p>`;
+            } else if (type === 'curfew') {
+                instructions.innerText = "Screen Curfew: No screens 30 minutes before sleep for optimal rest[cite: 1].";
+                target.innerHTML = `<div class="text-7xl animate-bounce">📵🌙</div><p class="text-xs text-purple-700 mt-3 font-bold">Digital sunset active!</p>`;
+            } else if (type === 'clouds') {
+                instructions.innerText = "Acknowledge thoughts and let them go like your fart[cite: 1, 2]!";
+                target.innerHTML = `<div class="text-6xl animate-bounce">☁️💨🍃</div><p class="text-xs text-sky-700 mt-3 font-bold">Drifting away effortlessly.</p>`;
+            }
+
+            document.getElementById('anim-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('anim-modal').classList.add('hidden');
+        }
+
+        function completeAnimation() {
+            closeModal();
+            playPopSound();
+            confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 } });
+            
+            if (activeTargetCheckboxId) {
+                const chk = document.getElementById('chk-' + activeTargetCheckboxId) || document.querySelector(`[data-id="${activeTargetCheckboxId}"]`);
+                if (chk) {
+                    chk.disabled = false;
+                    chk.checked = true;
+                    saveData();
+                }
+            }
+        }
+
         function releaseCloud(el) {
             playPopSound();
             el.classList.add('cloud-released');
             confetti({ particleCount: 15, spread: 40, origin: { y: 0.6 } });
+            // Unlock cloud checkbox
+            const cloudChk = document.getElementById('chk-cloud-checked');
+            if(cloudChk) {
+                cloudChk.disabled = false;
+                cloudChk.checked = true;
+                saveData();
+            }
         }
 
-        // Speech Synthesis for Nose Poke Voice Cue
         function speakProudCue() {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance("I am so proud of you!");
@@ -347,7 +494,6 @@
             }
         }
 
-        // Web Audio Synthesizers
         function playPopSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
@@ -382,9 +528,7 @@
             });
         }
 
-        function getStorageKey(dateStr) {
-            return 'mindful_pokes_data_' + dateStr;
-        }
+        function getStorageKey(dateStr) { return 'mindful_pokes_data_' + dateStr; }
 
         function updateScoreDisplay() {
             let totalScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
@@ -419,8 +563,9 @@
                     playFanfareSound();
                     setTimeout(speakProudCue, 400);
                     confetti({ particleCount: 120, spread: 90, origin: { y: 0.3 } });
+                    
+                    document.getElementById('grand-finale-overlay').classList.remove('hidden');
 
-                    // Award +100 Daily Confidence Points once per day
                     if (!localStorage.getItem(scoreAwardedKey)) {
                         let currentScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
                         localStorage.setItem('user_confidence_score', currentScore + 100);
@@ -433,13 +578,23 @@
             }
         }
 
+        function closeGrandFinale() {
+            document.getElementById('grand-finale-overlay').classList.add('hidden');
+        }
+
         function loadData() {
             const dateStr = document.getElementById('currentDate').value;
             const saved = localStorage.getItem(getStorageKey(dateStr));
             const data = saved ? JSON.parse(saved) : {};
 
             document.querySelectorAll('.app-chk').forEach(chk => {
-                chk.checked = data[chk.dataset.id] !== undefined ? data[chk.dataset.id] : false;
+                const id = chk.dataset.id;
+                const isChecked = data[id] !== undefined ? data[id] : false;
+                chk.checked = isChecked;
+                // If loaded data says it was checked, ensure disabled gated checkboxes are unlocked
+                if (isChecked && chk.disabled) {
+                    chk.disabled = false;
+                }
             });
 
             document.querySelectorAll('.text-input').forEach(txt => {
@@ -485,7 +640,6 @@
             }
         }
 
-        // Voice Note Recorder Engine
         async function toggleVoiceRecording() {
             const recordBtn = document.getElementById('record-btn');
             const recordText = document.getElementById('record-text');
