@@ -1,0 +1,17 @@
+{
+  "name": "Daily Mindful Pokes",
+  "short_name": "Mindful Pokes",
+  "description": "Your cozy, local-first daily wellness routine and emotional check tracker.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FBF9F5",
+  "theme_color": "#FBF9F5",
+  "icons": [
+    {
+      "src": "https://images.emojiterra.com/google/android-11/512px/1f443.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
