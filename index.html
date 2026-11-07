@@ -64,6 +64,12 @@
 
         .cloud-item { transition: all 0.6s ease; }
         .cloud-released { opacity: 0; transform: translateY(-50px) scale(0.7); pointer-events: none; }
+        
+        /* Tiny animated companions for every checklist item */
+        .checkbox-mascot { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; margin-left:.15rem; font-size:1.2rem; line-height:1; user-select:none; transform-origin:center bottom; }
+        @keyframes mascot-celebrate { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 25%{transform:translateY(-7px) rotate(-12deg) scale(1.12)} 50%{transform:translateY(0) rotate(10deg) scale(1.05)} 75%{transform:translateY(-3px) rotate(-6deg) scale(1.08)} }
+        .checkbox-mascot.is-celebrating { animation:mascot-celebrate 650ms ease-in-out; }
+        @media (prefers-reduced-motion: reduce) { .checkbox-mascot.is-celebrating { animation:none; } }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
@@ -528,6 +534,26 @@
             });
         }
 
+        function attachCheckboxMascots() {
+            const mascots = {'sec-1':'🦊','sec-2':'🐻','sec-3':'🐸','sec-4':'🐱','sec-5':'🐰','sec-6':'☁️'};
+            document.querySelectorAll('.app-chk').forEach(chk => {
+                const section = Array.from(chk.classList).find(name => mascots[name]);
+                if (!section || chk.nextElementSibling?.classList.contains('checkbox-mascot')) return;
+                const mascot = document.createElement('span');
+                mascot.className = 'checkbox-mascot';
+                mascot.textContent = mascots[section];
+                mascot.setAttribute('aria-hidden','true');
+                chk.insertAdjacentElement('afterend',mascot);
+                chk.addEventListener('change',() => {
+                    if (!chk.checked) return;
+                    mascot.classList.remove('is-celebrating');
+                    void mascot.offsetWidth;
+                    mascot.classList.add('is-celebrating');
+                });
+                mascot.addEventListener('animationend',() => mascot.classList.remove('is-celebrating'));
+            });
+        }
+
         function getStorageKey(dateStr) { return 'mindful_pokes_data_' + dateStr; }
 
         function updateScoreDisplay() {
@@ -673,6 +699,7 @@
         window.onload = function() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('currentDate').value = today;
+            attachCheckboxMascots();
             loadData();
         };
 
