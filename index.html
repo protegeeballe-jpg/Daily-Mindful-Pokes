@@ -186,6 +186,42 @@
         .cloud-intro-copy{font-size:.85rem;color:#475569;line-height:1.5}
         @media(max-width:380px){.cloud-intro-gallery{gap:.35rem}.cloud-intro-item{font-size:.68rem;padding:.5rem .2rem}.cloud-intro-item .cloud-art{font-size:2rem}}
 
+        
+
+        /* Watercolor paper and colored-pencil finish. */
+        body{
+            background-color:#fbf8ef;
+            background-image:
+                radial-gradient(ellipse at 9% 12%,rgba(247,202,184,.22),transparent 27%),
+                radial-gradient(ellipse at 91% 18%,rgba(181,213,205,.23),transparent 30%),
+                radial-gradient(ellipse at 52% 92%,rgba(205,197,231,.18),transparent 34%),
+                repeating-linear-gradient(0deg,rgba(105,91,72,.018) 0,rgba(105,91,72,.018) 1px,transparent 1px,transparent 5px);
+            background-size:100% 100%,100% 100%,100% 100%,5px 5px;
+            background-attachment:fixed;
+        }
+        .card-peach,.card-sage,.card-sky,.card-yellow,.card-lavender{border-width:2px;border-style:solid;box-shadow:3px 4px 0 rgba(105,86,66,.16),inset 0 0 24px rgba(255,255,255,.24);background-blend-mode:normal,screen,normal}
+        .card-peach{border-color:#e6b9b2;background-image:radial-gradient(ellipse at 18% 12%,rgba(255,255,255,.82),transparent 44%),radial-gradient(ellipse at 87% 82%,rgba(241,179,168,.2),transparent 46%),repeating-linear-gradient(135deg,rgba(161,102,91,.025) 0,rgba(161,102,91,.025) 1px,transparent 1px,transparent 5px)}
+        .card-sage{border-color:#b9cdb6;background-image:radial-gradient(ellipse at 14% 16%,rgba(255,255,255,.82),transparent 43%),radial-gradient(ellipse at 85% 84%,rgba(160,195,155,.2),transparent 48%),repeating-linear-gradient(135deg,rgba(82,121,85,.025) 0,rgba(82,121,85,.025) 1px,transparent 1px,transparent 5px)}
+        .card-sky{border-color:#b4cbd6;background-image:radial-gradient(ellipse at 16% 12%,rgba(255,255,255,.88),transparent 43%),radial-gradient(ellipse at 84% 82%,rgba(153,199,222,.2),transparent 48%),repeating-linear-gradient(135deg,rgba(76,116,137,.025) 0,rgba(76,116,137,.025) 1px,transparent 1px,transparent 5px)}
+        .card-yellow{border-color:#e2d19a;background-image:radial-gradient(ellipse at 12% 14%,rgba(255,255,255,.9),transparent 43%),radial-gradient(ellipse at 88% 84%,rgba(242,218,137,.22),transparent 47%),repeating-linear-gradient(135deg,rgba(141,115,54,.025) 0,rgba(141,115,54,.025) 1px,transparent 1px,transparent 5px)}
+        .card-lavender{border-color:#d0b9d7;background-image:radial-gradient(ellipse at 14% 13%,rgba(255,255,255,.88),transparent 43%),radial-gradient(ellipse at 86% 82%,rgba(201,172,216,.2),transparent 48%),repeating-linear-gradient(135deg,rgba(112,82,127,.025) 0,rgba(112,82,127,.025) 1px,transparent 1px,transparent 5px)}
+        .step-card{box-shadow:4px 5px 0 rgba(105,86,66,.14),inset 0 0 26px rgba(255,255,255,.24)}
+        .step-card h2,.heading-font{text-shadow:.35px .45px 0 currentColor}
+        .guided-task-row{padding:.45rem .55rem;border:1px solid rgba(145,128,101,.15);border-radius:1rem;background:rgba(255,255,255,.38)}
+        .guide-launch,.cloud-item{border-color:rgba(130,112,89,.24);box-shadow:0 2px 0 rgba(105,86,66,.1),inset 0 0 9px rgba(255,255,255,.8)}
+        textarea,.text-input{background-image:repeating-linear-gradient(0deg,rgba(147,129,103,.045) 0,rgba(147,129,103,.045) 1px,transparent 1px,transparent 26px)!important;background-color:rgba(255,255,255,.82)!important;border-color:rgba(151,130,111,.35)!important}
+        textarea:focus,.text-input:focus{outline:2px solid rgba(133,164,153,.65);outline-offset:2px}
+        .watercolor-progress{background:rgba(255,255,255,.68);border:1px solid rgba(147,128,96,.22);box-shadow:2px 3px 0 rgba(105,86,66,.1)}
+        .watercolor-track{height:.72rem;overflow:hidden;border-radius:99px;background:#e9e3d7;border:1px solid rgba(110,99,82,.12)}
+        .watercolor-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#9bc4ad,#7caea0,#d5bd83);transition:width .35s ease}
+        .writing-lock-card{background:radial-gradient(ellipse at 20% 10%,rgba(255,255,255,.9),transparent 45%),linear-gradient(135deg,rgba(233,220,241,.88),rgba(250,241,246,.92));border:1.5px solid #ceb9d8;box-shadow:3px 4px 0 rgba(112,82,127,.12)}
+        .writing-input{width:100%;padding:.75rem .9rem;border:1.5px solid #cdbbd5;border-radius:.9rem;background:rgba(255,255,255,.9);color:#3d3346}
+        .writing-input:focus{outline:3px solid rgba(173,145,193,.28);border-color:#9b7cae}
+        .writing-security-status{min-height:1.4rem;font-size:.78rem;line-height:1.4;color:#5d4968}
+        .writing-security-status[data-state="error"]{color:#a33745}
+        .writing-lock-hint{background:rgba(255,255,255,.82);border:1px dashed #b69abf;color:#5d4968}
+        @media(prefers-reduced-motion:reduce){.watercolor-fill{transition:none}}
+
     </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
@@ -220,8 +256,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl w-full">
             <div onclick="showPage('checklist')" class="card-sage rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition">
                 <span class="text-6xl mb-3">📝✨</span>
-                <h2 class="text-3xl font-bold text-emerald-900 handwriting">Daily Wellness Routine</h2>
-                <p class="text-xs text-emerald-800/80 mt-2">Interactive animated wellness checks</p>
+                <h2 class="text-3xl font-bold text-emerald-900 handwriting">ADHD-Friendly Health Checklist</h2>
+                <p class="text-xs text-emerald-800/80 mt-2">A gentle activity game • one small step at a time</p>
                 <span class="mt-4 px-4 py-1.5 bg-emerald-200 text-emerald-900 font-bold text-xs rounded-full">Start Routine ➔</span>
             </div>
 
@@ -241,16 +277,34 @@
             <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary 🔒</h2>
         </div>
         <div class="card-lavender rounded-3xl p-6 shadow-sm">
-            <textarea id="private-diary-entry" class="w-full h-64 bg-white/80 border-2 border-purple-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Dump anything here... What you can't say out loud to others or yourself. Completely private & local-first."></textarea>
+            <section id="diary-lock-panel" class="writing-lock-card rounded-2xl p-5 mb-4">
+                <div class="flex items-center gap-3 mb-2"><span class="text-3xl" aria-hidden="true">🔐</span><div>
+                    <h3 id="diary-lock-heading" class="font-bold text-purple-950 text-lg handwriting">Create your private writing key</h3>
+                    <p class="text-xs text-purple-800">Your diary and checklist reflections are encrypted on this device.</p>
+                </div></div>
+                <p id="diary-lock-intro" class="text-xs text-purple-900/80 mb-4">Create a separate passphrase. This is different from the 4-digit app PIN.</p>
+                <label for="diary-passphrase" class="block text-xs font-bold text-purple-950 mb-1">Private writing passphrase</label>
+                <input id="diary-passphrase" class="writing-input mb-3" type="password" autocomplete="new-password" minlength="16" maxlength="256" placeholder="Use 16+ characters or several words">
+                <div id="diary-confirm-wrap"><label for="diary-passphrase-confirm" class="block text-xs font-bold text-purple-950 mb-1">Confirm passphrase</label>
+                    <input id="diary-passphrase-confirm" class="writing-input mb-3" type="password" autocomplete="new-password" minlength="16" maxlength="256" placeholder="Type the same passphrase again">
+                </div>
+                <button id="diary-key-action" type="button" onclick="handleDiaryKeyAction()" class="w-full sm:w-auto px-5 py-2.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-bold text-sm rounded-xl shadow-sm">Create encryption key</button>
+                <p id="diary-security-status" class="writing-security-status mt-3" role="status" aria-live="polite">Your private writing stays locked until you create or enter this passphrase.</p>
+                <p class="text-[11px] text-purple-900/75 mt-2">Forgotten passphrases cannot be reset by this app. Keep yours somewhere safe. Clearing this browser's site data can also delete encrypted entries. Encryption protects stored text while locked, not an unlocked or compromised device.</p>
+            </section>
+            <div id="diary-editor-panel" class="hidden">
+            <textarea id="private-diary-entry" class="w-full h-64 bg-white/80 border-2 border-purple-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Your private thoughts are encrypted before they are saved on this device."></textarea>
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
                 <button id="record-btn" onclick="toggleVoiceRecording()" class="px-5 py-2.5 bg-rose-400 hover:bg-rose-500 text-white font-bold text-xs rounded-2xl shadow-sm transition flex items-center gap-2">
                     🎙️ <span id="record-text">Record Voice Note</span>
                 </button>
-                <p class="text-xs text-purple-700 italic">Saved automatically to local storage ✨</p>
+                <div class="flex items-center gap-3"><p id="writing-save-status" class="text-xs text-purple-700 italic" role="status" aria-live="polite">Encrypted autosave is active.</p><button type="button" onclick="lockPrivateWriting()" class="px-3 py-2 bg-purple-100 border border-purple-300 text-purple-900 text-xs font-bold rounded-xl">Lock writing</button></div>
             </div>
             <div id="audio-container" class="mt-4 hidden">
-                <p class="text-xs font-bold text-purple-900 mb-1">Today's Recorded Voice Note:</p>
+                <p class="text-xs font-bold text-purple-900 mb-1">Today's Temporary Voice Note:</p>
                 <audio id="diary-audio" controls class="w-full"></audio>
+            </div>
+            <p class="text-[11px] text-purple-800/75 mt-3">Voice recordings are temporary playback in this session; they are not stored as diary entries.</p>
             </div>
         </div>
     </div>
@@ -276,17 +330,19 @@
         </header>
 
         <main class="max-w-2xl mx-auto px-4 mt-8">
-            <div class="flex justify-between items-center mb-6 bg-white/70 p-4 rounded-2xl border border-amber-200 shadow-sm">
-                <span class="text-sm font-bold text-amber-900">Step <span id="current-step-num">1</span> of 6</span>
-                <div class="flex gap-2 text-xl" id="step-dots">
-                    <span id="dot-1">📍</span>
-                    <span id="dot-2" class="opacity-30">🌅</span>
-                    <span id="dot-3" class="opacity-30">🌤️</span>
-                    <span id="dot-4" class="opacity-30">🌙</span>
-                    <span id="dot-5" class="opacity-30">💤</span>
-                    <span id="dot-6" class="opacity-30">☁️</span>
+            <div class="flex justify-between items-center mb-4 bg-white/70 p-4 rounded-2xl border border-amber-200 shadow-sm">
+                <span class="text-sm font-bold text-amber-900">Card <span id="current-step-num">1</span> of 6</span>
+                <div class="flex gap-2 text-xl" id="step-dots" aria-label="Six activity cards">
+                    <span id="dot-1">📍</span><span id="dot-2" class="opacity-30">🌅</span><span id="dot-3" class="opacity-30">🌤️</span>
+                    <span id="dot-4" class="opacity-30">🌙</span><span id="dot-5" class="opacity-30">💤</span><span id="dot-6" class="opacity-30">☁️</span>
                 </div>
             </div>
+            <section class="watercolor-progress rounded-2xl p-4 mb-6" aria-label="Daily activity progress">
+                <div class="flex justify-between items-center gap-3 mb-2"><span class="text-sm font-bold text-slate-800">Today's little wins</span><span id="daily-progress-count" class="text-xs font-bold text-emerald-900 tabular-nums">0 of 20 steps</span></div>
+                <div class="watercolor-track" role="progressbar" aria-label="Completed health checklist activities" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="daily-progress-track"><div id="daily-progress-bar" class="watercolor-fill"></div></div>
+                <p class="text-xs text-slate-600 mt-2">One card at a time. Small steps count, and you can pause whenever you need.</p>
+            </section>
+            <div id="writing-lock-hint" class="writing-lock-hint rounded-xl p-3 mb-5 text-xs hidden">Your private reflection boxes are locked. <button type="button" onclick="showPage('diary')" class="font-bold underline">Open Safe Space Diary to unlock them.</button></div>
 
             <!-- Grand Finale Celebration Banner -->
             <div id="trophy-banner" class="mb-6 hidden">
@@ -506,6 +562,191 @@
 
         // PIN Gate
         const defaultPin = "1234";
+
+        // The four-digit PIN is only an app gate; private writing uses a separate encryption key.
+        const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
+        const WRITING_DIARY_PREFIX='dmp_diary_cipher_v1_';
+        const WRITING_NOTES_PREFIX='dmp_notes_cipher_v1_';
+        const WRITING_KDF_ITERATIONS=600000;
+        const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
+        const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
+        let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
+
+        function hasWritingCrypto(){return !!(window.isSecureContext&&window.crypto&&window.crypto.subtle&&window.crypto.getRandomValues);}
+        function bytesToBase64(bytes){let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
+        function base64ToBytes(value){const binary=atob(value),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;}
+        async function derivePrivateWritingKey(passphrase,salt,iterations=WRITING_KDF_ITERATIONS){
+            const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveKey']);
+            return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+        }
+        function getSecureWritingStorageKey(kind,dateStr){return (kind==='diary'?WRITING_DIARY_PREFIX:WRITING_NOTES_PREFIX)+dateStr;}
+        function getWritingAad(kind,dateStr){return new TextEncoder().encode('Daily Mindful Pokes|private-writing|'+kind+'|v1|'+dateStr);}
+        async function encryptPrivatePayload(kind,dateStr,value,key=writingCryptoKey){
+            if(!key)throw new Error('Private writing is locked.');
+            const iv=crypto.getRandomValues(new Uint8Array(12));
+            const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:getWritingAad(kind,dateStr),tagLength:128},key,new TextEncoder().encode(JSON.stringify(value)));
+            return JSON.stringify({version:1,algorithm:'AES-256-GCM',iv:bytesToBase64(iv),ciphertext:bytesToBase64(new Uint8Array(ciphertext))});
+        }
+        async function decryptPrivatePayload(kind,dateStr,record,key=writingCryptoKey){
+            if(!key)throw new Error('Private writing is locked.');
+            const encrypted=typeof record==='string'?JSON.parse(record):record;
+            if(!encrypted||encrypted.version!==1||encrypted.algorithm!=='AES-256-GCM')throw new Error('Unsupported encrypted writing format.');
+            const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(encrypted.iv),additionalData:getWritingAad(kind,dateStr),tagLength:128},key,base64ToBytes(encrypted.ciphertext));
+            return JSON.parse(new TextDecoder().decode(plaintext));
+        }
+        function getCurrentWritingDate(){
+            const input=document.getElementById('currentDate');
+            if(input&&input.value)return input.value;
+            const now=new Date();
+            return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+        }
+        function setWritingSecurityStatus(message,state='info'){
+            const status=document.getElementById('diary-security-status');
+            if(status){status.textContent=message;status.dataset.state=state;}
+            const saveStatus=document.getElementById('writing-save-status');
+            if(saveStatus&&state==='error')saveStatus.textContent=message;
+        }
+        function renderDiarySecurityUI(){
+            const configured=!!localStorage.getItem(WRITING_CONFIG_KEY);
+            const heading=document.getElementById('diary-lock-heading'),intro=document.getElementById('diary-lock-intro');
+            const confirmWrap=document.getElementById('diary-confirm-wrap'),button=document.getElementById('diary-key-action');
+            if(writingCryptoKey){document.getElementById('diary-lock-panel')?.classList.add('hidden');document.getElementById('diary-editor-panel')?.classList.remove('hidden');return;}
+            document.getElementById('diary-lock-panel')?.classList.remove('hidden');
+            document.getElementById('diary-editor-panel')?.classList.add('hidden');
+            if(heading)heading.textContent=configured?'Unlock your private writing':'Create your private writing key';
+            if(intro)intro.textContent=configured?'Enter your passphrase to decrypt your diary and checklist reflections on this device.':'Create a separate passphrase. Existing plain-text diary and checklist reflections will be encrypted during setup.';
+            confirmWrap?.classList.toggle('hidden',configured);
+            if(button)button.textContent=configured?'Unlock private writing':'Create encryption key';
+            const pass=document.getElementById('diary-passphrase');
+            if(pass){pass.autocomplete=configured?'current-password':'new-password';pass.placeholder=configured?'Enter your private writing passphrase':'Use 16+ characters or several words';}
+        }
+        function updatePrivateWritingAccess(){
+            const unlocked=!!writingCryptoKey;
+            document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{field.disabled=!unlocked;if(!unlocked)field.value='';});
+            document.getElementById('writing-lock-hint')?.classList.toggle('hidden',unlocked);
+            const lockButton=document.querySelector('#diary-editor-panel button[onclick="lockPrivateWriting()"]');
+            if(lockButton)lockButton.classList.toggle('hidden',!unlocked);
+            renderDiarySecurityUI();
+            if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing is encrypted before it is saved on this device.';}
+        }
+        async function migrateLegacyPrivateWriting(key){
+            const dates=new Set();
+            for(let i=0;i<localStorage.length;i++){
+                const storageKey=localStorage.key(i);
+                let match=storageKey&&storageKey.match(/^private_diary_(\d{4}-\d{2}-\d{2})$/);
+                if(match)dates.add(match[1]);
+                match=storageKey&&storageKey.match(/^mindful_pokes_data_(\d{4}-\d{2}-\d{2})$/);
+                if(match)dates.add(match[1]);
+            }
+            for(const dateStr of dates){
+                const oldDiaryKey='private_diary_'+dateStr,oldDiary=localStorage.getItem(oldDiaryKey);
+                const appDataKey='mindful_pokes_data_'+dateStr,rawAppData=localStorage.getItem(appDataKey);
+                let appData={},valid=true;
+                if(rawAppData){try{appData=JSON.parse(rawAppData)||{};}catch(error){valid=false;}}
+                const secureDiaryKey=getSecureWritingStorageKey('diary',dateStr);
+                if(oldDiary!==null&&!localStorage.getItem(secureDiaryKey))localStorage.setItem(secureDiaryKey,await encryptPrivatePayload('diary',dateStr,oldDiary,key));
+                if(oldDiary!==null)localStorage.removeItem(oldDiaryKey);
+                if(valid&&rawAppData){
+                    const hadFields=PRIVATE_NOTE_IDS.some(id=>Object.prototype.hasOwnProperty.call(appData,id));
+                    const legacyNotes={};let hasContent=false;
+                    PRIVATE_NOTE_IDS.forEach(id=>{if(typeof appData[id]==='string'){legacyNotes[id]=appData[id];hasContent=hasContent||appData[id].length>0;}delete appData[id];});
+                    const secureNotesKey=getSecureWritingStorageKey('notes',dateStr);
+                    if(hasContent&&!localStorage.getItem(secureNotesKey))localStorage.setItem(secureNotesKey,await encryptPrivatePayload('notes',dateStr,legacyNotes,key));
+                    if(hadFields)localStorage.setItem(appDataKey,JSON.stringify(appData));
+                }
+            }
+        }
+        async function handleDiaryKeyAction(){
+            const passInput=document.getElementById('diary-passphrase'),confirmInput=document.getElementById('diary-passphrase-confirm'),button=document.getElementById('diary-key-action');
+            const passphrase=passInput.value,configText=localStorage.getItem(WRITING_CONFIG_KEY);
+            if(!hasWritingCrypto()){setWritingSecurityStatus('Secure browser encryption is unavailable. Open this app over HTTPS in a modern browser.','error');return;}
+            if(!passphrase||passphrase.length<16){setWritingSecurityStatus('Please use a passphrase with at least 16 characters. Several unrelated words work well.','error');return;}
+            button.disabled=true;button.textContent='Securing private writing…';
+            try{
+                let key;
+                if(!configText){
+                    if(passphrase!==confirmInput.value)throw new Error('The two passphrases do not match.');
+                    const salt=crypto.getRandomValues(new Uint8Array(16));
+                    key=await derivePrivateWritingKey(passphrase,salt,WRITING_KDF_ITERATIONS);
+                    const verifyIv=crypto.getRandomValues(new Uint8Array(12));
+                    const verifier=await crypto.subtle.encrypt({name:'AES-GCM',iv:verifyIv,additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,new TextEncoder().encode(WRITING_CHECK_TEXT));
+                    localStorage.setItem(WRITING_CONFIG_KEY,JSON.stringify({version:1,algorithm:'AES-256-GCM',kdf:'PBKDF2-HMAC-SHA-256',iterations:WRITING_KDF_ITERATIONS,salt:bytesToBase64(salt),verifierIv:bytesToBase64(verifyIv),verifierCiphertext:bytesToBase64(new Uint8Array(verifier))}));
+                }else{
+                    const config=JSON.parse(configText);
+                    if(config.version!==1||config.algorithm!=='AES-256-GCM'||config.kdf!=='PBKDF2-HMAC-SHA-256'||config.iterations!==WRITING_KDF_ITERATIONS)throw new Error('The saved encryption settings are unsupported or have been changed.');
+                    key=await derivePrivateWritingKey(passphrase,base64ToBytes(config.salt),config.iterations);
+                    let verified;
+                    try{verified=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(config.verifierIv),additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,base64ToBytes(config.verifierCiphertext));}
+                    catch(error){throw new Error('The passphrase did not match.');}
+                    if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
+                }
+                writingCryptoKey=key;
+                await migrateLegacyPrivateWriting(key);
+                await loadPrivateWritingForDate(getCurrentWritingDate());
+                updatePrivateWritingAccess();
+                const saveStatus=document.getElementById('writing-save-status');
+                if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
+            }catch(error){
+                writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
+                const message=error?.message==='The passphrase did not match.'
+                    ?'That passphrase did not unlock this writing. Please check it and try again.'
+                    :error?.message==='The two passphrases do not match.'
+                        ?error.message
+                        :'Could not unlock or migrate private writing. Existing entries were left in place. '+(error?.message||'');
+                setWritingSecurityStatus(message,'error');
+            }finally{passInput.value='';confirmInput.value='';button.disabled=false;renderDiarySecurityUI();}
+        }
+        function getPrivateWritingPayload(){
+            const diary=document.getElementById('private-diary-entry')?.value||'',notes={};
+            PRIVATE_NOTE_IDS.forEach(id=>{notes[id]=document.getElementById(id)?.value||'';});
+            return {diary,notes};
+        }
+        async function savePrivateWritingForDate(dateStr=writingLoadedDate){
+            if(!writingCryptoKey||!dateStr||writingLoadedDate!==dateStr)return;
+            const key=writingCryptoKey,payload=getPrivateWritingPayload();
+            const task=async()=>{
+                const diary=await encryptPrivatePayload('diary',dateStr,payload.diary,key);
+                const notes=await encryptPrivatePayload('notes',dateStr,payload.notes,key);
+                localStorage.setItem(getSecureWritingStorageKey('diary',dateStr),diary);
+                localStorage.setItem(getSecureWritingStorageKey('notes',dateStr),notes);
+                const status=document.getElementById('writing-save-status');
+                if(status&&writingCryptoKey)status.textContent='Saved securely on this device.';
+            };
+            writingSavePromise=writingSavePromise.then(task,task);
+            return writingSavePromise;
+        }
+        function schedulePrivateWritingSave(){
+            if(!writingCryptoKey||!writingLoadedDate)return;
+            if(writingSaveTimer)clearTimeout(writingSaveTimer);
+            writingSaveTimer=setTimeout(()=>{
+                writingSaveTimer=null;
+                savePrivateWritingForDate(writingLoadedDate).catch(error=>setWritingSecurityStatus('Encrypted autosave failed. Your text is still visible; do not lock or close the page until saving succeeds. '+(error?.message||''),'error'));
+            },500);
+        }
+        async function loadPrivateWritingForDate(dateStr){
+            if(!writingCryptoKey)return;
+            if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
+            await writingSavePromise;
+            let diaryText='',notes={};
+            const diaryRecord=localStorage.getItem(getSecureWritingStorageKey('diary',dateStr)),notesRecord=localStorage.getItem(getSecureWritingStorageKey('notes',dateStr));
+            if(diaryRecord)diaryText=await decryptPrivatePayload('diary',dateStr,diaryRecord,writingCryptoKey);
+            if(notesRecord)notes=await decryptPrivatePayload('notes',dateStr,notesRecord,writingCryptoKey);
+            document.getElementById('private-diary-entry').value=typeof diaryText==='string'?diaryText:'';
+            PRIVATE_NOTE_IDS.forEach(id=>{const field=document.getElementById(id);if(field)field.value=typeof notes[id]==='string'?notes[id]:'';});
+            writingLoadedDate=dateStr;
+        }
+        async function lockPrivateWriting(){
+            if(!writingCryptoKey)return;
+            if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
+            try{
+                await savePrivateWritingForDate(writingLoadedDate);
+                await writingSavePromise;
+                writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
+                setWritingSecurityStatus('Locked. Your saved private writing remains encrypted on this device.','info');
+            }catch(error){setWritingSecurityStatus('Could not finish encrypted saving, so the writing remains unlocked. '+(error?.message||''),'error');}
+        }
+
+
         document.querySelectorAll('.pin-box').forEach((box, idx, boxes) => {
             box.addEventListener('input', () => {
                 if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
@@ -529,6 +770,12 @@
             });
             document.getElementById('view-' + pageId).classList.remove('hidden');
             if (pageId === 'launcher') updateScoreDisplay();
+            if (pageId === 'diary') {
+                renderDiarySecurityUI();
+                if (writingCryptoKey && writingLoadedDate !== getCurrentWritingDate()) {
+                    loadPrivateWritingForDate(getCurrentWritingDate()).catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
+                }
+            }
         }
 
         function changeStep(direction) {
@@ -1001,7 +1248,21 @@
             document.getElementById('launcher-score').innerText = totalScore;
         }
 
+        function updateDailyActivityProgress() {
+            let total=1,completed=isSectionComplete(1)?1:0;
+            for(let section=2;section<=6;section++){
+                const checks=Array.from(document.querySelectorAll('.sec-'+section));
+                total+=checks.length;completed+=checks.filter(check=>check.checked).length;
+            }
+            const label=document.getElementById('daily-progress-count'),bar=document.getElementById('daily-progress-bar'),track=document.getElementById('daily-progress-track');
+            const percent=total?Math.round((completed/total)*100):0;
+            if(label)label.textContent=completed+' of '+total+' steps';
+            if(bar)bar.style.width=percent+'%';
+            if(track)track.setAttribute('aria-valuenow',String(completed));
+        }
+
         function checkSectionCompletion() {
+            updateDailyActivityProgress();
             let completedCards = 0;
             for (let i = 1; i <= 6; i++) {
                 const chks = document.querySelectorAll('.sec-' + i);
@@ -1068,39 +1329,33 @@
                 if (guided) chk.disabled = false;
             });
 
-            document.querySelectorAll('.text-input').forEach(txt => {
-                txt.value = data[txt.id] !== undefined ? data[txt.id] : '';
-            });
-
+            // Private diary and reflections are loaded only after the passphrase unlocks them.
             restoreCloudProgress(data);
             syncChecklistCartoons();
-
-            document.getElementById('private-diary-entry').value = localStorage.getItem('private_diary_' + dateStr) || '';
 
             checkSectionCompletion();
             updateScoreDisplay();
         }
 
         function saveData(e) {
-            const dateStr = document.getElementById('currentDate').value;
-            const data = {};
+            if(e?.target&&(e.target.id==='private-diary-entry'||e.target.id==='diary-passphrase'||e.target.id==='diary-passphrase-confirm'||e.target.classList?.contains('text-input')))return;
+            const dateStr=document.getElementById('currentDate').value;
+            // Preserve old note values until they have been encrypted during first-time setup.
+            let data={};
+            try{data=JSON.parse(localStorage.getItem(getStorageKey(dateStr))||'{}')||{};}catch(error){data={};}
 
             document.querySelectorAll('.app-chk').forEach(chk => {
                 data[chk.dataset.id] = chk.checked;
                 data[chk.dataset.id + '__guided'] = chk.dataset.guideUnlocked === 'true' || chk.checked;
             });
 
-            document.querySelectorAll('.text-input').forEach(txt => {
-                data[txt.id] = txt.value;
-            });
-
+            // Private reflection text is saved separately using AES-256-GCM.
             data.cloud_flow_version = 1;
             document.querySelectorAll('.cloud-item[data-cloud]').forEach(item => {
                 data['cloud_' + item.dataset.cloud] = item.dataset.released === 'true';
             });
 
             localStorage.setItem(getStorageKey(dateStr), JSON.stringify(data));
-            localStorage.setItem('private_diary_' + dateStr, document.getElementById('private-diary-entry').value);
 
             if (e && e.target && e.target.type === 'checkbox' && e.target.checked) {
                 playPopSound();
@@ -1110,13 +1365,29 @@
             checkSectionCompletion();
         }
 
-        function handleDateChange() { loadData(); }
+        async function handleDateChange() {
+            if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
+            const previousDate=writingLoadedDate;
+            if(writingCryptoKey&&previousDate)await savePrivateWritingForDate(previousDate);
+            loadData();
+            if(writingCryptoKey){
+                try{await loadPrivateWritingForDate(getCurrentWritingDate());}
+                catch(error){setWritingSecurityStatus('Could not decrypt this date’s private writing. Nothing was overwritten. '+(error?.message||''),'error');}
+            }
+        }
 
-        function resetDayData() {
-            const dateStr = document.getElementById('currentDate').value;
-            if (confirm("Reset today's checklist?")) {
+        async function resetDayData() {
+            const dateStr=document.getElementById('currentDate').value;
+            if(confirm("Reset today's checklist?")){
+                if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
+                await writingSavePromise;
                 localStorage.removeItem(getStorageKey(dateStr));
+                localStorage.removeItem(getSecureWritingStorageKey('notes',dateStr));
                 loadData();
+                if(writingCryptoKey){
+                    try{await loadPrivateWritingForDate(dateStr);}
+                    catch(error){setWritingSecurityStatus('Checklist reset, but saved private writing could not be read. '+(error?.message||''),'error');}
+                }
             }
         }
 
@@ -1151,14 +1422,26 @@
         }
 
         window.onload = function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('currentDate').value = today;
+            const now=new Date();
+            const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+            document.getElementById('currentDate').value=today;
             attachChecklistCartoons();
             loadData();
+            updatePrivateWritingAccess();
         };
 
-        document.addEventListener('change', saveData);
-        document.addEventListener('input', saveData);
+        document.addEventListener('change',saveData);
+        document.addEventListener('input',saveData);
+        document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
+            field.addEventListener('input',schedulePrivateWritingSave);
+            field.addEventListener('change',schedulePrivateWritingSave);
+        });
+        document.addEventListener('visibilitychange',()=>{
+            if(document.visibilityState==='hidden'&&writingCryptoKey&&writingLoadedDate){
+                if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
+                savePrivateWritingForDate(writingLoadedDate).catch(error=>setWritingSecurityStatus('Encrypted save failed. '+(error?.message||''),'error'));
+            }
+        });
     </script>
 </body>
 </html>
