@@ -77,11 +77,11 @@
         <div class="garden-shell">
             <header class="garden-topbar">
                 <div class="garden-brand">🌼 Onnea’s Little Garden</div>
-                <button id="garden-close" type="button" class="garden-small-button" data-garden-action="close-garden" aria-label="Close the garden and return home">✕ Close</button>
+                <button id="garden-close" type="button" class="garden-small-button" data-garden-action="back-to-room" aria-label="Return to the little room">← Room</button>
             </header>
 
             <h1 id="garden-scene-heading" class="garden-screen-title">The little room</h1>
-            <p class="garden-intro">A quiet little place to grow two seeds, enjoy fresh air, and watch time do its lovely work.</p>
+            <p id="garden-scene-intro" class="garden-intro">A quiet little place to grow two seeds, enjoy fresh air, and watch time do its lovely work.</p>
 
             <section data-garden-scene="room" class="garden-room-card" aria-label="Cozy garden room">
                 <div class="garden-room-scene">
@@ -131,9 +131,12 @@
                 </div>
 
                 <div class="garden-room-actions">
+                    <button type="button" class="garden-action-button primary" data-action="showPage" data-page="checklist">My Health Checklist 📝</button>
+                    <button type="button" class="garden-action-button" data-action="showPage" data-page="diary">Personal Diary 🔐</button>
                     <button id="garden-window-button" type="button" class="garden-action-button" data-garden-action="toggle-window" aria-pressed="false">Open the window 🍃</button>
                     <button type="button" class="garden-action-button" data-garden-action="visit-garden">Go to the garden 🌳</button>
-                    <button type="button" class="garden-action-button" data-garden-action="open-journal">Garden journal 📔</button>
+                    <button type="button" class="garden-action-button" data-action="showPage" data-page="diary">Personal Diary 🔐</button>
+                    <button type="button" class="garden-action-button" data-garden-action="open-journal">Garden notes 📔</button>
                 </div>
             </section>
 
@@ -172,7 +175,8 @@
                 <p id="garden-planted-date" class="garden-care-copy"></p>
                 <div class="garden-game-actions">
                     <button id="garden-water-button" type="button" class="garden-action-button primary" data-garden-action="water-garden">Water the garden 💧</button>
-                    <button type="button" class="garden-action-button" data-garden-action="open-journal">Write in my journal 📔</button>
+                    <button type="button" class="garden-action-button" data-action="showPage" data-page="diary">Personal Diary 🔐</button>
+                    <button type="button" class="garden-action-button" data-garden-action="open-journal">Garden notes 📔</button>
                     <button type="button" class="garden-action-button" data-garden-action="back-to-room">Back to my room 🏡</button>
                 </div>
                 <p class="garden-one-year"><strong id="garden-care-count">0</strong> watering days recorded. <span id="garden-tree-milestone">The fruit tree’s one-year milestone is ahead.</span> Plants never die when you miss a day.</p>
@@ -190,22 +194,17 @@
                 <div id="garden-notes-list" aria-live="polite"></div>
             </section>
 
-            <p id="garden-status" class="garden-status" role="status" aria-live="polite">A cozy room, a sunny window, and a little garden are waiting for you.</p>
-            <p class="garden-care-copy">A gentle reminder: growth follows calendar time, not button taps. You can visit whenever you like. There is no penalty for taking a break.</p>
-        </div>
-    </section>
-
     <!-- 📖 Safe Space Diary View -->
-    <div id="view-diary" class="hidden max-w-4xl mx-auto px-4 py-8">
+    <div id="view-diary" data-garden-scene="diary" class="hidden max-w-4xl mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
-            <button data-action="showPage" data-page="launcher" class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 text-sm font-bold rounded-2xl hover:bg-amber-200">← Back to Home</button>
-            <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary 🔒</h2>
+            <button data-action="showPage" data-page="garden" class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 text-sm font-bold rounded-2xl hover:bg-amber-200">← Back to Home</button>
+            <h2 class="text-3xl font-bold text-purple-900 handwriting">Personal Diary 🔒</h2>
         </div>
         <div class="card-lavender rounded-3xl p-6 shadow-sm">
             <section id="diary-lock-panel" class="writing-lock-card rounded-2xl p-5 mb-4">
                 <div class="flex items-center gap-3 mb-2"><span class="text-3xl" aria-hidden="true">🔐</span><div>
                     <h3 id="diary-lock-heading" class="font-bold text-purple-950 text-lg handwriting">Create your private writing key</h3>
-                    <p class="text-xs text-purple-800">Your diary and checklist reflections are encrypted on this device.</p>
+                    <p class="text-xs text-purple-800">Your personal diary and private checklist reflections are encrypted on this device.</p>
                 </div></div>
                 <p id="diary-lock-intro" class="text-xs text-purple-900/80 mb-4">Create a separate passphrase. This is different from the 4-digit app PIN.</p>
                 <label for="diary-passphrase" class="block text-xs font-bold text-purple-950 mb-1">Private writing passphrase</label>
@@ -235,9 +234,9 @@
     </div>
 
     <!-- 📝 Main Checklist Wizard View -->
-    <div id="view-checklist" class="hidden">
+    <div id="view-checklist" data-garden-scene="checklist" class="hidden garden-checklist-scene">
         <header class="bg-white/80 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
-            <div class="flex items-center space-x-3 cursor-pointer" data-action="showPage" data-page="launcher" role="button" tabindex="0">
+            <div class="flex items-center space-x-3 cursor-pointer" data-action="showPage" data-page="garden" role="button" tabindex="0">
                 <span class="text-3xl">💧</span>
                 <div>
                     <h1 class="text-2xl font-bold text-amber-900 handwriting text-3xl">Daily Mindful Pokes</h1>
@@ -249,7 +248,7 @@
                     <label for="currentDate" class="text-xs font-semibold text-amber-900">Date:</label>
                     <input type="date" id="currentDate" class="bg-transparent text-sm font-medium focus:outline-none text-amber-900" data-change-action="handleDateChange">
                 </div>
-                <button data-action="showPage" data-page="launcher" class="text-xs text-amber-900 font-bold px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-xl">Home</button>
+                <button data-action="showPage" data-page="launcher" class="text-xs text-amber-900 font-bold px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-xl">Room</button>
                 <button data-action="resetDayData" class="text-xs text-rose-700 font-bold px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl">Reset</button>
             </div>
         </header>
@@ -552,6 +551,11 @@
             <p id="finish-status" class="hidden mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900" role="status" aria-live="polite"></p>
         </main>
     </div>
+
+            <p id="garden-status" class="garden-status" role="status" aria-live="polite">A cozy room, a sunny window, and a little garden are waiting for you.</p>
+            <p class="garden-care-copy">A gentle reminder: growth follows calendar time, not button taps. You can visit whenever you like. There is no penalty for taking a break.</p>
+        </div>
+    </section>
 
     <!-- 🌟 ANIMATION MODAL POPUP -->
     <div id="anim-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
