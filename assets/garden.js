@@ -7,11 +7,11 @@ const overlay = document.getElementById('onnea-garden');
 if (overlay) initializeOnneaGarden(overlay);
 
 function initializeOnneaGarden(root) {
-    let garden = loadSavedGarden();
     let lastFocusedElement = null;
     let windowIsOpen = false;
 
     const byId = id => root.querySelector('#' + id);
+    let garden = loadSavedGarden();
 
     function todayISO() {
         const now = new Date();
@@ -285,6 +285,12 @@ function initializeOnneaGarden(root) {
         const trigger = event.target.closest('[data-garden-action]');
         if (!trigger) return;
         handleAction(trigger.dataset.gardenAction, trigger);
+    });
+
+    document.addEventListener('keydown', event => {
+        if ((event.key !== 'Enter' && event.key !== ' ') || !event.target.matches('[data-garden-action][role="button"]')) return;
+        event.preventDefault();
+        event.target.click();
     });
 
     overlay.addEventListener('keydown', event => {
