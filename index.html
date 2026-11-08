@@ -62,8 +62,29 @@
         }
         .breathing-ball { animation: breathe-circle 12s infinite ease-in-out; }
 
-        .cloud-item { transition: all 0.6s ease; }
-        .cloud-released { opacity: 0; transform: translateY(-50px) scale(0.7); pointer-events: none; }
+        .cloud-item { width:100%; display:flex; align-items:center; gap:.65rem; padding:.65rem .75rem; text-align:left; border:1px solid #dbeafe; border-radius:.9rem; background:rgba(255,255,255,.92); transition:background .2s ease,transform .2s ease,border-color .2s ease; }
+        .cloud-item:hover:not(:disabled) { background:#eff8ff; transform:translateY(-2px); }
+        .cloud-item:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
+        .cloud-art { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 2.5rem; min-height:2.2rem; font-size:1.9rem; transform-origin:center; }
+        .cloud-cumulus .cloud-art { animation:cloud-hover 2.8s ease-in-out infinite; }
+        .cloud-stratus .cloud-art { filter:grayscale(.45); animation:cloud-slide 3.8s ease-in-out infinite; }
+        .cloud-stratocumulus .cloud-art { animation:cloud-drizzle 2.4s ease-in-out infinite; }
+        .cloud-rain { position:absolute; font-size:.65rem; bottom:-.3rem; right:-.1rem; letter-spacing:-.2rem; }
+        .cloud-copy { flex:1; line-height:1.4; }
+        .cloud-status { margin-left:auto; flex:0 0 auto; font-size:.68rem; font-weight:800; color:#64748b; white-space:nowrap; }
+        .cloud-released { opacity:1; transform:none; pointer-events:none; background:#f0fdf4; border-color:#bbf7d0; }
+        .cloud-released .cloud-art { animation-duration:.9s; animation-fill-mode:forwards; }
+        .cloud-cumulus.cloud-released .cloud-art { animation-name:cloud-puff-away; }
+        .cloud-stratus.cloud-released .cloud-art { animation-name:cloud-drift-away; }
+        .cloud-stratocumulus.cloud-released .cloud-art { animation-name:cloud-rain-away; }
+        .cloud-released.is-restored .cloud-art { animation:none; opacity:.65; }
+        .cloud-released .cloud-status { color:#15803d; }
+        @keyframes cloud-hover { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-5px) scale(1.05)} }
+        @keyframes cloud-slide { 0%,100%{transform:translateX(-3px)} 50%{transform:translateX(4px)} }
+        @keyframes cloud-drizzle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-4px) rotate(3deg)} }
+        @keyframes cloud-puff-away { 0%{transform:scale(1);opacity:1} 45%{transform:scale(1.45);opacity:.85} 100%{transform:translate(18px,-24px) scale(.72);opacity:.45} }
+        @keyframes cloud-drift-away { 0%{transform:translateX(0);opacity:1} 100%{transform:translateX(28px);opacity:.4} }
+        @keyframes cloud-rain-away { 0%{transform:translateY(0);opacity:1} 55%{transform:translateY(-8px) scale(1.18)} 100%{transform:translate(10px,-22px);opacity:.45} }
         
         /* Each checklist row gets a lively cartoon buddy; checkboxes remain visible and functional. */
         .task-cartoon { --toon:#f6c66b; position:relative; display:inline-flex; vertical-align:middle; flex:0 0 2.1rem; width:2.1rem; height:2.1rem; align-items:center; justify-content:center; margin:0 .1rem 0 .25rem; border:2px solid rgba(80,60,40,.22); border-radius:48% 48% 44% 44%; background:var(--toon); box-shadow:inset 0 -4px 0 rgba(80,50,20,.10),0 2px 3px rgba(0,0,0,.08); transform-origin:center bottom; pointer-events:none; }
@@ -99,7 +120,7 @@
         .guide-launch .guide-buddy{font-size:1.65rem;display:inline-block;transform-origin:center bottom;animation:guide-bob 1.8s ease-in-out infinite}
         .guide-launch .guide-buddy.drink{animation:guide-drink 2.2s ease-in-out infinite}
         .guide-checkbox-label{flex:1;min-width:0;display:flex;align-items:center;gap:.55rem;transition:opacity .2s ease}
-        .guide-checkbox-label:not(.is-unlocked){pointer-events:none;opacity:.78}
+        .guide-checkbox-label:not(.is-unlocked){display:none!important;pointer-events:none;opacity:.78}
         .app-chk.guide-hidden{display:none!important}
         .guided-task-row .guide-checkbox-label:not(.is-unlocked) span{line-height:1.35}
         .guide-launch.is-hidden{display:none}
@@ -381,16 +402,29 @@
                     <span class="text-xs text-sky-900 font-semibold">Interactive Cloud Fart Releasing</span>
                     <button onclick="openModal('clouds', 'cloud-checked')" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">☁️ Cloud Animation</button>
                 </div>
-                <p class="text-xs text-sky-800/80 mb-3 italic">Click any cloud thought to release it like your fart!</p>
+                <p class="text-xs text-sky-800/80 mb-3 italic">Tap all three cloud types one by one. Watch each one drift away, then tick the completion box.</p>
                 
                 <div class="space-y-2.5 text-xs">
                     <div class="bg-white/80 p-3 rounded-2xl border border-sky-100">
                         <span class="font-bold text-sky-900">Low-Level (Raw Emotions):</span>
-                        <div class="mt-1 space-y-1">
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Cumulus:</strong> Okay, just vibing.</div>
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Stratus:</strong> Emotionally flatline (Grey).</div>
-                            <div onclick="releaseCloud(this)" class="cloud-item cursor-pointer hover:text-sky-600">☁️ <strong>Stratocumulus:</strong> Low energy droplets.</div>
+                        <div class="mt-2 space-y-2">
+                            <button type="button" data-cloud="cumulus" aria-pressed="false" onclick="releaseCloud(this)" class="cloud-item cloud-cumulus">
+                                <span class="cloud-art" aria-hidden="true">☁️</span>
+                                <span class="cloud-copy"><strong>Cumulus:</strong> Okay, just vibing. A soft, fluffy passing feeling.</span>
+                                <span class="cloud-status">Tap to release</span>
+                            </button>
+                            <button type="button" data-cloud="stratus" aria-pressed="false" onclick="releaseCloud(this)" class="cloud-item cloud-stratus">
+                                <span class="cloud-art" aria-hidden="true">🌫️</span>
+                                <span class="cloud-copy"><strong>Stratus:</strong> Feeling emotionally flat or grey. Just notice it gently.</span>
+                                <span class="cloud-status">Tap to release</span>
+                            </button>
+                            <button type="button" data-cloud="stratocumulus" aria-pressed="false" onclick="releaseCloud(this)" class="cloud-item cloud-stratocumulus">
+                                <span class="cloud-art" aria-hidden="true">🌥️<span class="cloud-rain">💧💧</span></span>
+                                <span class="cloud-copy"><strong>Stratocumulus:</strong> Low-energy droplets. Acknowledge the heaviness without judgment.</span>
+                                <span class="cloud-status">Tap to release</span>
+                            </button>
                         </div>
+                        <p id="cloud-progress" class="mt-3 text-xs font-semibold text-sky-800" aria-live="polite">0 of 3 clouds released. Tap each cloud to let it drift away.</p>
                     </div>
                     <label class="flex items-center gap-2 pt-2 cursor-pointer font-bold text-sky-900">
                         <input type="checkbox" id="chk-cloud-checked" class="app-chk sec-6" data-id="cloud-checked" disabled> Mark Cloud Check Complete
@@ -401,8 +435,9 @@
             <!-- Wizard Navigation -->
             <div class="flex justify-between items-center mt-6">
                 <button id="btn-prev" onclick="changeStep(-1)" class="px-6 py-3 bg-amber-100 border border-amber-300 text-amber-900 font-bold rounded-2xl hover:bg-amber-200 transition opacity-50 cursor-not-allowed" disabled>← Previous Card</button>
-                <button id="btn-next" onclick="changeStep(1)" class="px-6 py-3 bg-amber-400 text-amber-950 font-bold rounded-2xl hover:bg-amber-500 shadow-md transition transform active:scale-95">Next Card ➔</button>
+                <button id="btn-next" onclick="handleNextStep()" class="px-6 py-3 bg-amber-400 text-amber-950 font-bold rounded-2xl hover:bg-amber-500 shadow-md transition transform active:scale-95">Next Card ➔</button>
             </div>
+            <p id="finish-status" class="hidden mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900" role="status" aria-live="polite"></p>
         </main>
     </div>
 
@@ -488,7 +523,47 @@
                 document.getElementById('btn-prev').classList.toggle('cursor-not-allowed', currentStep === 1);
 
                 document.getElementById('btn-next').innerText = (currentStep === 6) ? "Finish Checklist 🏆" : "Next Card ➔";
+                document.getElementById('finish-status')?.classList.add('hidden');
             }
+        }
+
+        function handleNextStep() {
+            if (currentStep === 6) {
+                finishChecklist();
+                return;
+            }
+            changeStep(1);
+        }
+
+        function isSectionComplete(sectionNumber) {
+            const checks = Array.from(document.querySelectorAll('.sec-' + sectionNumber));
+            if (!checks.length) return false;
+            // Card 1 is a location choice: one selected place completes that card.
+            return sectionNumber === 1
+                ? checks.some(check => check.checked)
+                : checks.every(check => check.checked);
+        }
+
+        function finishChecklist() {
+            const firstIncomplete = Array.from({length:6},(_,index)=>index+1).find(section => !isSectionComplete(section));
+            const status = document.getElementById('finish-status');
+
+            if (firstIncomplete) {
+                if (currentStep !== firstIncomplete) {
+                    changeStep(firstIncomplete - currentStep);
+                }
+                status.textContent = firstIncomplete === 6
+                    ? "Almost there! Release all three cloud types, then tick the completion checkbox."
+                    : "Almost there! Please complete the remaining activity or activities on Card " + firstIncomplete + ".";
+                status.classList.remove('hidden');
+                document.getElementById('card-step-' + firstIncomplete)?.scrollIntoView({behavior:'smooth',block:'start'});
+                return;
+            }
+
+            status.classList.add('hidden');
+            checkSectionCompletion();
+            document.getElementById('trophy-banner').classList.remove('hidden');
+            document.getElementById('grand-finale-overlay').classList.remove('hidden');
         }
 
 
@@ -653,7 +728,6 @@
 
         function closeModal() {
             stopBreathingTimer();
-            stopBreathingTimer();
             document.getElementById('anim-modal').classList.add('hidden');
         }
 
@@ -676,21 +750,59 @@
             }
         }
 
-        function releaseCloud(el) {
-            playPopSound();
-            el.classList.add('cloud-released');
-            confetti({ particleCount: 15, spread: 40, origin: { y: 0.6 } });
-            // Unlock cloud checkbox
+        function restoreCloudProgress(data) {
+            document.querySelectorAll('.cloud-item[data-cloud]').forEach(item => {
+                const released = data['cloud_' + item.dataset.cloud] === true;
+                item.dataset.released = released ? 'true' : 'false';
+                item.disabled = released;
+                item.setAttribute('aria-pressed',released ? 'true' : 'false');
+                item.classList.toggle('cloud-released',released);
+                item.classList.toggle('is-restored',released);
+                const status = item.querySelector('.cloud-status');
+                if (status) status.textContent = released ? 'Released ✓' : 'Tap to release';
+            });
+            updateCloudProgress();
+        }
+
+        function updateCloudProgress() {
+            const items = Array.from(document.querySelectorAll('.cloud-item[data-cloud]'));
+            const releasedCount = items.filter(item => item.dataset.released === 'true').length;
+            const progress = document.getElementById('cloud-progress');
+            if (progress) {
+                progress.textContent = releasedCount === items.length
+                    ? '3 of 3 clouds released. Lovely work! Your completion checkbox is ready below.'
+                    : releasedCount + ' of ' + items.length + ' clouds released. Tap each cloud to let it drift away.';
+            }
+
             const cloudChk = document.getElementById('chk-cloud-checked');
-            if(cloudChk) {
+            if (!cloudChk) return;
+            const allReleased = items.length > 0 && releasedCount === items.length;
+
+            if (allReleased) {
                 cloudChk.disabled = false;
                 cloudChk.dataset.guideUnlocked = 'true';
                 cloudChk.classList.remove('guide-hidden');
                 cloudChk.closest('.guided-task-row')?.querySelector('.guide-checkbox-label')?.classList.add('is-unlocked');
-                cloudChk.closest('.guided-task-row')?.querySelector('.guide-launch')?.classList.add('is-hidden');
-                cloudChk.checked = true;
-                saveData();
+            } else if (!cloudChk.checked) {
+                cloudChk.disabled = true;
+                cloudChk.dataset.guideUnlocked = 'false';
+                cloudChk.classList.add('guide-hidden');
+                cloudChk.closest('.guided-task-row')?.querySelector('.guide-checkbox-label')?.classList.remove('is-unlocked');
             }
+        }
+
+        function releaseCloud(el) {
+            if (!el || !el.dataset.cloud || el.dataset.released === 'true') return;
+            el.dataset.released = 'true';
+            el.disabled = true;
+            el.setAttribute('aria-pressed','true');
+            el.classList.add('cloud-released');
+            const status = el.querySelector('.cloud-status');
+            if (status) status.textContent = 'Released ✓';
+            playPopSound();
+            confetti({ particleCount: 15, spread: 40, origin: { y: 0.6 } });
+            updateCloudProgress();
+            saveData();
         }
 
         function speakProudCue() {
@@ -747,6 +859,8 @@
                 label.classList.add('guide-checkbox-label');
                 chk.classList.add('guide-hidden');
                 const id = chk.dataset.id;
+                // Card 6 is guided by its three individually animated cloud buttons.
+                if (id === 'cloud-checked') return;
                 const guideButton = document.createElement('button');
                 guideButton.type = 'button';
                 guideButton.className = 'guide-launch';
@@ -793,8 +907,7 @@
             let completedCards = 0;
             for (let i = 1; i <= 6; i++) {
                 const chks = document.querySelectorAll('.sec-' + i);
-                let allChecked = true;
-                chks.forEach(c => { if (!c.checked) allChecked = false; });
+                const allChecked = isSectionComplete(i);
                 
                 const trophy = document.getElementById('trophy-' + i);
                 if (allChecked && chks.length > 0) {
@@ -841,6 +954,13 @@
             const saved = localStorage.getItem(getStorageKey(dateStr));
             const data = saved ? JSON.parse(saved) : {};
 
+            // Older versions marked the cloud task complete after only one click.
+            // Clear that legacy completion before restoring the checkbox state.
+            if (data.cloud_flow_version !== 1 && data['cloud-checked'] === true) {
+                data['cloud-checked'] = false;
+                data['cloud-checked__guided'] = false;
+            }
+
             document.querySelectorAll('.app-chk').forEach(chk => {
                 const id = chk.dataset.id;
                 const isChecked = data[id] !== undefined ? data[id] : false;
@@ -854,6 +974,7 @@
                 txt.value = data[txt.id] !== undefined ? data[txt.id] : '';
             });
 
+            restoreCloudProgress(data);
             syncChecklistCartoons();
 
             document.getElementById('private-diary-entry').value = localStorage.getItem('private_diary_' + dateStr) || '';
@@ -873,6 +994,11 @@
 
             document.querySelectorAll('.text-input').forEach(txt => {
                 data[txt.id] = txt.value;
+            });
+
+            data.cloud_flow_version = 1;
+            document.querySelectorAll('.cloud-item[data-cloud]').forEach(item => {
+                data['cloud_' + item.dataset.cloud] = item.dataset.released === 'true';
             });
 
             localStorage.setItem(getStorageKey(dateStr), JSON.stringify(data));
