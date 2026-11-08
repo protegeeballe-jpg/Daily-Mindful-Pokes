@@ -137,7 +137,7 @@
         .guide-speech{background:#fff8e8;border:2px solid #f2d59c;border-radius:1.2rem;padding:.8rem 1rem;color:#59472e;font-weight:700;line-height:1.45}
         .guide-timer{font-variant-numeric:tabular-nums;font-size:2rem;font-weight:800;color:#1d4ed8}
         .guide-breath-orb{width:7rem;height:7rem;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfdbfe,#60a5fa 65%,#2563eb);box-shadow:0 8px 24px #60a5fa66;animation:guide-pulse 4s ease-in-out infinite}
-        .legacy-guide-row{display:none!important}
+        .legacy-guide-button{display:none!important}
         @media(max-width:420px){.guide-launch{padding:.4rem;font-size:.65rem}.guided-task-row{gap:.4rem}.guide-launch .guide-buddy{font-size:1.4rem}}
         @media(prefers-reduced-motion:reduce){.guide-launch .guide-buddy,.guide-person,.guide-prop,.guide-breath-orb{animation:none!important}}
 
@@ -888,9 +888,9 @@
                 row.insertBefore(guideButton,label);
             });
             document.querySelectorAll('button[onclick^="openModal("]').forEach(button => {
-                const parent = button.closest('div');
-                // Keep the dedicated Card 6 cloud-animation launcher visible.
-                if (parent && !button.closest('#card-step-6')) parent.classList.add('legacy-guide-row');
+                // Hide only the old inline guide button; never hide its task heading or row.
+                // Card 6 keeps its dedicated cloud-animation launcher.
+                if (!button.closest('#card-step-6')) button.classList.add('legacy-guide-button');
             });
             syncChecklistCartoons();
         }
@@ -905,12 +905,12 @@
                 if (unlocked) {
                     chk.disabled = false;
                     label?.classList.add('is-unlocked');
-                    launch?.classList.add('is-hidden');
                     chk.dataset.guideUnlocked = 'true';
                 } else {
                     label?.classList.remove('is-unlocked');
-                    launch?.classList.remove('is-hidden');
                 }
+                // Keep "Show me" available so the user can replay the demonstration anytime.
+                launch?.classList.remove('is-hidden');
             });
         }
 
