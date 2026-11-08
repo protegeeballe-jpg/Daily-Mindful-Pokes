@@ -1654,6 +1654,10 @@
         }
 
         function scheduleEcosystemCanvasFrame(){
+            const canvas=document.getElementById('ecosystem-canvas');
+            if(!canvas||!ecosystemCanvasContext)return;
+            const rect=canvas.getBoundingClientRect();
+            if(rect.width<1||rect.height<1)return;
             if(ecosystemCanvasFrame!==null)return;
             if(ecosystemCanvasReducedMotion()){
                 ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
