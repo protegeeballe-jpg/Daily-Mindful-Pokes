@@ -11,6 +11,10 @@ A local-first daily wellness and habit-building application.
 
 The PIN gate is not server authentication. Someone with developer-tools access, control of the browser profile, malicious same-origin JavaScript, or a compromised device can bypass a client-side screen gate. The diary passphrase is a separate encryption boundary. A forgotten private-writing passphrase cannot decrypt private entries. Clearing site data can delete local records. There is no cloud account or cross-device synchronization.
 
+## Content Security Policy
+
+The HTML sets a meta-delivered Content Security Policy: scripts and other fetches are restricted to this origin, objects are blocked, and inline event handlers are removed. Inline style support remains enabled for existing dynamically-updated visual states. GitHub Pages does not provide custom response headers for this static site, so header-only controls such as `frame-ancestors` cannot be enforced through this meta policy.
+
 ## Development
 
 - `index.html`: app shell
