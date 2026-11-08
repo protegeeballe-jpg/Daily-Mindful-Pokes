@@ -60,6 +60,12 @@ test('the health checklist and encrypted diary are scenes inside the garden hub'
  assert.match(html,/id="view-diary" data-garden-scene="diary"/);
  assert.match(html,/data-page="checklist"/);
  assert.match(html,/data-page="diary"/);
+ const gardenStart=html.indexOf('<section id="little-garden"');
+ const diaryStart=html.indexOf('id="view-diary"');
+ const checklistStart=html.indexOf('id="view-checklist"');
+ const gardenEnd=html.indexOf('<!-- 🌟 ANIMATION MODAL POPUP -->');
+ assert.ok(gardenStart < diaryStart && diaryStart < gardenEnd);
+ assert.ok(gardenStart < checklistStart && checklistStart < gardenEnd);
  assert.match(app,/garden:show-scene/);
  assert.match(app,/showPage\('garden'\)/);
 });
