@@ -41,7 +41,7 @@ test('all existing checklist, cloud and ecosystem features remain',()=>{
 });
 
 test('Garden hub is a separate local module and does not replace existing features',()=>{
- assert.match(html,/id="onnea-garden"/);
+ assert.match(html,/id="little-garden"/);
  assert.match(html,/data-garden-action="open-garden"/);
  assert.match(html,/assets\/garden\.css/);
  assert.match(html,/type="module" src="\.\/assets\/garden\.js"/);
