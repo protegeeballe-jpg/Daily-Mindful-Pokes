@@ -13,6 +13,7 @@
     
     <link rel="stylesheet" href="./assets/tailwind.generated.css">
     <link rel="stylesheet" href="./assets/app.css">
+    <link rel="stylesheet" href="./assets/garden.css">
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
@@ -55,6 +56,13 @@
                 <span class="mt-4 px-4 py-1.5 bg-emerald-200 text-emerald-900 font-bold text-xs rounded-full">Start Routine ➔</span>
             </div>
 
+            <div data-garden-action="open-garden" class="card-yellow rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition" role="button" tabindex="0" aria-label="Open Onnea's Little Garden">
+                <span class="text-6xl mb-3" aria-hidden="true">🌱🏡</span>
+                <h2 class="text-3xl font-bold text-amber-900 handwriting">Onnea’s Little Garden</h2>
+                <p class="text-xs text-amber-800/80 mt-2">A cozy room, two little seeds, and a year of growing together.</p>
+                <span class="mt-4 px-4 py-1.5 bg-amber-200 text-amber-950 font-bold text-xs rounded-full">Visit the Garden ➔</span>
+            </div>
+
             <div data-action="showPage" data-page="diary" class="card-lavender rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition" role="button" tabindex="0">
                 <span class="text-6xl mb-3">🔒📖</span>
                 <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary</h2>
@@ -63,6 +71,129 @@
             </div>
         </div>
     </div>
+
+    <!-- 🌱 Onnea's Little Garden: isolated from checklist and private diary data. -->
+    <section id="onnea-garden" class="garden-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="garden-scene-heading">
+        <div class="garden-shell">
+            <header class="garden-topbar">
+                <div class="garden-brand">🌼 Onnea’s Little Garden</div>
+                <button id="garden-close" type="button" class="garden-small-button" data-garden-action="close-garden" aria-label="Close the garden and return home">✕ Close</button>
+            </header>
+
+            <h1 id="garden-scene-heading" class="garden-screen-title">The little room</h1>
+            <p class="garden-intro">A quiet little place to grow two seeds, enjoy fresh air, and watch time do its lovely work.</p>
+
+            <section data-garden-scene="room" class="garden-room-card" aria-label="Cozy garden room">
+                <div class="garden-room-scene">
+                    <div class="garden-window-wrap">
+                        <div id="garden-window" class="garden-window" role="img" aria-label="A sunny window looking out onto a green garden">
+                            <span class="garden-window-sun" aria-hidden="true"></span>
+                            <span class="garden-window-cloud" aria-hidden="true">☁️</span>
+                            <span class="garden-window-hill" aria-hidden="true"></span>
+                        </div>
+                        <p class="garden-window-caption">A window for sunshine and fresh air</p>
+                    </div>
+                    <div class="garden-room-furniture" aria-label="A bookshelf and a little table">
+                        <div class="garden-bookshelf" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                        <div class="garden-table" aria-hidden="true">🪴</div>
+                    </div>
+                </div>
+
+                <div id="garden-first-planting" class="garden-planting-panel">
+                    <h3>Day 1 — Let’s plant two little seeds!</h3>
+                    <p>Choose one fruit tree and one pretty flower. They will grow with the passing days, even when you are away.</p>
+                    <div class="garden-choice-grid">
+                        <div class="garden-choice">
+                            <label for="garden-tree-choice">Your fruit tree seed</label>
+                            <select id="garden-tree-choice">
+                                <option value="mango">🥭 Mango tree</option>
+                                <option value="rambutan">🍒 Rambutan tree</option>
+                                <option value="apple">🍎 Apple tree</option>
+                            </select>
+                        </div>
+                        <div class="garden-choice">
+                            <label for="garden-flower-choice">Your flower seed</label>
+                            <select id="garden-flower-choice">
+                                <option value="sunflower">🌻 Sunflower</option>
+                                <option value="cosmos">🌸 Cosmos</option>
+                                <option value="zinnia">🌺 Zinnia</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="garden-action-button primary" data-garden-action="begin-planting">Plant my two seeds 🌱</button>
+                </div>
+
+                <div id="garden-planted-summary" class="hidden garden-planting-panel">
+                    <h3>Your seeds have a home!</h3>
+                    <p id="garden-room-seeds"></p>
+                    <p>Planted on <strong id="garden-room-date"></strong>. They are growing at their own pace.</p>
+                    <button type="button" class="garden-action-button primary" data-garden-action="visit-garden">Visit my garden 🌿</button>
+                </div>
+
+                <div class="garden-room-actions">
+                    <button id="garden-window-button" type="button" class="garden-action-button" data-garden-action="toggle-window" aria-pressed="false">Open the window 🍃</button>
+                    <button type="button" class="garden-action-button" data-garden-action="visit-garden">Go to the garden 🌳</button>
+                    <button type="button" class="garden-action-button" data-garden-action="open-journal">Garden journal 📔</button>
+                </div>
+            </section>
+
+            <section data-garden-scene="outdoors" class="hidden garden-outdoor-card" aria-label="The two growing plants">
+                <div class="garden-outdoor-stage">
+                    <span class="garden-sun" aria-hidden="true"></span>
+                    <span class="garden-cloud" aria-hidden="true">☁️</span>
+                    <div class="garden-bed-row">
+                        <div class="garden-bed">
+                            <span id="garden-tree-visual" class="garden-plant-visual" aria-hidden="true">🟤</span>
+                            <span class="garden-plant-label">FRUIT TREE</span>
+                        </div>
+                        <div class="garden-bed">
+                            <span id="garden-flower-visual" class="garden-plant-visual" aria-hidden="true">🟤</span>
+                            <span class="garden-plant-label">FLOWER</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="garden-growth-grid">
+                    <article class="garden-growth-card">
+                        <h3 id="garden-tree-name">Fruit tree</h3>
+                        <p id="garden-tree-description" class="garden-growth-description">A little seed</p>
+                        <div class="garden-growth-meta"><span id="garden-tree-age">Planted today</span><span id="garden-tree-planted-on"></span></div>
+                        <div class="garden-meter"><div id="garden-tree-progress" class="garden-meter-fill" role="progressbar" aria-label="Fruit tree growth to its next stage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+                        <p id="garden-tree-progress-text" class="garden-growth-foot">Waiting for its first sprout</p>
+                    </article>
+                    <article class="garden-growth-card">
+                        <h3 id="garden-flower-name">Flower</h3>
+                        <p id="garden-flower-description" class="garden-growth-description">A little seed</p>
+                        <div class="garden-growth-meta"><span id="garden-flower-age">Planted today</span><span id="garden-flower-planted-on"></span></div>
+                        <div class="garden-meter"><div id="garden-flower-progress" class="garden-meter-fill" role="progressbar" aria-label="Flower growth to its next stage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+                        <p id="garden-flower-progress-text" class="garden-growth-foot">Waiting for its first sprout</p>
+                    </article>
+                </div>
+                <p id="garden-day-count" class="garden-care-copy">Day 1 of your garden</p>
+                <p id="garden-planted-date" class="garden-care-copy"></p>
+                <div class="garden-game-actions">
+                    <button id="garden-water-button" type="button" class="garden-action-button primary" data-garden-action="water-garden">Water the garden 💧</button>
+                    <button type="button" class="garden-action-button" data-garden-action="open-journal">Write in my journal 📔</button>
+                    <button type="button" class="garden-action-button" data-garden-action="back-to-room">Back to my room 🏡</button>
+                </div>
+                <p class="garden-one-year"><strong id="garden-care-count">0</strong> watering days recorded. <span id="garden-tree-milestone">The fruit tree’s one-year milestone is ahead.</span> Plants never die when you miss a day.</p>
+            </section>
+
+            <section data-garden-scene="journal" class="hidden garden-journal-card" aria-label="Garden journal">
+                <h3>Little things I notice</h3>
+                <p class="garden-care-copy">Write about the weather, a new leaf, a flower bud, or anything you would like to remember.</p>
+                <label for="garden-note-input" class="block text-sm font-bold text-emerald-900 mb-2">Today’s garden thought</label>
+                <textarea id="garden-note-input" class="garden-note-input" maxlength="500" placeholder="Today I noticed…"></textarea>
+                <div class="garden-game-actions">
+                    <button type="button" class="garden-action-button primary" data-garden-action="save-garden-note">Save my thought ✍️</button>
+                    <button type="button" class="garden-action-button" data-garden-action="back-to-garden">Back to my garden 🌿</button>
+                </div>
+                <div id="garden-notes-list" aria-live="polite"></div>
+            </section>
+
+            <p id="garden-status" class="garden-status" role="status" aria-live="polite">A cozy room, a sunny window, and a little garden are waiting for you.</p>
+            <p class="garden-care-copy">A gentle reminder: growth follows calendar time, not button taps. You can visit whenever you like. There is no penalty for taking a break.</p>
+        </div>
+    </section>
 
     <!-- 📖 Safe Space Diary View -->
     <div id="view-diary" class="hidden max-w-4xl mx-auto px-4 py-8">
@@ -451,6 +582,7 @@
 
     <!-- Scripts Engine -->
     <script type="module" src="./assets/app.js"></script>
+    <script type="module" src="./assets/garden.js"></script>
 <canvas id="celebration-canvas" aria-hidden="true"></canvas>
 </body>
 </html>
