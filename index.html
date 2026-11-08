@@ -1429,6 +1429,7 @@
             const canopyBloomed=data['sleep-3']===true;
 
             const panel=document.getElementById('ecosystem-panel');
+            const seed=document.getElementById('ecosystem-seed');
             const roots=document.getElementById('ecosystem-roots');
             const trunk=document.getElementById('ecosystem-trunk');
             const canopy=document.getElementById('ecosystem-canopy');
@@ -1438,6 +1439,7 @@
             const intro=document.getElementById('ecosystem-intro-copy');
 
             panel?.classList.toggle('has-roots',rootCount>0);
+            if(rootCount>0)seed?.classList.remove('is-arriving');
             if(roots){
                 const rootProgress=rootCount/rootActions.length;
                 roots.style.setProperty('--root-scale',(1+rootCount*.065).toFixed(3));
