@@ -90,6 +90,36 @@
         .task-cartoon.is-celebrating { animation:cartoon-boing .68s cubic-bezier(.2,.8,.3,1); }
         .task-cartoon.is-done .toon-mouth { width:.44rem; height:.22rem; border:0; border-top:2px solid #493b35; border-radius:50%; }
         @media (prefers-reduced-motion: reduce) { .task-cartoon,.task-cartoon.is-celebrating { animation:none !important; } }
+    
+        /* Guided checklist companions: the character demonstrates first; the checkbox is revealed afterward. */
+        .guided-task-row{display:flex;align-items:center;gap:.7rem;min-width:0}
+        .guide-launch{display:flex;align-items:center;gap:.55rem;flex:0 0 auto;padding:.45rem .65rem;border:1px solid rgba(120,100,70,.2);border-radius:1rem;background:rgba(255,255,255,.82);color:#57483b;font-size:.72rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.05);transition:transform .18s ease,background .18s ease}
+        .guide-launch:hover{transform:translateY(-2px);background:#fff}
+        .guide-launch:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+        .guide-launch .guide-buddy{font-size:1.65rem;display:inline-block;transform-origin:center bottom;animation:guide-bob 1.8s ease-in-out infinite}
+        .guide-launch .guide-buddy.drink{animation:guide-drink 2.2s ease-in-out infinite}
+        .guide-checkbox-label{flex:1;min-width:0;display:flex;align-items:center;gap:.55rem;transition:opacity .2s ease}
+        .guide-checkbox-label:not(.is-unlocked){pointer-events:none;opacity:.78}
+        .app-chk.guide-hidden{display:none!important}
+        .guided-task-row .guide-checkbox-label:not(.is-unlocked) span{line-height:1.35}
+        .guide-launch.is-hidden{display:none}
+        @keyframes guide-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        @keyframes guide-drink{0%,35%,100%{transform:rotate(0) translateY(0)}55%{transform:rotate(-18deg) translateY(-3px)}75%{transform:rotate(0) translateY(0)}}
+        @keyframes guide-sip{0%,100%{transform:rotate(0)}35%,65%{transform:rotate(-28deg) translateY(-8px)}}
+        @keyframes guide-stretch{0%,100%{transform:scale(1)}50%{transform:scale(1.18) translateY(-5px)}}
+        @keyframes guide-pulse{0%,100%{transform:scale(.78);opacity:.7}50%{transform:scale(1.2);opacity:1}}
+        .guide-scene{display:flex;align-items:center;justify-content:center;gap:1rem;min-height:145px}
+        .guide-person{font-size:5rem;display:inline-block;transform-origin:center bottom;animation:guide-bob 1.8s ease-in-out infinite}
+        .guide-prop{font-size:3.2rem;display:inline-block;animation:guide-pulse 2s ease-in-out infinite}
+        .guide-person.drinking{animation:guide-drink 2.2s ease-in-out infinite}
+        .guide-person.stretching{animation:guide-stretch 2.4s ease-in-out infinite}
+        .guide-speech{background:#fff8e8;border:2px solid #f2d59c;border-radius:1.2rem;padding:.8rem 1rem;color:#59472e;font-weight:700;line-height:1.45}
+        .guide-timer{font-variant-numeric:tabular-nums;font-size:2rem;font-weight:800;color:#1d4ed8}
+        .guide-breath-orb{width:7rem;height:7rem;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfdbfe,#60a5fa 65%,#2563eb);box-shadow:0 8px 24px #60a5fa66;animation:guide-pulse 4s ease-in-out infinite}
+        .legacy-guide-row{display:none!important}
+        @media(max-width:420px){.guide-launch{padding:.4rem;font-size:.65rem}.guided-task-row{gap:.4rem}.guide-launch .guide-buddy{font-size:1.4rem}}
+        @media(prefers-reduced-motion:reduce){.guide-launch .guide-buddy,.guide-person,.guide-prop,.guide-breath-orb{animation:none!important}}
+
     </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
@@ -444,57 +474,173 @@
             }
         }
 
+
+        let breathingTimer = null;
+        let breathingTimeout = null;
+        let breathingCycle = 0;
+        let breathingPhaseIndex = 0;
+        let breathingSecondsLeft = 0;
+        const breathingPhases = [
+            {name:"Breathe in",seconds:4,tip:"Gently breathe in through your nose."},
+            {name:"Hold softly",seconds:2,tip:"Pause softly. No straining."},
+            {name:"Breathe out",seconds:6,tip:"Slowly breathe out. Let your shoulders soften."}
+        ];
+
+        const guideContent = {
+            "loc-home":{title:"Find your place",line:"Pause and look around. Are you at home? Choose the place that describes where you are.",person:"🧒",prop:"🏡",action:"Take a moment to notice your surroundings."},
+            "loc-office":{title:"Check in at work",line:"Take one calm look around. Are you at work right now? Choose your location when you're ready.",person:"🧑‍💻",prop:"💼",action:"Notice where you are."},
+            "loc-house":{title:"A guest today",line:"Are you visiting someone else's home? Look around and choose the place that fits.",person:"👧",prop:"🏠",action:"Notice your surroundings."},
+            "loc-out":{title:"Out and about",line:"You're out somewhere. Take a breath, notice your surroundings, and choose this option if it fits.",person:"🧍",prop:"🌳",action:"Pause and orient yourself."},
+            "start-1":{title:"Three grateful things",line:"Let's find three small things to appreciate. They can be as simple as a safe moment, a kind word, or a warm drink.",person:"🐻",prop:"🌼",action:"Think of three things. You can jot them down mentally or in your own words."},
+            "start-2":{title:"Prayer and intention",line:"Let's pause together. Set a kind intention for yourself and the people you care about. Take the moment in your own way.",person:"🐰",prop:"🙏",action:"Take a quiet moment for prayer or a positive intention."},
+            "start-3":{title:"Gentle movement",line:"Let's loosen up. Roll your shoulders gently, stretch your arms, and move only within a comfortable range.",person:"🐱",prop:"🙆",action:"Try a few gentle stretches. Stop if anything hurts."},
+            "start-4":{title:"A little hydration",line:"I brought my glass! Watch me take a refreshing sip. Now it's your turn—enjoy some water at a comfortable pace.",person:"👧",prop:"🥛",action:"Drink your water. No need to rush.",drink:true},
+            "mid-1":{title:"Posture and stretch",line:"Let's reset our posture. Unclench your jaw, relax your shoulders, sit or stand comfortably, then stretch gently.",person:"🐼",prop:"🧘",action:"Take a comfortable posture and stretch gently."},
+            "mid-2":{title:"Breathe with me",line:"We'll do five gentle 4–2–6 cycles: breathe in for 4, pause softly for 2, and breathe out for 6. Keep it comfortable—never force or hold if uncomfortable.",person:"🐨",prop:"🌬️",action:"Start the five guided breathing cycles.",breathing:true},
+            "mid-3":{title:"Midday water break",line:"A tiny water break can help you pause. Watch me take a sip, then have some water if it's available.",person:"👧",prop:"💧",action:"Drink some water at your own pace.",drink:true},
+            "mid-4":{title:"Check how you feel",line:"Let's gently check in. What emotion is here right now? What thought is asking for your attention? You don't have to judge or fix it.",person:"🦊",prop:"💗",action:"Name what you're feeling, even if the answer is 'not sure'."},
+            "mid-5":{title:"Let a thought drift by",line:"Imagine a thought floating past like a cloud. You can notice it without holding on. Let it drift away in its own time.",person:"🐣",prop:"☁️",action:"Notice one thought and practice letting it pass."},
+            "end-1":{title:"Three wins today",line:"Let's celebrate three things you managed today. Tiny wins count: showing up, trying again, or taking a pause.",person:"🐻",prop:"🏆",action:"Write or think of three things you feel good about."},
+            "end-2":{title:"Tomorrow's priorities",line:"Let's make tomorrow feel lighter. Choose up to three priorities that matter most. They don't need to be perfect.",person:"🐱",prop:"📝",action:"Write three realistic priorities for tomorrow."},
+            "end-3":{title:"Evening hydration",line:"One more gentle reminder from me: have some water if you'd like and if it suits your needs. Sip comfortably.",person:"👧",prop:"🥛",action:"Drink some water at a comfortable pace.",drink:true},
+            "end-4":{title:"Give yourself a GOOD JOB poke",line:"You made it through another day. Give yourself a gentle little nose boop and say, 'Good job. I kept going.'",person:"🐰",prop:"👃✨",action:"Give yourself a gentle nose poke and a kind word."},
+            "sleep-1":{title:"Gratitude for others",line:"Think of three things someone did that you appreciated today. They can be very small moments.",person:"🐼",prop:"💛",action:"Write or remember three gratitude points about others."},
+            "sleep-2":{title:"Gratitude for blessings",line:"Take a quiet moment to remember three blessings or things you're thankful for today, in your own words.",person:"🐰",prop:"✨",action:"Write or remember three gratitude points."},
+            "sleep-3":{title:"Screen sunset",line:"Let's give your eyes and mind a gentle break. Put your device aside for the last 30 minutes before sleep when you can.",person:"🦉",prop:"🌙📵",action:"Begin your screen-free wind-down."},
+            "sleep-4":{title:"A peaceful intention",line:"Before sleep, pause for a prayer or a gentle intention. Let the day settle; you can pick things up tomorrow.",person:"🐻",prop:"🙏",action:"Take a quiet moment for prayer or intention."},
+            "sleep-5":{title:"Bedtime water reminder",line:"If you're thirsty, have a comfortable sip of water. No need to drink more than feels right before bed.",person:"👧",prop:"💧",action:"Have water if you need it, at a comfortable pace.",drink:true},
+            "cloud-checked":{title:"Cloud check",line:"Choose a thought or feeling you want to release. Tap one of the clouds on your card and watch it drift away. You can leave any thought alone if you're not ready.",person:"🐥",prop:"☁️💨",action:"Release a cloud thought when you're ready."}
+        };
+
+        function stopBreathingTimer() {
+            if (breathingTimer) { clearInterval(breathingTimer); breathingTimer = null; }
+            if (breathingTimeout) { clearTimeout(breathingTimeout); breathingTimeout = null; }
+        }
+
         function openModal(type, checkboxId) {
+            stopBreathingTimer();
             activeModalType = type;
             activeTargetCheckboxId = checkboxId;
+            const guide = guideContent[checkboxId] || {
+                title:"Let's do this together",line:"Take a gentle moment for this activity. Go at your own pace.",person:"🐻",prop:"✨",action:"When you're ready, tell me you've completed the activity."
+            };
             const target = document.getElementById('modal-animation-target');
             const instructions = document.getElementById('modal-instructions');
-            
+            const button = document.getElementById('modal-complete-btn');
+            document.querySelector('#modal-content-box h2')?.remove();
             target.innerHTML = '';
-            
-            if (type === 'water') {
-                instructions.innerText = "Drink your Beauty Potion! Savor the hydration.";
-                target.innerHTML = `<div class="text-7xl animate-bounce-gentle">🥛💧✨</div><p class="text-xs text-cyan-700 mt-3 font-bold">Refreshing beauty potion circulating!</p>`;
-            } else if (type === 'breathing') {
-                instructions.innerText = "Follow the 4-2-6 Calming Ratio: Inhale (4s), Hold (2s), Exhale (6s).";
-                target.innerHTML = `
-                    <div class="w-32 h-32 rounded-full breathing-ball flex items-center justify-center text-white font-bold text-xs shadow-inner">
-                        Breathe
-                    </div>
-                `;
-            } else if (type === 'prayer') {
-                instructions.innerText = "Be at peace with the source and set your positive intention.";
-                target.innerHTML = `<div class="text-7xl animate-pulse">🙏✨</div><p class="text-xs text-emerald-700 mt-3 font-bold">Peace and positive intention flowing.</p>`;
-            } else if (type === 'feeling') {
-                instructions.innerText = "Acknowledge the existence of your emotions without judgment.";
-                target.innerHTML = `<div class="text-7xl animate-heartbeat">💓</div><p class="text-xs text-rose-700 mt-3 font-bold">Heartbeat steady and mindful.</p>`;
-            } else if (type === 'curfew') {
-                instructions.innerText = "Screen Curfew: No screens 30 minutes before sleep for optimal rest.";
-                target.innerHTML = `<div class="text-7xl animate-bounce">📵🌙</div><p class="text-xs text-purple-700 mt-3 font-bold">Digital sunset active!</p>`;
-            } else if (type === 'clouds') {
-                instructions.innerText = "Acknowledge thoughts and let them go like your fart!";
-                target.innerHTML = `<div class="text-6xl animate-bounce">☁️💨🍃</div><p class="text-xs text-sky-700 mt-3 font-bold">Drifting away effortlessly.</p>`;
-            }
+            instructions.innerHTML = '';
+            button.disabled = false;
+            button.classList.remove('opacity-50','cursor-not-allowed');
+            button.style.display = 'block';
 
+            const heading = document.createElement('h2');
+            heading.className = 'text-2xl font-bold text-amber-900 handwriting mb-2';
+            heading.textContent = guide.title;
+            document.getElementById('modal-content-box').insertBefore(heading,target);
+
+            if (guide.breathing) {
+                target.innerHTML = '<div class="flex flex-col items-center gap-3 w-full"><div id="breathing-orb" class="guide-breath-orb"></div><div id="breathing-phase" class="text-xl font-bold text-blue-800">Ready?</div><div id="breathing-tip" class="text-sm text-slate-600">We will take five gentle cycles together.</div><div id="breathing-count" class="guide-timer">5 cycles</div><div id="breathing-clock" class="text-xs text-blue-700 font-semibold">12 seconds per cycle</div></div>';
+                instructions.textContent = guide.line;
+                button.textContent = 'Start 5 breathing cycles';
+                button.onclick = startBreathingExercise;
+            } else {
+                const motionClass = guide.drink ? 'drinking' : (checkboxId === 'start-3' || checkboxId === 'mid-1' ? 'stretching' : '');
+                target.innerHTML = '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup':'')+'">'+guide.prop+'</span></div><div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
+                document.getElementById('guide-speech').textContent = guide.line;
+                document.getElementById('guide-action').textContent = guide.action;
+                instructions.textContent = guide.drink ? "My turn... sip! Your turn next. Take your time." : "Let's do it at your own pace.";
+                button.textContent = guide.drink ? "I'm done drinking—show my checkbox" : "I've done it—show my checkbox";
+                button.onclick = completeAnimation;
+                if (guide.drink) {
+                    button.disabled = true;
+                    button.classList.add('opacity-50','cursor-not-allowed');
+                    breathingTimeout = setTimeout(() => {
+                        button.disabled = false;
+                        button.classList.remove('opacity-50','cursor-not-allowed');
+                        instructions.textContent = "Your turn! Are you done with your water?";
+                        document.getElementById('guide-speech').textContent = "Your turn! Are you done drinking your water?";
+                    }, 2200);
+                }
+            }
             document.getElementById('anim-modal').classList.remove('hidden');
         }
 
+        function startBreathingExercise() {
+            stopBreathingTimer();
+            breathingCycle = 1;
+            breathingPhaseIndex = 0;
+            breathingSecondsLeft = breathingPhases[0].seconds;
+            const button = document.getElementById('modal-complete-btn');
+            button.disabled = true;
+            button.classList.add('opacity-50','cursor-not-allowed');
+            button.textContent = 'Breathing with you...';
+            updateBreathingDisplay();
+            breathingTimer = setInterval(() => {
+                breathingSecondsLeft--;
+                if (breathingSecondsLeft <= 0) {
+                    breathingPhaseIndex++;
+                    if (breathingPhaseIndex >= breathingPhases.length) {
+                        breathingPhaseIndex = 0;
+                        breathingCycle++;
+                    }
+                    if (breathingCycle > 5) {
+                        stopBreathingTimer();
+                        document.getElementById('breathing-phase').textContent = 'Amazing work!';
+                        document.getElementById('breathing-tip').textContent = 'Five gentle cycles complete. Take a normal, comfortable breath.';
+                        document.getElementById('breathing-count').textContent = '5 / 5 cycles';
+                        document.getElementById('breathing-clock').textContent = 'You did it!';
+                        document.getElementById('breathing-orb').style.animation = 'none';
+                        const doneButton = document.getElementById('modal-complete-btn');
+                        doneButton.disabled = false;
+                        doneButton.classList.remove('opacity-50','cursor-not-allowed');
+                        doneButton.textContent = 'Good job! Show my checkbox';
+                        doneButton.onclick = completeAnimation;
+                        document.getElementById('modal-instructions').textContent = 'Good job! You are doing amazing!';
+                        playPopSound();
+                        return;
+                    }
+                    breathingSecondsLeft = breathingPhases[breathingPhaseIndex].seconds;
+                }
+                updateBreathingDisplay();
+            },1000);
+        }
+
+        function updateBreathingDisplay() {
+            const phase = breathingPhases[breathingPhaseIndex];
+            const phaseEl = document.getElementById('breathing-phase');
+            if (!phaseEl) return;
+            phaseEl.textContent = phase.name;
+            document.getElementById('breathing-tip').textContent = phase.tip;
+            document.getElementById('breathing-count').textContent = 'Cycle ' + breathingCycle + ' of 5';
+            document.getElementById('breathing-clock').textContent = breathingSecondsLeft + ' seconds';
+            const orb = document.getElementById('breathing-orb');
+            orb.style.animationDuration = phase.seconds + 's';
+            orb.style.transform = phase.name === 'Breathe in' ? 'scale(1.2)' : 'scale(.82)';
+        }
+
         function closeModal() {
+            stopBreathingTimer();
+            stopBreathingTimer();
             document.getElementById('anim-modal').classList.add('hidden');
         }
 
         function completeAnimation() {
+            const chk = activeTargetCheckboxId
+                ? (document.getElementById('chk-' + activeTargetCheckboxId) || document.querySelector('[data-id="' + activeTargetCheckboxId + '"]'))
+                : null;
             closeModal();
             playPopSound();
-            confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 } });
-            
-            if (activeTargetCheckboxId) {
-                const chk = document.getElementById('chk-' + activeTargetCheckboxId) || document.querySelector(`[data-id="${activeTargetCheckboxId}"]`);
-                if (chk) {
-                    chk.disabled = false;
-                    chk.checked = true;
-                    saveData();
-                }
+            if (chk) {
+                chk.disabled = false;
+                chk.dataset.guideUnlocked = 'true';
+                chk.classList.remove('guide-hidden');
+                const row = chk.closest('.guided-task-row');
+                const label = row?.querySelector('.guide-checkbox-label');
+                if (label) label.classList.add('is-unlocked');
+                const launch = row?.querySelector('.guide-launch');
+                if (launch) launch.classList.add('is-hidden');
+                saveData();
             }
         }
 
@@ -506,6 +652,10 @@
             const cloudChk = document.getElementById('chk-cloud-checked');
             if(cloudChk) {
                 cloudChk.disabled = false;
+                cloudChk.dataset.guideUnlocked = 'true';
+                cloudChk.classList.remove('guide-hidden');
+                cloudChk.closest('.guided-task-row')?.querySelector('.guide-checkbox-label')?.classList.add('is-unlocked');
+                cloudChk.closest('.guided-task-row')?.querySelector('.guide-launch')?.classList.add('is-hidden');
                 cloudChk.checked = true;
                 saveData();
             }
@@ -556,35 +706,47 @@
 
         function attachChecklistCartoons() {
             document.querySelectorAll('.app-chk').forEach(chk => {
-                const row = chk.closest('label');
-                if (!row || row.querySelector('.task-cartoon')) return;
-                const character = document.createElement('span');
-                character.className = 'task-cartoon';
-                character.setAttribute('aria-hidden', 'true');
-                character.innerHTML = '<span class="toon-cheeks"><i></i><i></i></span><span class="toon-face"><span class="toon-eyes"><i></i><i></i></span><span class="toon-mouth"></span></span>';
-                row.appendChild(character);
-                chk.addEventListener('change', () => {
-                    character.classList.toggle('is-done', chk.checked);
-                    if (chk.checked) {
-                        character.classList.remove('is-celebrating');
-                        void character.offsetWidth;
-                        character.classList.add('is-celebrating');
-                        playPopSound();
-                    } else {
-                        character.classList.remove('is-celebrating');
-                    }
-                });
-                character.addEventListener('animationend', () => character.classList.remove('is-celebrating'));
+                const label = chk.closest('label');
+                if (!label || label.closest('.guided-task-row')) return;
+                const row = document.createElement('div');
+                row.className = 'guided-task-row';
+                label.parentNode.insertBefore(row,label);
+                row.appendChild(label);
+                label.classList.add('guide-checkbox-label');
+                chk.classList.add('guide-hidden');
+                const id = chk.dataset.id;
+                const guideButton = document.createElement('button');
+                guideButton.type = 'button';
+                guideButton.className = 'guide-launch';
+                const buddy = guideContent[id];
+                guideButton.innerHTML = '<span class="guide-buddy '+(buddy?.drink?'drink':'')+'" aria-hidden="true">'+(buddy?.person || '🐻')+'</span><span>Show me</span>';
+                guideButton.setAttribute('aria-label','Show animated guide for '+id);
+                guideButton.addEventListener('click',() => openModal('guided',id));
+                row.insertBefore(guideButton,label);
+            });
+            document.querySelectorAll('button[onclick^="openModal("]').forEach(button => {
+                const parent = button.closest('div');
+                if (parent) parent.classList.add('legacy-guide-row');
             });
             syncChecklistCartoons();
         }
 
         function syncChecklistCartoons() {
             document.querySelectorAll('.app-chk').forEach(chk => {
-                const row = chk.closest('label');
-                const character = row?.querySelector('.task-cartoon');
-                if (!character) return;
-                character.classList.toggle('is-done', chk.checked);
+                const row = chk.closest('.guided-task-row');
+                const label = row?.querySelector('.guide-checkbox-label');
+                const launch = row?.querySelector('.guide-launch');
+                const unlocked = chk.dataset.guideUnlocked === 'true' || chk.checked;
+                chk.classList.toggle('guide-hidden',!unlocked);
+                if (unlocked) {
+                    chk.disabled = false;
+                    label?.classList.add('is-unlocked');
+                    launch?.classList.add('is-hidden');
+                    chk.dataset.guideUnlocked = 'true';
+                } else {
+                    label?.classList.remove('is-unlocked');
+                    launch?.classList.remove('is-hidden');
+                }
             });
         }
 
@@ -651,10 +813,9 @@
                 const id = chk.dataset.id;
                 const isChecked = data[id] !== undefined ? data[id] : false;
                 chk.checked = isChecked;
-                // If loaded data says it was checked, ensure disabled gated checkboxes are unlocked
-                if (isChecked && chk.disabled) {
-                    chk.disabled = false;
-                }
+                const guided = data[id + '__guided'] === true || isChecked;
+                chk.dataset.guideUnlocked = guided ? 'true' : 'false';
+                if (guided) chk.disabled = false;
             });
 
             document.querySelectorAll('.text-input').forEach(txt => {
@@ -675,6 +836,7 @@
 
             document.querySelectorAll('.app-chk').forEach(chk => {
                 data[chk.dataset.id] = chk.checked;
+                data[chk.dataset.id + '__guided'] = chk.dataset.guideUnlocked === 'true' || chk.checked;
             });
 
             document.querySelectorAll('.text-input').forEach(txt => {
