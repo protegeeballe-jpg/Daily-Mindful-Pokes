@@ -3,10 +3,10 @@ import {
     getFlowerStage, getPlantAgeDays, getTreeStage, validateGardenState
 } from './garden-model.js';
 
-const overlay = document.getElementById('onnea-garden');
-if (overlay) initializeOnneaGarden(overlay);
+const overlay = document.getElementById('-garden');
+if (overlay) initializeGarden(overlay);
 
-function initializeOnneaGarden(root) {
+function initializeGarden(root) {
     let lastFocusedElement = null;
     let windowIsOpen = false;
 
