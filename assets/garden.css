@@ -1,4 +1,4 @@
-/* Onnea's Little Garden — an isolated, local-only game space. */
+/* Little Garden — an isolated, local-only game space. */
 body.garden-overlay-open { overflow: hidden; }
 .garden-overlay {
     position: fixed;
