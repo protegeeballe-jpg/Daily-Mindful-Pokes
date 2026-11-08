@@ -138,6 +138,26 @@
         .guide-timer{font-variant-numeric:tabular-nums;font-size:2rem;font-weight:800;color:#1d4ed8}
         .guide-breath-orb{width:7rem;height:7rem;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfdbfe,#60a5fa 65%,#2563eb);box-shadow:0 8px 24px #60a5fa66;animation:guide-pulse 4s ease-in-out infinite}
         .legacy-guide-button{display:none!important}
+
+        /* Two-person human cartoon demonstration for stretching activities. */
+        .stretch-demo-wrap{display:flex;align-items:center;justify-content:center;width:100%;min-height:176px;padding:.1rem;overflow:hidden}
+        .stretch-demo-svg{display:block;width:min(100%,330px);height:auto;max-height:190px;overflow:visible}
+        .stretch-demo-preview{width:4.2rem;height:2.4rem;min-height:0;flex:0 0 4.2rem;padding:0;overflow:hidden}
+        .stretch-demo-preview .stretch-demo-svg{width:4.2rem;height:2.4rem}
+        .stretch-arm{transform-box:view-box}
+        .stretch-man-left{transform-origin:80px 75px;animation:stretch-lift-left 4.2s ease-in-out infinite}
+        .stretch-man-right{transform-origin:110px 75px;animation:stretch-lift-right 4.2s ease-in-out infinite}
+        .stretch-woman-left{transform-origin:210px 75px;animation:stretch-lift-left 4.2s ease-in-out infinite .12s}
+        .stretch-woman-right{transform-origin:240px 75px;animation:stretch-lift-right 4.2s ease-in-out infinite .12s}
+        .stretch-man-upper{transform-box:view-box;transform-origin:95px 112px;animation:stretch-reach-body 4.2s ease-in-out infinite}
+        .stretch-woman-upper{transform-box:view-box;transform-origin:225px 112px;animation:stretch-reach-body 4.2s ease-in-out infinite .12s}
+        .stretch-demo-sun{animation:stretch-sun-glow 3.5s ease-in-out infinite;transform-box:view-box;transform-origin:160px 26px}
+        @keyframes stretch-lift-left{0%,14%,100%{transform:rotate(0)}35%,66%{transform:rotate(135deg)}82%{transform:rotate(0)}}
+        @keyframes stretch-lift-right{0%,14%,100%{transform:rotate(0)}35%,66%{transform:rotate(-135deg)}82%{transform:rotate(0)}}
+        @keyframes stretch-reach-body{0%,14%,100%{transform:translateY(0) scaleY(1)}35%,66%{transform:translateY(-3px) scaleY(1.025)}82%{transform:translateY(0) scaleY(1)}}
+        @keyframes stretch-sun-glow{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
+        @media(prefers-reduced-motion:reduce){.stretch-demo-svg *,.stretch-demo-wrap,.stretch-demo-wrap *{animation:none!important;transition:none!important}}
+
         @media(max-width:420px){.guide-launch{padding:.4rem;font-size:.65rem}.guided-task-row{gap:.4rem}.guide-launch .guide-buddy{font-size:1.4rem}}
         @media(prefers-reduced-motion:reduce){.guide-launch .guide-buddy,.guide-person,.guide-prop,.guide-breath-orb{animation:none!important}}
 
@@ -617,6 +637,67 @@
             if (breathingTimeout) { clearTimeout(breathingTimeout); breathingTimeout = null; }
         }
 
+
+        function buildStretchingCartoon(mini = false) {
+            const label = 'Two people, a man and a woman, raising their arms overhead for a gentle stretch.';
+            return '<div class="stretch-demo-wrap'+(mini?' stretch-demo-preview':'')+'" role="img" aria-label="'+label+'">' +
+                '<svg class="stretch-demo-svg" viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg" focusable="false">' +
+                '<defs>' +
+                    '<linearGradient id="stretch-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5fbff"/><stop offset="1" stop-color="#fff8ec"/></linearGradient>' +
+                    '<linearGradient id="stretch-man-shirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#76b9a7"/><stop offset="1" stop-color="#3f8778"/></linearGradient>' +
+                    '<linearGradient id="stretch-woman-shirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb0a8"/><stop offset="1" stop-color="#e77e91"/></linearGradient>' +
+                '</defs>' +
+                '<rect x="4" y="4" width="312" height="180" rx="22" fill="url(#stretch-sky)"/>' +
+                '<circle class="stretch-demo-sun" cx="160" cy="26" r="11" fill="#f5cf72" opacity=".8"/>' +
+                '<path d="M145 26 H133 M187 26 H175 M160 11 V3 M160 49 V41 M148 14 L142 8 M178 44 L172 38 M148 38 L142 44 M178 8 L172 14" stroke="#e8bd58" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>' +
+                '<path d="M23 166 Q160 158 297 166" fill="none" stroke="#d7e7dc" stroke-width="3" stroke-linecap="round"/>' +
+                '<ellipse cx="95" cy="168" rx="34" ry="5" fill="#a9c3b7" opacity=".3"/><ellipse cx="225" cy="168" rx="34" ry="5" fill="#a9c3b7" opacity=".3"/>' +
+
+                /* Man: short dark hair, teal top and navy trousers. */
+                '<g class="stretch-man">' +
+                    '<path d="M78 117 Q72 137 72 160 M106 117 Q112 137 116 160" fill="none" stroke="#344b63" stroke-width="12" stroke-linecap="round"/>' +
+                    '<path d="M58 161 Q71 155 81 162 Q84 168 69 170 Q56 171 58 161Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
+                    '<path d="M106 162 Q118 155 130 162 Q132 169 117 170 Q105 171 106 162Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
+                    '<g class="stretch-man-upper">' +
+                        '<path d="M84 59 Q95 55 106 59 L116 118 Q95 127 74 118 Z" fill="url(#stretch-man-shirt)" stroke="#3a756b" stroke-width="2.3" stroke-linejoin="round"/>' +
+                        '<path d="M88 64 Q95 70 102 64" fill="none" stroke="#d6f1e7" stroke-width="2" stroke-linecap="round"/>' +
+                        '<path d="M95 72 V116" stroke="#3e8276" stroke-width="2" opacity=".35"/>' +
+                        '<path d="M86 112 Q95 116 104 112" fill="none" stroke="#a8d8c9" stroke-width="2" opacity=".75"/>' +
+                        '<path d="M87 42 L87 59 M103 42 L103 59" stroke="#bd805f" stroke-width="6" stroke-linecap="round"/>' +
+                        '<circle cx="95" cy="37" r="16" fill="#d99b78" stroke="#a86e50" stroke-width="2"/>' +
+                        '<path d="M79 37 Q77 17 95 17 Q112 17 112 36 Q103 28 94 30 Q86 29 79 37Z" fill="#493a36" stroke="#302b2b" stroke-width="2" stroke-linejoin="round"/>' +
+                        '<path d="M86 39 Q88 41 90 39 M100 39 Q102 41 104 39" fill="none" stroke="#3b302c" stroke-width="2" stroke-linecap="round"/>' +
+                        '<path d="M91 48 Q95 51 100 48" fill="none" stroke="#864e45" stroke-width="2" stroke-linecap="round"/>' +
+                    '</g>' +
+                    '<g class="stretch-arm stretch-man-left"><path d="M80 75 Q66 84 60 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="60" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
+                    '<g class="stretch-arm stretch-man-right"><path d="M110 75 Q124 84 130 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="130" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
+                '</g>' +
+
+                /* Woman: long dark hair, coral top and plum leggings. */
+                '<g class="stretch-woman">' +
+                    '<path d="M208 117 Q202 137 199 160 M238 117 Q244 137 248 160" fill="none" stroke="#58445f" stroke-width="12" stroke-linecap="round"/>' +
+                    '<path d="M184 161 Q197 155 207 162 Q210 168 195 170 Q182 171 184 161Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
+                    '<path d="M238 162 Q250 155 262 162 Q264 169 249 170 Q237 171 238 162Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
+                    '<g class="stretch-woman-upper">' +
+                        '<path d="M214 59 Q225 55 236 59 L246 118 Q225 127 204 118 Z" fill="url(#stretch-woman-shirt)" stroke="#bd6477" stroke-width="2.3" stroke-linejoin="round"/>' +
+                        '<path d="M218 65 Q225 71 232 65" fill="none" stroke="#ffe4df" stroke-width="2" stroke-linecap="round"/>' +
+                        '<path d="M225 72 V116" stroke="#bd6477" stroke-width="2" opacity=".3"/>' +
+                        '<path d="M216 112 Q225 116 234 112" fill="none" stroke="#ffe2df" stroke-width="2" opacity=".75"/>' +
+                        '<path d="M217 42 L217 59 M233 42 L233 59" stroke="#d99b78" stroke-width="6" stroke-linecap="round"/>' +
+                        '<path d="M208 38 Q205 13 226 13 Q246 14 243 42 L243 65 Q238 75 234 61 L237 39 Q226 28 216 39 L216 62 Q209 70 205 59Z" fill="#493a36" stroke="#302b2b" stroke-width="2" stroke-linejoin="round"/>' +
+                        '<circle cx="225" cy="37" r="16" fill="#d99b78" stroke="#a86e50" stroke-width="2"/>' +
+                        '<path d="M209 36 Q208 19 225 19 Q242 19 241 36 Q231 27 223 30 Q215 29 209 36Z" fill="#493a36"/>' +
+                        '<ellipse cx="219" cy="38" rx="1.8" ry="2.5" fill="#3b302c"/><ellipse cx="231" cy="38" rx="1.8" ry="2.5" fill="#3b302c"/>' +
+                        '<path d="M220 48 Q225 52 230 48" fill="none" stroke="#864e45" stroke-width="2" stroke-linecap="round"/>' +
+                        '<circle cx="211" cy="46" r="3" fill="#ee9b9b" opacity=".65"/><circle cx="239" cy="46" r="3" fill="#ee9b9b" opacity=".65"/>' +
+                    '</g>' +
+                    '<g class="stretch-arm stretch-woman-left"><path d="M210 75 Q196 84 190 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="190" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
+                    '<g class="stretch-arm stretch-woman-right"><path d="M240 75 Q254 84 260 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="260" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
+                '</g>' +
+                '<g fill="#7aa99a" opacity=".8"><path d="M35 135 Q43 119 51 135 Q43 132 35 135Z"/><path d="M272 135 Q280 119 288 135 Q280 132 272 135Z"/></g>' +
+                '</svg></div>';
+        }
+
         function openModal(type, checkboxId) {
             stopBreathingTimer();
             activeModalType = type;
@@ -664,7 +745,7 @@
                 else if (['end-4'].includes(checkboxId)) motionClass = 'boop';
                 else if (['sleep-3'].includes(checkboxId)) motionClass = 'thinking';
                 const propMotion = ['end-2'].includes(checkboxId) ? 'writing' : (['mid-5','cloud-checked'].includes(checkboxId) ? 'floating' : (checkboxId === 'sleep-3' ? 'screen-away' : ''));
-                target.innerHTML = '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup ':'')+propMotion+'">'+guide.prop+'</span></div><div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
+                target.innerHTML = (['start-3','mid-1'].includes(checkboxId) ? buildStretchingCartoon(false) : '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup ':'')+propMotion+'">'+guide.prop+'</span></div>') + '<div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
                 document.getElementById('guide-speech').textContent = guide.line;
                 document.getElementById('guide-action').textContent = guide.action;
                 instructions.textContent = guide.drink ? "My turn... sip! Your turn next. Take your time." : "Let's do it at your own pace.";
@@ -761,8 +842,7 @@
                 const row = chk.closest('.guided-task-row');
                 const label = row?.querySelector('.guide-checkbox-label');
                 if (label) label.classList.add('is-unlocked');
-                const launch = row?.querySelector('.guide-launch');
-                if (launch) launch.classList.add('is-hidden');
+                // Leave Show me visible so the user can replay the demonstration.
                 saveData();
             }
         }
@@ -882,7 +962,7 @@
                 guideButton.type = 'button';
                 guideButton.className = 'guide-launch';
                 const buddy = guideContent[id];
-                guideButton.innerHTML = '<span class="guide-buddy '+(buddy?.drink?'drink':'')+'" aria-hidden="true">'+(buddy?.person || '🐻')+'</span><span>Show me</span>';
+                guideButton.innerHTML = (['start-3','mid-1'].includes(id) ? buildStretchingCartoon(true) : '<span class="guide-buddy '+(buddy?.drink?'drink':'')+'" aria-hidden="true">'+(buddy?.person || '🐻')+'</span>') + '<span>Show me</span>';
                 guideButton.setAttribute('aria-label','Show animated guide for '+id);
                 guideButton.addEventListener('click',() => openModal('guided',id));
                 row.insertBefore(guideButton,label);
