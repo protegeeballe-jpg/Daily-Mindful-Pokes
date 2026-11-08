@@ -178,7 +178,7 @@ import {
             });
 
             if (['garden', 'checklist', 'diary'].includes(pageId)) {
-                const garden = document.getElementById('onnea-garden');
+                const garden = document.getElementById('little-garden');
                 garden?.classList.remove('hidden');
                 if (pageId === 'garden') {
                     document.dispatchEvent(new CustomEvent('garden:open'));
