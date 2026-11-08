@@ -76,6 +76,7 @@ function initializeGarden(root) {
             };
             intro.textContent = descriptions[sceneName] || descriptions.room;
         }
+        if (!overlay.classList.contains('hidden')) heading?.focus({ preventScroll: true });
     }
 
     function renderRoom() {
