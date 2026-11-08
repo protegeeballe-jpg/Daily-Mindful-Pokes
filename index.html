@@ -120,6 +120,23 @@
         @media(max-width:420px){.guide-launch{padding:.4rem;font-size:.65rem}.guided-task-row{gap:.4rem}.guide-launch .guide-buddy{font-size:1.4rem}}
         @media(prefers-reduced-motion:reduce){.guide-launch .guide-buddy,.guide-person,.guide-prop,.guide-breath-orb{animation:none!important}}
 
+    
+        @keyframes guide-breath-in{from{transform:scale(.78)}to{transform:scale(1.2)}}
+        @keyframes guide-breath-out{from{transform:scale(1.2)}to{transform:scale(.78)}}
+        @keyframes guide-pray{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-3deg)}}
+        @keyframes guide-think{0%,100%{transform:rotate(0)}50%{transform:rotate(7deg) translateY(-3px)}}
+        @keyframes guide-write{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(3px) rotate(5deg)}75%{transform:translateX(-2px) rotate(-4deg)}}
+        @keyframes guide-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        @keyframes guide-boop{0%,100%{transform:scale(1)}45%{transform:scale(1.18) translateY(-5px)}}
+        .guide-person.praying{animation:guide-pray 2.2s ease-in-out infinite}
+        .guide-person.thinking{animation:guide-think 2.6s ease-in-out infinite}
+        .guide-person.writing{animation:guide-write .8s ease-in-out infinite}
+        .guide-person.floating{animation:guide-float 2.5s ease-in-out infinite}
+        .guide-person.boop{animation:guide-boop 1.2s ease-in-out infinite}
+        .guide-prop.writing{animation:guide-write .8s ease-in-out infinite}
+        .guide-prop.floating{animation:guide-float 2.5s ease-in-out infinite}
+        .guide-prop.screen-away{animation:guide-float 2s ease-in-out infinite}
+
     </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
@@ -545,8 +562,17 @@
                 button.textContent = 'Start 5 breathing cycles';
                 button.onclick = startBreathingExercise;
             } else {
-                const motionClass = guide.drink ? 'drinking' : (checkboxId === 'start-3' || checkboxId === 'mid-1' ? 'stretching' : '');
-                target.innerHTML = '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup':'')+'">'+guide.prop+'</span></div><div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
+                let motionClass = '';
+                if (guide.drink) motionClass = 'drinking';
+                else if (['start-3','mid-1'].includes(checkboxId)) motionClass = 'stretching';
+                else if (['start-2','sleep-4'].includes(checkboxId)) motionClass = 'praying';
+                else if (['start-1','end-1','sleep-1','sleep-2'].includes(checkboxId)) motionClass = 'thinking';
+                else if (['end-2'].includes(checkboxId)) motionClass = 'writing';
+                else if (['mid-5','cloud-checked'].includes(checkboxId)) motionClass = 'floating';
+                else if (['end-4'].includes(checkboxId)) motionClass = 'boop';
+                else if (['sleep-3'].includes(checkboxId)) motionClass = 'thinking';
+                const propMotion = ['end-2'].includes(checkboxId) ? 'writing' : (['mid-5','cloud-checked'].includes(checkboxId) ? 'floating' : (checkboxId === 'sleep-3' ? 'screen-away' : ''));
+                target.innerHTML = '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup ':'')+propMotion+'">'+guide.prop+'</span></div><div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
                 document.getElementById('guide-speech').textContent = guide.line;
                 document.getElementById('guide-action').textContent = guide.action;
                 instructions.textContent = guide.drink ? "My turn... sip! Your turn next. Take your time." : "Let's do it at your own pace.";
@@ -615,8 +641,14 @@
             document.getElementById('breathing-count').textContent = 'Cycle ' + breathingCycle + ' of 5';
             document.getElementById('breathing-clock').textContent = breathingSecondsLeft + ' seconds';
             const orb = document.getElementById('breathing-orb');
-            orb.style.animationDuration = phase.seconds + 's';
-            orb.style.transform = phase.name === 'Breathe in' ? 'scale(1.2)' : 'scale(.82)';
+            if (phase.name === 'Breathe in') {
+                orb.style.animation = 'guide-breath-in 4s ease-in-out 1 forwards';
+            } else if (phase.name === 'Hold softly') {
+                orb.style.animation = 'none';
+                orb.style.transform = 'scale(1.2)';
+            } else {
+                orb.style.animation = 'guide-breath-out 6s ease-in-out 1 forwards';
+            }
         }
 
         function closeModal() {
