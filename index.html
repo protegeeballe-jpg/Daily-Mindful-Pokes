@@ -226,7 +226,8 @@
 
         /* Interactive watercolor ecosystem: progress is derived from this date's saved actions. */
         .ecosystem-card{position:relative;overflow:hidden;border:1.5px solid #b9cbb4;border-radius:1.5rem;padding:1rem;background:radial-gradient(ellipse at 18% 8%,rgba(255,255,255,.9),transparent 42%),radial-gradient(ellipse at 85% 78%,rgba(197,222,194,.28),transparent 48%),linear-gradient(145deg,#f4f6e9,#edf4ee 55%,#f8f2e6);box-shadow:3px 4px 0 rgba(93,121,94,.13)}
-        .ecosystem-svg{display:block;width:100%;max-width:330px;height:auto;margin:0 auto;overflow:visible}
+        .ecosystem-canvas{display:block;width:100%;max-width:330px;height:auto;aspect-ratio:4/3;margin:0 auto;overflow:visible}
+        .ecosystem-svg-fallback{display:none;width:100%;max-width:330px;height:auto;margin:0 auto;overflow:visible}
         .ecosystem-roots{transform-box:view-box;transform-origin:160px 208px;transform:scaleX(var(--root-scale,1));transition:transform .45s ease}
         .ecosystem-roots path{transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)}
         .ecosystem-roots.is-pulsing{animation:ecosystem-root-pulse .9s ease-out}
@@ -384,7 +385,8 @@
                     <span class="text-xs font-bold text-emerald-900 bg-white/65 border border-emerald-200 rounded-full px-3 py-1">Today’s tree</span>
                 </div>
                 <p id="ecosystem-intro-copy" class="text-xs text-emerald-900/75 mb-2">Start with one small action. Your seed is ready to take root.</p>
-                <svg id="ecosystem-tree-art" class="ecosystem-svg" viewBox="0 0 320 240" role="img" aria-labelledby="ecosystem-tree-title ecosystem-tree-desc" xmlns="http://www.w3.org/2000/svg">
+                <canvas id="ecosystem-canvas" class="ecosystem-canvas" width="640" height="480" role="img" aria-label="An animated watercolor-style tree. Prayer and water grow its roots, releasing each stress cloud strengthens its trunk, and Screen Curfew blooms flowers.">Your browser does not support the animated tree. The visual status is also provided in the progress summaries below.</canvas>
+                <svg id="ecosystem-tree-art" class="ecosystem-svg ecosystem-svg-fallback" viewBox="0 0 320 240" role="img" aria-labelledby="ecosystem-tree-title ecosystem-tree-desc" xmlns="http://www.w3.org/2000/svg">
                     <title id="ecosystem-tree-title">A watercolor tree that grows with your daily actions</title>
                     <desc id="ecosystem-tree-desc">A seed settles into the soil. Prayer and water grow the roots, releasing clouds strengthens the trunk, and Screen Curfew blooms a flower.</desc>
                     <defs>
@@ -905,6 +907,7 @@
             });
             document.getElementById('view-' + pageId).classList.remove('hidden');
             if (pageId === 'checklist') {
+                resizeEcosystemCanvas();
                 updateEcosystemTree();
                 replayEcosystemWelcome();
             }
@@ -1410,9 +1413,330 @@
             element.classList.add(className);
         }
 
+        const ecosystemCanvasMotion={roots:0,clouds:0,flowers:0,seedDrop:0};
+        const ecosystemCanvasTargets={roots:0,clouds:0,flowers:0,seedDrop:0};
+        let ecosystemCanvasParticles=[];
+        let ecosystemCanvasContext=null;
+        let ecosystemCanvasFrame=null;
+
+        function ecosystemCanvasReducedMotion(){
+            return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        }
+
+        function resizeEcosystemCanvas(){
+            const canvas=document.getElementById('ecosystem-canvas');
+            const fallback=document.getElementById('ecosystem-tree-art');
+            if(!canvas)return;
+            if(!ecosystemCanvasContext){
+                try{ecosystemCanvasContext=canvas.getContext('2d');}catch(error){ecosystemCanvasContext=null;}
+            }
+            if(!ecosystemCanvasContext){
+                canvas.style.display='none';
+                if(fallback)fallback.style.display='block';
+                return;
+            }
+            if(fallback)fallback.style.display='none';
+            canvas.style.display='block';
+            const rect=canvas.getBoundingClientRect();
+            if(rect.width<1||rect.height<1)return;
+            const dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
+            const pixelWidth=Math.max(1,Math.round(rect.width*dpr));
+            const pixelHeight=Math.max(1,Math.round(rect.height*dpr));
+            if(canvas.width!==pixelWidth)canvas.width=pixelWidth;
+            if(canvas.height!==pixelHeight)canvas.height=pixelHeight;
+            const scale=Math.min(rect.width/320,rect.height/240);
+            const offsetX=(rect.width-320*scale)/2;
+            const offsetY=(rect.height-240*scale)/2;
+            try{ecosystemCanvasContext.setTransform(scale*dpr,0,0,scale*dpr,offsetX*dpr,offsetY*dpr);}
+            catch(error){
+                ecosystemCanvasContext=null;
+                canvas.style.display='none';
+                if(fallback)fallback.style.display='block';
+                return;
+            }
+            drawEcosystemCanvas();
+        }
+
+        function traceEcosystemRoot(ctx,x0,y0,cx,cy,x1,y1,progress){
+            const amount=Math.max(0,Math.min(1,progress));
+            if(amount<=0)return;
+            const steps=28;
+            const last=Math.max(1,Math.ceil(steps*amount));
+            ctx.beginPath();
+            ctx.moveTo(x0,y0);
+            for(let i=1;i<=last;i++){
+                const t=Math.min(amount,i/steps);
+                const inverse=1-t;
+                ctx.lineTo(inverse*inverse*x0+2*inverse*t*cx+t*t*x1,inverse*inverse*y0+2*inverse*t*cy+t*t*y1);
+            }
+            ctx.stroke();
+        }
+
+        function drawEcosystemFlower(ctx,x,y,scale){
+            if(scale<=0.01)return;
+            ctx.save();
+            ctx.translate(x,y);
+            ctx.scale(scale,scale);
+            ctx.fillStyle='#f48fb1';
+            ctx.strokeStyle='#d5799a';
+            ctx.lineWidth=1;
+            for(let i=0;i<5;i++){
+                ctx.save();
+                ctx.rotate((Math.PI*2*i)/5);
+                ctx.beginPath();
+                ctx.ellipse(0,-5.2,3.2,5.8,0,0,Math.PI*2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.beginPath();
+            ctx.fillStyle='#fff1a8';
+            ctx.arc(0,0,2.7,0,Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawEcosystemCanvas(){
+            const ctx=ecosystemCanvasContext;
+            if(!ctx)return;
+            const roots=Math.max(0,Math.min(1,ecosystemCanvasMotion.roots));
+            const clouds=Math.max(0,Math.min(3,ecosystemCanvasMotion.clouds));
+            const flowers=Math.max(0,Math.min(1,ecosystemCanvasMotion.flowers));
+            const seedDrop=Math.max(0,ecosystemCanvasMotion.seedDrop);
+            const centerX=160;
+            const groundY=184;
+            ctx.clearRect(0,0,320,240);
+
+            const sky=ctx.createRadialGradient(160,84,8,160,104,150);
+            sky.addColorStop(0,'rgba(255,255,245,.88)');
+            sky.addColorStop(1,'rgba(220,235,220,0)');
+            ctx.fillStyle=sky;
+            ctx.fillRect(8,4,304,210);
+
+            const soil=ctx.createLinearGradient(0,groundY,0,240);
+            soil.addColorStop(0,'#a77b4f');
+            soil.addColorStop(1,'#705034');
+            ctx.fillStyle=soil;
+            ctx.fillRect(12,groundY,296,56);
+            ctx.beginPath();
+            ctx.moveTo(18,groundY+1);
+            ctx.quadraticCurveTo(78,groundY-5,128,groundY+1);
+            ctx.quadraticCurveTo(190,groundY+6,244,groundY);
+            ctx.quadraticCurveTo(279,groundY-3,302,groundY+1);
+            ctx.strokeStyle='#9dbd91';
+            ctx.lineWidth=4;
+            ctx.lineCap='round';
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(24,groundY+8);
+            ctx.quadraticCurveTo(160,groundY+14,296,groundY+7);
+            ctx.strokeStyle='rgba(231,238,213,.45)';
+            ctx.lineWidth=1.5;
+            ctx.setLineDash([3,5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            if(roots>0.001){
+                ctx.save();
+                ctx.strokeStyle='#6f5037';
+                ctx.lineCap='round';
+                ctx.lineJoin='round';
+                ctx.lineWidth=5;
+                traceEcosystemRoot(ctx,centerX,groundY,158,groundY+20,160,groundY+51,roots);
+                ctx.lineWidth=3.8;
+                traceEcosystemRoot(ctx,159,groundY+13,143,groundY+23,112,groundY+37,roots);
+                traceEcosystemRoot(ctx,161,groundY+13,179,groundY+23,207,groundY+39,roots);
+                ctx.lineWidth=2.5;
+                traceEcosystemRoot(ctx,128,groundY+29,111,groundY+43,87,groundY+48,roots);
+                traceEcosystemRoot(ctx,192,groundY+30,209,groundY+43,233,groundY+49,roots);
+                ctx.restore();
+            }
+
+            // Each existing cloud release increases trunk width by exactly five percent.
+            const trunkX=1+clouds*0.05;
+            const trunkY=0.82+clouds*0.06;
+            ctx.save();
+            ctx.translate(centerX,groundY);
+            ctx.scale(trunkX,trunkY);
+            ctx.lineCap='round';
+            ctx.lineJoin='round';
+            ctx.beginPath();
+            ctx.moveTo(-3,-56);
+            ctx.quadraticCurveTo(-25,-78,-42,-91);
+            ctx.moveTo(3,-58);
+            ctx.quadraticCurveTo(27,-79,43,-92);
+            ctx.strokeStyle='#866347';
+            ctx.lineWidth=7;
+            ctx.stroke();
+
+            const bark=ctx.createLinearGradient(-14,0,14,0);
+            bark.addColorStop(0,'#806044');
+            bark.addColorStop(.48,'#b58b60');
+            bark.addColorStop(1,'#76573d');
+            ctx.beginPath();
+            ctx.moveTo(-13,0);
+            ctx.quadraticCurveTo(-8,-35,-7,-94);
+            ctx.lineTo(7,-94);
+            ctx.quadraticCurveTo(8,-38,13,0);
+            ctx.closePath();
+            ctx.fillStyle=bark;
+            ctx.fill();
+            ctx.strokeStyle='#75583e';
+            ctx.lineWidth=2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(-1,-12);
+            ctx.quadraticCurveTo(3,-48,0,-85);
+            ctx.strokeStyle='rgba(236,207,165,.65)';
+            ctx.lineWidth=3;
+            ctx.stroke();
+            ctx.restore();
+
+            const topY=groundY-94*trunkY;
+            const leafClusters=[
+                {x:centerX,y:topY-17,r:27,c:'#81ad78'},
+                {x:centerX-32,y:topY-4,r:22,c:'#8fbd83'},
+                {x:centerX+32,y:topY-5,r:22,c:'#6fa46f'},
+                {x:centerX-17,y:topY-34,r:18,c:'#a8c995'},
+                {x:centerX+18,y:topY-35,r:18,c:'#a4c48e'}
+            ];
+            leafClusters.forEach((leaf,index)=>{
+                ctx.beginPath();
+                ctx.fillStyle=leaf.c;
+                ctx.arc(leaf.x,leaf.y,leaf.r,0,Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.strokeStyle=index%2?'rgba(240,248,225,.75)':'rgba(231,244,218,.8)';
+                ctx.lineWidth=1.1;
+                ctx.moveTo(leaf.x,leaf.y+leaf.r*.55);
+                ctx.lineTo(leaf.x,leaf.y-leaf.r*.55);
+                ctx.stroke();
+            });
+            [
+                [centerX-33,topY-15],[centerX+28,topY-18],[centerX,topY-45],
+                [centerX-48,topY+7],[centerX+47,topY+5]
+            ].forEach((point,index)=>drawEcosystemFlower(ctx,point[0],point[1],flowers*(index===2?1:.88)));
+
+            const seedY=groundY-2-seedDrop*42;
+            ctx.save();
+            ctx.globalAlpha=Math.max(.28,1-roots*.72);
+            const seedGlow=ctx.createRadialGradient(centerX,seedY,1,centerX,seedY,16);
+            seedGlow.addColorStop(0,'rgba(255,236,151,.55)');
+            seedGlow.addColorStop(1,'rgba(255,236,151,0)');
+            ctx.fillStyle=seedGlow;
+            ctx.beginPath();
+            ctx.arc(centerX,seedY,16,0,Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX,seedY,7,4.7,Math.PI/7,0,Math.PI*2);
+            ctx.fillStyle='#d4b18a';
+            ctx.fill();
+            ctx.strokeStyle='#7e5d42';
+            ctx.lineWidth=1.3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(centerX-2,seedY-1);
+            ctx.quadraticCurveTo(centerX+1,seedY-5,centerX+3,seedY-2);
+            ctx.strokeStyle='#f5dfbd';
+            ctx.lineWidth=1.1;
+            ctx.stroke();
+            ctx.restore();
+
+            ecosystemCanvasParticles.forEach(particle=>{
+                ctx.save();
+                ctx.globalAlpha=Math.max(0,particle.life);
+                ctx.fillStyle=particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x,particle.y,particle.radius*Math.max(.25,particle.life),0,Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function scheduleEcosystemCanvasFrame(){
+            if(ecosystemCanvasFrame!==null)return;
+            if(ecosystemCanvasReducedMotion()){
+                ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
+                ecosystemCanvasMotion.clouds=ecosystemCanvasTargets.clouds;
+                ecosystemCanvasMotion.flowers=ecosystemCanvasTargets.flowers;
+                ecosystemCanvasMotion.seedDrop=ecosystemCanvasTargets.seedDrop;
+                ecosystemCanvasParticles=[];
+                drawEcosystemCanvas();
+                return;
+            }
+            ecosystemCanvasFrame=requestAnimationFrame(runEcosystemCanvasFrame);
+        }
+
+        function runEcosystemCanvasFrame(){
+            ecosystemCanvasFrame=null;
+            if(ecosystemCanvasReducedMotion()){
+                ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
+                ecosystemCanvasMotion.clouds=ecosystemCanvasTargets.clouds;
+                ecosystemCanvasMotion.flowers=ecosystemCanvasTargets.flowers;
+                ecosystemCanvasMotion.seedDrop=ecosystemCanvasTargets.seedDrop;
+                ecosystemCanvasParticles=[];
+                drawEcosystemCanvas();
+                return;
+            }
+            const lerp=(start,end,factor)=>start+(end-start)*factor;
+            ecosystemCanvasMotion.roots=lerp(ecosystemCanvasMotion.roots,ecosystemCanvasTargets.roots,.105);
+            ecosystemCanvasMotion.clouds=lerp(ecosystemCanvasMotion.clouds,ecosystemCanvasTargets.clouds,.105);
+            ecosystemCanvasMotion.flowers=lerp(ecosystemCanvasMotion.flowers,ecosystemCanvasTargets.flowers,.105);
+            ecosystemCanvasMotion.seedDrop=lerp(ecosystemCanvasMotion.seedDrop,ecosystemCanvasTargets.seedDrop,.16);
+            ecosystemCanvasParticles=ecosystemCanvasParticles.filter(particle=>{
+                particle.x+=particle.vx;
+                particle.y+=particle.vy;
+                particle.vy+=.025;
+                particle.life-=.035;
+                return particle.life>.04;
+            });
+            drawEcosystemCanvas();
+            const moving=['roots','clouds','flowers','seedDrop'].some(key=>Math.abs(ecosystemCanvasMotion[key]-ecosystemCanvasTargets[key])>.002);
+            if(moving||ecosystemCanvasParticles.length)ecosystemCanvasFrame=requestAnimationFrame(runEcosystemCanvasFrame);
+        }
+
+        function updateEcosystemCanvas(rootCount,cloudCount,canopyBloomed,animate={}){
+            const canvas=document.getElementById('ecosystem-canvas');
+            if(!canvas)return;
+            ecosystemCanvasTargets.roots=Math.max(0,Math.min(1,rootCount/6));
+            ecosystemCanvasTargets.clouds=Math.max(0,Math.min(3,cloudCount));
+            ecosystemCanvasTargets.flowers=canopyBloomed?1:0;
+            const reduced=ecosystemCanvasReducedMotion();
+            if(animate.roots)spawnEcosystemCanvasParticles(160,190);
+            if(animate.trunk)spawnEcosystemCanvasParticles(160,100);
+            if(animate.flower)spawnEcosystemCanvasParticles(206,64);
+            if(reduced){
+                ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
+                ecosystemCanvasMotion.clouds=ecosystemCanvasTargets.clouds;
+                ecosystemCanvasMotion.flowers=ecosystemCanvasTargets.flowers;
+                ecosystemCanvasParticles=[];
+                drawEcosystemCanvas();
+                return;
+            }
+            const changed=['roots','clouds','flowers'].some(key=>Math.abs(ecosystemCanvasMotion[key]-ecosystemCanvasTargets[key])>.002);
+            if(changed||ecosystemCanvasParticles.length)scheduleEcosystemCanvasFrame();
+            else drawEcosystemCanvas();
+        }
+
+        function spawnEcosystemCanvasParticles(x,y){
+            const colors=['#8fbd83','#f48fb1','#f5d37c','#a7c8df'];
+            for(let i=0;i<12&&ecosystemCanvasParticles.length<36;i++){
+                const angle=(Math.PI*2*i)/12;
+                const speed=.55+Math.random()*1.05;
+                ecosystemCanvasParticles.push({
+                    x:x+(Math.random()-.5)*9,y:y+(Math.random()-.5)*7,
+                    vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-.35,
+                    color:colors[i%colors.length],radius:1.4+Math.random()*1.4,life:.9+Math.random()*.1
+                });
+            }
+        }
+
         function replayEcosystemWelcome(){
             const panel=document.getElementById('ecosystem-panel');
             if(panel&&!panel.classList.contains('has-roots')){
+                ecosystemCanvasMotion.seedDrop=1;
+                ecosystemCanvasTargets.seedDrop=0;
+                scheduleEcosystemCanvasFrame();
                 replayEcosystemEffect('#ecosystem-seed','is-arriving');
             }
         }
@@ -1481,6 +1805,7 @@
             updateMeter('ecosystem-root-meter','ecosystem-root-meter-fill',rootCount,6);
             updateMeter('ecosystem-trunk-meter','ecosystem-trunk-meter-fill',cloudCount,3);
             updateMeter('ecosystem-canopy-meter','ecosystem-canopy-meter-fill',canopyBloomed?1:0,1);
+            updateEcosystemCanvas(rootCount,cloudCount,canopyBloomed,animate);
 
             if(animate.roots&&rootCount)replayEcosystemEffect('#ecosystem-roots','is-pulsing');
             if(animate.trunk&&cloudCount)replayEcosystemEffect('#ecosystem-trunk','is-growing');
@@ -1663,6 +1988,7 @@
             updatePrivateWritingAccess();
         };
 
+        window.addEventListener('resize',resizeEcosystemCanvas,{passive:true});
         document.addEventListener('change',saveData);
         document.addEventListener('input',saveData);
         document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
