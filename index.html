@@ -7,272 +7,31 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Canvas Confetti -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600&family=Lora:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #FBF9F5;
-            background-image: radial-gradient(#e5dec9 0.75px, transparent 0.75px);
-            background-size: 24px 24px;
-            line-height: 1.6;
-        }
-        .heading-font { font-family: 'Lora', serif; }
-        .handwriting { font-family: 'Caveat', cursive; }
-        
-        /* Watercolor & Color Pencil Cards */
-        .card-peach { background-color: #FFF0ED; border: 3px dashed #F2C4BE; box-shadow: 6px 6px 0px #F2C4BE; }
-        .card-sage { background-color: #F0F4ED; border: 3px dashed #C8D6C1; box-shadow: 6px 6px 0px #C8D6C1; }
-        .card-sky { background-color: #EDF5F8; border: 3px dashed #B8D0DC; box-shadow: 6px 6px 0px #B8D0DC; }
-        .card-yellow { background-color: #FEF9E7; border: 3px dashed #F3E5AB; box-shadow: 6px 6px 0px #F3E5AB; }
-        .card-lavender { background-color: #F5EEF8; border: 3px dashed #D7BDE2; box-shadow: 6px 6px 0px #D7BDE2; }
-        
-        input[type="checkbox"] {
-            accent-color: #6B8E23;
-            width: 1.4rem;
-            height: 1.4rem;
-            cursor: pointer;
-        }
-        input[type="checkbox"]:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Animations */
-        @keyframes bounce-gentle {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .animate-bounce-gentle { animation: bounce-gentle 2s infinite ease-in-out; }
-
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); }
-            15% { transform: scale(1.2); }
-            30% { transform: scale(1); }
-            45% { transform: scale(1.15); }
-        }
-        .animate-heartbeat { animation: heartbeat 1.5s infinite ease-in-out; }
-
-        @keyframes breathe-circle {
-            0% { transform: scale(0.8); background-color: #93c5fd; }
-            33% { transform: scale(1.3); background-color: #3b82f6; } 
-            50% { transform: scale(1.3); background-color: #1d4ed8; } 
-            100% { transform: scale(0.8); background-color: #93c5fd; } 
-        }
-        .breathing-ball { animation: breathe-circle 12s infinite ease-in-out; }
-
-        .cloud-item { width:100%; display:flex; align-items:center; gap:.65rem; padding:.65rem .75rem; text-align:left; border:1px solid #dbeafe; border-radius:.9rem; background:rgba(255,255,255,.92); transition:background .2s ease,transform .2s ease,border-color .2s ease; }
-        .cloud-item:hover:not(:disabled) { background:#eff8ff; transform:translateY(-2px); }
-        .cloud-item:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
-        .cloud-art { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 2.5rem; min-height:2.2rem; font-size:1.9rem; transform-origin:center; }
-        .cloud-cumulus .cloud-art { animation:cloud-hover 2.8s ease-in-out infinite; }
-        .cloud-stratus .cloud-art { filter:grayscale(.45); animation:cloud-slide 3.8s ease-in-out infinite; }
-        .cloud-stratocumulus .cloud-art { animation:cloud-drizzle 2.4s ease-in-out infinite; }
-        .cloud-rain { position:absolute; font-size:.65rem; bottom:-.3rem; right:-.1rem; letter-spacing:-.2rem; }
-        .cloud-copy { flex:1; line-height:1.4; }
-        .cloud-status { margin-left:auto; flex:0 0 auto; font-size:.68rem; font-weight:800; color:#64748b; white-space:nowrap; }
-        .cloud-released { opacity:1; transform:none; pointer-events:none; background:#f0fdf4; border-color:#bbf7d0; }
-        .cloud-released .cloud-art { animation-duration:.9s; animation-fill-mode:forwards; }
-        .cloud-cumulus.cloud-released .cloud-art { animation-name:cloud-puff-away; }
-        .cloud-stratus.cloud-released .cloud-art { animation-name:cloud-drift-away; }
-        .cloud-stratocumulus.cloud-released .cloud-art { animation-name:cloud-rain-away; }
-        .cloud-released.is-restored .cloud-art { animation:none; opacity:.65; }
-        .cloud-released .cloud-status { color:#15803d; }
-        @keyframes cloud-hover { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-5px) scale(1.05)} }
-        @keyframes cloud-slide { 0%,100%{transform:translateX(-3px)} 50%{transform:translateX(4px)} }
-        @keyframes cloud-drizzle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-4px) rotate(3deg)} }
-        @keyframes cloud-puff-away { 0%{transform:scale(1);opacity:1} 45%{transform:scale(1.45);opacity:.85} 100%{transform:translate(18px,-24px) scale(.72);opacity:.45} }
-        @keyframes cloud-drift-away { 0%{transform:translateX(0);opacity:1} 100%{transform:translateX(28px);opacity:.4} }
-        @keyframes cloud-rain-away { 0%{transform:translateY(0);opacity:1} 55%{transform:translateY(-8px) scale(1.18)} 100%{transform:translate(10px,-22px);opacity:.45} }
-        
-        /* Each checklist row gets a lively cartoon buddy; checkboxes remain visible and functional. */
-        .task-cartoon { --toon:#f6c66b; position:relative; display:inline-flex; vertical-align:middle; flex:0 0 2.1rem; width:2.1rem; height:2.1rem; align-items:center; justify-content:center; margin:0 .1rem 0 .25rem; border:2px solid rgba(80,60,40,.22); border-radius:48% 48% 44% 44%; background:var(--toon); box-shadow:inset 0 -4px 0 rgba(80,50,20,.10),0 2px 3px rgba(0,0,0,.08); transform-origin:center bottom; pointer-events:none; }
-        .task-cartoon::before,.task-cartoon::after { content:""; position:absolute; z-index:0; top:-.25rem; width:.7rem; height:.78rem; border:2px solid rgba(80,60,40,.22); background:var(--toon); border-radius:70% 70% 25% 25%; }
-        .task-cartoon::before { left:.1rem; transform:rotate(-18deg); }
-        .task-cartoon::after { right:.1rem; transform:rotate(18deg); }
-        .task-cartoon .toon-face { position:relative; z-index:1; display:flex; align-items:center; flex-direction:column; gap:.18rem; margin-top:.12rem; }
-        .task-cartoon .toon-eyes { display:flex; gap:.42rem; }
-        .task-cartoon .toon-eyes i { display:block; width:.17rem; height:.22rem; border-radius:50%; background:#493b35; }
-        .task-cartoon .toon-mouth { width:.34rem; height:.16rem; border-bottom:2px solid #493b35; border-radius:0 0 50% 50%; }
-        .task-cartoon .toon-cheeks { position:absolute; top:.85rem; left:.22rem; right:.22rem; display:flex; justify-content:space-between; }
-        .task-cartoon .toon-cheeks i { width:.25rem; height:.12rem; border-radius:50%; background:#ef8f91; opacity:.8; }
-        .sec-1 ~ .task-cartoon { --toon:#f5bd68; }
-        .sec-2 ~ .task-cartoon { --toon:#c99a70; }
-        .sec-3 ~ .task-cartoon { --toon:#9bd68b; }
-        .sec-4 ~ .task-cartoon { --toon:#f2a4ad; }
-        .sec-5 ~ .task-cartoon { --toon:#e9e2d5; }
-        .sec-6 ~ .task-cartoon { --toon:#c9e8f5; }
-        .app-chk:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
-        .app-chk:disabled { opacity:.55; }
-        @keyframes cartoon-idle { 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-2px) rotate(2deg)} }
-        @keyframes cartoon-boing { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 22%{transform:translateY(-10px) rotate(-10deg) scale(1.1)} 48%{transform:translateY(0) rotate(9deg) scale(.96)} 72%{transform:translateY(-5px) rotate(-5deg) scale(1.05)} }
-        .task-cartoon { animation:cartoon-idle 2.8s ease-in-out infinite; }
-        .task-cartoon.is-celebrating { animation:cartoon-boing .68s cubic-bezier(.2,.8,.3,1); }
-        .task-cartoon.is-done .toon-mouth { width:.44rem; height:.22rem; border:0; border-top:2px solid #493b35; border-radius:50%; }
-        @media (prefers-reduced-motion: reduce) { .task-cartoon,.task-cartoon.is-celebrating { animation:none !important; } }
     
-        /* Guided checklist companions: the character demonstrates first; the checkbox is revealed afterward. */
-        .guided-task-row{display:flex;align-items:center;gap:.7rem;min-width:0}
-        .guide-launch{display:flex;align-items:center;gap:.55rem;flex:0 0 auto;padding:.45rem .65rem;border:1px solid rgba(120,100,70,.2);border-radius:1rem;background:rgba(255,255,255,.82);color:#57483b;font-size:.72rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.05);transition:transform .18s ease,background .18s ease}
-        .guide-launch:hover{transform:translateY(-2px);background:#fff}
-        .guide-launch:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
-        .guide-launch .guide-buddy{font-size:1.65rem;display:inline-block;transform-origin:center bottom;animation:guide-bob 1.8s ease-in-out infinite}
-        .guide-launch .guide-buddy.drink{animation:guide-drink 2.2s ease-in-out infinite}
-        .guide-checkbox-label{flex:1;min-width:0;display:flex;align-items:center;gap:.55rem;transition:opacity .2s ease}
-        .guide-checkbox-label:not(.is-unlocked){display:none!important;pointer-events:none;opacity:.78}
-        .app-chk.guide-hidden{display:none!important}
-        .guided-task-row .guide-checkbox-label:not(.is-unlocked) span{line-height:1.35}
-        .guide-launch.is-hidden{display:none}
-        @keyframes guide-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-        @keyframes guide-drink{0%,35%,100%{transform:rotate(0) translateY(0)}55%{transform:rotate(-18deg) translateY(-3px)}75%{transform:rotate(0) translateY(0)}}
-        @keyframes guide-sip{0%,100%{transform:rotate(0)}35%,65%{transform:rotate(-28deg) translateY(-8px)}}
-        @keyframes guide-stretch{0%,100%{transform:scale(1)}50%{transform:scale(1.18) translateY(-5px)}}
-        @keyframes guide-pulse{0%,100%{transform:scale(.78);opacity:.7}50%{transform:scale(1.2);opacity:1}}
-        .guide-scene{display:flex;align-items:center;justify-content:center;gap:1rem;min-height:145px}
-        .guide-person{font-size:5rem;display:inline-block;transform-origin:center bottom;animation:guide-bob 1.8s ease-in-out infinite}
-        .guide-prop{font-size:3.2rem;display:inline-block;animation:guide-pulse 2s ease-in-out infinite}
-        .guide-person.drinking{animation:guide-drink 2.2s ease-in-out infinite}
-        .guide-person.stretching{animation:guide-stretch 2.4s ease-in-out infinite}
-        .guide-speech{background:#fff8e8;border:2px solid #f2d59c;border-radius:1.2rem;padding:.8rem 1rem;color:#59472e;font-weight:700;line-height:1.45}
-        .guide-timer{font-variant-numeric:tabular-nums;font-size:2rem;font-weight:800;color:#1d4ed8}
-        .guide-breath-orb{width:7rem;height:7rem;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfdbfe,#60a5fa 65%,#2563eb);box-shadow:0 8px 24px #60a5fa66;animation:guide-pulse 4s ease-in-out infinite}
-        .legacy-guide-button{display:none!important}
-
-        /* Two-person human cartoon demonstration for stretching activities. */
-        .stretch-demo-wrap{display:flex;align-items:center;justify-content:center;width:100%;min-height:176px;padding:.1rem;overflow:hidden}
-        .stretch-demo-svg{display:block;width:min(100%,330px);height:auto;max-height:190px;overflow:visible}
-        .stretch-demo-preview{width:4.2rem;height:2.4rem;min-height:0;flex:0 0 4.2rem;padding:0;overflow:hidden}
-        .stretch-demo-preview .stretch-demo-svg{width:4.2rem;height:2.4rem}
-        .stretch-arm{transform-box:view-box}
-        .stretch-man-left{transform-origin:80px 75px;animation:stretch-lift-left 4.2s ease-in-out infinite}
-        .stretch-man-right{transform-origin:110px 75px;animation:stretch-lift-right 4.2s ease-in-out infinite}
-        .stretch-woman-left{transform-origin:210px 75px;animation:stretch-lift-left 4.2s ease-in-out infinite .12s}
-        .stretch-woman-right{transform-origin:240px 75px;animation:stretch-lift-right 4.2s ease-in-out infinite .12s}
-        .stretch-man-upper{transform-box:view-box;transform-origin:95px 112px;animation:stretch-reach-body 4.2s ease-in-out infinite}
-        .stretch-woman-upper{transform-box:view-box;transform-origin:225px 112px;animation:stretch-reach-body 4.2s ease-in-out infinite .12s}
-        .stretch-demo-sun{animation:stretch-sun-glow 3.5s ease-in-out infinite;transform-box:view-box;transform-origin:160px 26px}
-        @keyframes stretch-lift-left{0%,14%,100%{transform:rotate(0)}35%,66%{transform:rotate(135deg)}82%{transform:rotate(0)}}
-        @keyframes stretch-lift-right{0%,14%,100%{transform:rotate(0)}35%,66%{transform:rotate(-135deg)}82%{transform:rotate(0)}}
-        @keyframes stretch-reach-body{0%,14%,100%{transform:translateY(0) scaleY(1)}35%,66%{transform:translateY(-3px) scaleY(1.025)}82%{transform:translateY(0) scaleY(1)}}
-        @keyframes stretch-sun-glow{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
-        @media(prefers-reduced-motion:reduce){.stretch-demo-svg *,.stretch-demo-wrap,.stretch-demo-wrap *{animation:none!important;transition:none!important}}
-
-        @media(max-width:420px){.guide-launch{padding:.4rem;font-size:.65rem}.guided-task-row{gap:.4rem}.guide-launch .guide-buddy{font-size:1.4rem}}
-        @media(prefers-reduced-motion:reduce){.guide-launch .guide-buddy,.guide-person,.guide-prop,.guide-breath-orb{animation:none!important}}
-
-    
-        @keyframes guide-breath-in{from{transform:scale(.78)}to{transform:scale(1.2)}}
-        @keyframes guide-breath-out{from{transform:scale(1.2)}to{transform:scale(.78)}}
-        @keyframes guide-pray{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-3deg)}}
-        @keyframes guide-think{0%,100%{transform:rotate(0)}50%{transform:rotate(7deg) translateY(-3px)}}
-        @keyframes guide-write{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(3px) rotate(5deg)}75%{transform:translateX(-2px) rotate(-4deg)}}
-        @keyframes guide-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-        @keyframes guide-boop{0%,100%{transform:scale(1)}45%{transform:scale(1.18) translateY(-5px)}}
-        .guide-person.praying{animation:guide-pray 2.2s ease-in-out infinite}
-        .guide-person.thinking{animation:guide-think 2.6s ease-in-out infinite}
-        .guide-person.writing{animation:guide-write .8s ease-in-out infinite}
-        .guide-person.floating{animation:guide-float 2.5s ease-in-out infinite}
-        .guide-person.boop{animation:guide-boop 1.2s ease-in-out infinite}
-        .guide-prop.writing{animation:guide-write .8s ease-in-out infinite}
-        .guide-prop.floating{animation:guide-float 2.5s ease-in-out infinite}
-        .guide-prop.screen-away{animation:guide-float 2s ease-in-out infinite}
-
-    
-        .cloud-intro-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;width:100%;margin:.5rem 0 1rem}
-        .cloud-intro-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;min-width:0;padding:.65rem .35rem;border:1px solid #dbeafe;border-radius:1rem;background:#f8fcff;font-size:.75rem;font-weight:800;color:#334155}
-        .cloud-intro-item .cloud-art{font-size:2.5rem;min-height:3rem}
-        .cloud-intro-item .cloud-rain{font-size:.7rem}
-        .cloud-intro-copy{font-size:.85rem;color:#475569;line-height:1.5}
-        @media(max-width:380px){.cloud-intro-gallery{gap:.35rem}.cloud-intro-item{font-size:.68rem;padding:.5rem .2rem}.cloud-intro-item .cloud-art{font-size:2rem}}
-
-        
-
-        /* Watercolor paper and colored-pencil finish. */
-        body{
-            background-color:#fbf8ef;
-            background-image:
-                radial-gradient(ellipse at 9% 12%,rgba(247,202,184,.22),transparent 27%),
-                radial-gradient(ellipse at 91% 18%,rgba(181,213,205,.23),transparent 30%),
-                radial-gradient(ellipse at 52% 92%,rgba(205,197,231,.18),transparent 34%),
-                repeating-linear-gradient(0deg,rgba(105,91,72,.018) 0,rgba(105,91,72,.018) 1px,transparent 1px,transparent 5px);
-            background-size:100% 100%,100% 100%,100% 100%,5px 5px;
-            background-attachment:fixed;
-        }
-        .card-peach,.card-sage,.card-sky,.card-yellow,.card-lavender{border-width:2px;border-style:solid;box-shadow:3px 4px 0 rgba(105,86,66,.16),inset 0 0 24px rgba(255,255,255,.24);background-blend-mode:normal,screen,normal}
-        .card-peach{border-color:#e6b9b2;background-image:radial-gradient(ellipse at 18% 12%,rgba(255,255,255,.82),transparent 44%),radial-gradient(ellipse at 87% 82%,rgba(241,179,168,.2),transparent 46%),repeating-linear-gradient(135deg,rgba(161,102,91,.025) 0,rgba(161,102,91,.025) 1px,transparent 1px,transparent 5px)}
-        .card-sage{border-color:#b9cdb6;background-image:radial-gradient(ellipse at 14% 16%,rgba(255,255,255,.82),transparent 43%),radial-gradient(ellipse at 85% 84%,rgba(160,195,155,.2),transparent 48%),repeating-linear-gradient(135deg,rgba(82,121,85,.025) 0,rgba(82,121,85,.025) 1px,transparent 1px,transparent 5px)}
-        .card-sky{border-color:#b4cbd6;background-image:radial-gradient(ellipse at 16% 12%,rgba(255,255,255,.88),transparent 43%),radial-gradient(ellipse at 84% 82%,rgba(153,199,222,.2),transparent 48%),repeating-linear-gradient(135deg,rgba(76,116,137,.025) 0,rgba(76,116,137,.025) 1px,transparent 1px,transparent 5px)}
-        .card-yellow{border-color:#e2d19a;background-image:radial-gradient(ellipse at 12% 14%,rgba(255,255,255,.9),transparent 43%),radial-gradient(ellipse at 88% 84%,rgba(242,218,137,.22),transparent 47%),repeating-linear-gradient(135deg,rgba(141,115,54,.025) 0,rgba(141,115,54,.025) 1px,transparent 1px,transparent 5px)}
-        .card-lavender{border-color:#d0b9d7;background-image:radial-gradient(ellipse at 14% 13%,rgba(255,255,255,.88),transparent 43%),radial-gradient(ellipse at 86% 82%,rgba(201,172,216,.2),transparent 48%),repeating-linear-gradient(135deg,rgba(112,82,127,.025) 0,rgba(112,82,127,.025) 1px,transparent 1px,transparent 5px)}
-        .step-card{box-shadow:4px 5px 0 rgba(105,86,66,.14),inset 0 0 26px rgba(255,255,255,.24)}
-        .step-card h2,.heading-font{text-shadow:.35px .45px 0 currentColor}
-        .guided-task-row{padding:.45rem .55rem;border:1px solid rgba(145,128,101,.15);border-radius:1rem;background:rgba(255,255,255,.38)}
-        .guide-launch,.cloud-item{border-color:rgba(130,112,89,.24);box-shadow:0 2px 0 rgba(105,86,66,.1),inset 0 0 9px rgba(255,255,255,.8)}
-        textarea,.text-input{background-image:repeating-linear-gradient(0deg,rgba(147,129,103,.045) 0,rgba(147,129,103,.045) 1px,transparent 1px,transparent 26px)!important;background-color:rgba(255,255,255,.82)!important;border-color:rgba(151,130,111,.35)!important}
-        textarea:focus,.text-input:focus{outline:2px solid rgba(133,164,153,.65);outline-offset:2px}
-        .watercolor-progress{background:rgba(255,255,255,.68);border:1px solid rgba(147,128,96,.22);box-shadow:2px 3px 0 rgba(105,86,66,.1)}
-        .watercolor-track{height:.72rem;overflow:hidden;border-radius:99px;background:#e9e3d7;border:1px solid rgba(110,99,82,.12)}
-        .watercolor-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#9bc4ad,#7caea0,#d5bd83);transition:width .35s ease}
-        .writing-lock-card{background:radial-gradient(ellipse at 20% 10%,rgba(255,255,255,.9),transparent 45%),linear-gradient(135deg,rgba(233,220,241,.88),rgba(250,241,246,.92));border:1.5px solid #ceb9d8;box-shadow:3px 4px 0 rgba(112,82,127,.12)}
-        .writing-input{width:100%;padding:.75rem .9rem;border:1.5px solid #cdbbd5;border-radius:.9rem;background:rgba(255,255,255,.9);color:#3d3346}
-        .writing-input:focus{outline:3px solid rgba(173,145,193,.28);border-color:#9b7cae}
-        .writing-security-status{min-height:1.4rem;font-size:.78rem;line-height:1.4;color:#5d4968}
-        .writing-security-status[data-state="error"]{color:#a33745}
-        .writing-lock-hint{background:rgba(255,255,255,.82);border:1px dashed #b69abf;color:#5d4968}
-        @media(prefers-reduced-motion:reduce){.watercolor-fill{transition:none}}
-
-        
-
-        /* Interactive watercolor ecosystem: progress is derived from this date's saved actions. */
-        .ecosystem-card{position:relative;overflow:hidden;border:1.5px solid #b9cbb4;border-radius:1.5rem;padding:1rem;background:radial-gradient(ellipse at 18% 8%,rgba(255,255,255,.9),transparent 42%),radial-gradient(ellipse at 85% 78%,rgba(197,222,194,.28),transparent 48%),linear-gradient(145deg,#f4f6e9,#edf4ee 55%,#f8f2e6);box-shadow:3px 4px 0 rgba(93,121,94,.13)}
-        .ecosystem-canvas{display:block;width:100%;max-width:330px;height:auto;aspect-ratio:4/3;margin:0 auto;overflow:visible}
-        .ecosystem-svg-fallback{display:none;width:100%;max-width:330px;height:auto;margin:0 auto;overflow:visible}
-        .ecosystem-roots{transform-box:view-box;transform-origin:160px 208px;transform:scaleX(var(--root-scale,1));transition:transform .45s ease}
-        .ecosystem-roots path{transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)}
-        .ecosystem-roots.is-pulsing{animation:ecosystem-root-pulse .9s ease-out}
-        .ecosystem-trunk{transform-box:view-box;transform-origin:160px 202px;transform:scale(var(--trunk-x,1),var(--trunk-y,.82));transition:transform .65s cubic-bezier(.2,.8,.2,1)}
-        .ecosystem-trunk.is-growing{animation:ecosystem-trunk-grow .75s ease-out}
-        .ecosystem-seed{opacity:1;transform-box:view-box;transform-origin:160px 217px}
-        .ecosystem-seed.is-arriving{animation:ecosystem-seed-drop 1.15s cubic-bezier(.2,.85,.3,1.15) both}
-        .ecosystem-seed-heart{transform-box:view-box;transform-origin:178px 202px;animation:ecosystem-heart-float 2.2s ease-in-out infinite}
-        .ecosystem-card.has-roots #ecosystem-seed{opacity:0;transform:scale(.55);transition:opacity .35s ease,transform .4s ease;pointer-events:none}
-        .ecosystem-canopy-flower{opacity:0;transform:scale(.35);transform-box:view-box;transform-origin:239px 61px;transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
-        .ecosystem-canopy.has-flower .ecosystem-canopy-flower{opacity:1;transform:scale(1);filter:drop-shadow(0 0 5px rgba(244,191,95,.75));animation:ecosystem-flower-pop .8s ease-out}
-        .ecosystem-status{display:flex;align-items:flex-start;gap:.5rem;padding:.55rem .65rem;border-radius:.85rem;background:rgba(255,255,255,.62);border:1px solid rgba(121,145,115,.17);font-size:.72rem;line-height:1.4;color:#405847}
-        .ecosystem-status>span{flex:0 0 auto;font-size:1.15rem;line-height:1.2}
-        .ecosystem-status-copy{flex:1;min-width:0}
-        .ecosystem-status strong{display:block;color:#35513d;font-size:.74rem}
-        .ecosystem-status-copy>span{display:block;color:#5c7060;line-height:1.35}
-        .ecosystem-meter{height:6px;margin-top:.42rem;overflow:hidden;border-radius:999px;background:rgba(110,139,109,.16)}
-        .ecosystem-meter-fill{height:100%;width:0;border-radius:inherit;transition:width .65s cubic-bezier(.2,.8,.2,1)}
-        .roots-fill{background:linear-gradient(90deg,#a7c995,#648f70)}
-        .trunk-fill{background:linear-gradient(90deg,#d2a878,#98714f)}
-        .canopy-fill{background:linear-gradient(90deg,#f1d18a,#d68c9b)}
-        @keyframes ecosystem-seed-drop{0%{opacity:0;transform:translateY(-48px) scale(.7)}62%{opacity:1;transform:translateY(5px) scale(1.08)}82%{transform:translateY(-2px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes ecosystem-heart-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.06)}}
-        @keyframes ecosystem-root-pulse{0%{transform:scaleX(.92)}45%{transform:scaleX(1.13)}100%{transform:scaleX(var(--root-scale,1))}}
-        @keyframes ecosystem-trunk-grow{0%{filter:brightness(1)}35%{filter:brightness(1.14)}100%{filter:brightness(1)}}
-        @keyframes ecosystem-flower-pop{0%{transform:scale(.25) rotate(-24deg)}65%{transform:scale(1.18) rotate(9deg)}100%{transform:scale(1) rotate(0)}}
-        @media(prefers-reduced-motion:reduce){.ecosystem-roots,.ecosystem-roots path,.ecosystem-trunk,.ecosystem-seed,.ecosystem-seed-heart,.ecosystem-canopy-flower,.ecosystem-meter-fill{transition:none!important;animation:none!important}}
-
-    </style>
+    <link rel="stylesheet" href="./assets/tailwind.generated.css">
+    <link rel="stylesheet" href="./assets/app.css">
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
-    <!-- 🔒 PIN Lock Screen -->
+    <!-- Local app gate; private writing uses a separate encryption passphrase. -->
     <div id="view-pin" class="fixed inset-0 bg-amber-50/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4">
         <div class="card-yellow rounded-3xl p-8 max-w-sm w-full text-center">
-            <span class="text-5xl animate-bounce inline-block">✨</span>
-            <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">Mindful Safe Gate</h2>
-            <p class="text-xs text-amber-800/80 mt-1 mb-6">Enter your 4-digit PIN to unlock</p>
-            <div class="flex justify-center gap-3 mb-6">
-                <input type="password" maxlength="1" class="pin-box w-12 h-12 text-center text-xl font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500">
-                <input type="password" maxlength="1" class="pin-box w-12 h-12 text-center text-xl font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500">
-                <input type="password" maxlength="1" class="pin-box w-12 h-12 text-center text-xl font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500">
-                <input type="password" maxlength="1" class="pin-box w-12 h-12 text-center text-xl font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500">
-            </div>
-            <button onclick="unlockApp()" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition transform active:scale-95">Unlock App 🔓</button>
+            <span class="text-5xl animate-bounce inline-block" aria-hidden="true">✨</span>
+            <h2 id="app-pin-heading" class="text-3xl font-bold text-amber-900 handwriting mt-2">Create your app PIN</h2>
+            <p id="app-pin-intro" class="text-xs text-amber-800/80 mt-2 mb-5">Create a personal 6–12 digit PIN to open this app on this device.</p>
+            <form id="app-pin-form" novalidate>
+                <label for="app-pin-input" class="sr-only">App PIN</label>
+                <input id="app-pin-input" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="new-password" required class="w-full text-center text-xl tracking-[.3em] font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="6–12 digits" aria-describedby="app-pin-message">
+                <div id="app-pin-confirm-wrap" class="mt-3">
+                    <label for="app-pin-confirm" class="sr-only">Confirm app PIN</label>
+                    <input id="app-pin-confirm" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="new-password" class="w-full text-center text-xl tracking-[.3em] font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="Confirm PIN">
+                </div>
+                <p id="app-pin-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">This PIN is separate from your private-writing passphrase.</p>
+                <button id="app-pin-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition transform active:scale-95">Set PIN &amp; Continue</button>
+            </form>
+            <p class="text-[10px] text-amber-900/70 mt-4">This is a local app screen gate. It does not encrypt checklist progress. Use your separate private-writing passphrase for diary protection.</p>
         </div>
     </div>
 
@@ -288,14 +47,14 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl w-full">
-            <div onclick="showPage('checklist')" class="card-sage rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition">
+            <div data-action="showPage" data-page="checklist" class="card-sage rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition" role="button" tabindex="0">
                 <span class="text-6xl mb-3">📝✨</span>
                 <h2 class="text-3xl font-bold text-emerald-900 handwriting">ADHD-Friendly Health Checklist</h2>
                 <p class="text-xs text-emerald-800/80 mt-2">A gentle activity game • one small step at a time</p>
                 <span class="mt-4 px-4 py-1.5 bg-emerald-200 text-emerald-900 font-bold text-xs rounded-full">Start Routine ➔</span>
             </div>
 
-            <div onclick="showPage('diary')" class="card-lavender rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition">
+            <div data-action="showPage" data-page="diary" class="card-lavender rounded-3xl p-8 cursor-pointer text-center flex flex-col items-center justify-center hover:scale-105 transition" role="button" tabindex="0">
                 <span class="text-6xl mb-3">🔒📖</span>
                 <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary</h2>
                 <p class="text-xs text-purple-800/80 mt-2">Unfiltered thoughts, voice notes, and private reflections.</p>
@@ -307,7 +66,7 @@
     <!-- 📖 Safe Space Diary View -->
     <div id="view-diary" class="hidden max-w-4xl mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
-            <button onclick="showPage('launcher')" class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 text-sm font-bold rounded-2xl hover:bg-amber-200">← Back to Home</button>
+            <button data-action="showPage" data-page="launcher" class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 text-sm font-bold rounded-2xl hover:bg-amber-200">← Back to Home</button>
             <h2 class="text-3xl font-bold text-purple-900 handwriting">Safe Space Diary 🔒</h2>
         </div>
         <div class="card-lavender rounded-3xl p-6 shadow-sm">
@@ -322,17 +81,17 @@
                 <div id="diary-confirm-wrap"><label for="diary-passphrase-confirm" class="block text-xs font-bold text-purple-950 mb-1">Confirm passphrase</label>
                     <input id="diary-passphrase-confirm" class="writing-input mb-3" type="password" autocomplete="new-password" minlength="16" maxlength="256" placeholder="Type the same passphrase again">
                 </div>
-                <button id="diary-key-action" type="button" onclick="handleDiaryKeyAction()" class="w-full sm:w-auto px-5 py-2.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-bold text-sm rounded-xl shadow-sm">Create encryption key</button>
+                <button id="diary-key-action" type="button" data-action="handleDiaryKeyAction" class="w-full sm:w-auto px-5 py-2.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-bold text-sm rounded-xl shadow-sm">Create encryption key</button>
                 <p id="diary-security-status" class="writing-security-status mt-3" role="status" aria-live="polite">Your private writing stays locked until you create or enter this passphrase.</p>
                 <p class="text-[11px] text-purple-900/75 mt-2">Forgotten passphrases cannot be reset by this app. Keep yours somewhere safe. Clearing this browser's site data can also delete encrypted entries. Encryption protects stored text while locked, not an unlocked or compromised device.</p>
             </section>
             <div id="diary-editor-panel" class="hidden">
             <textarea id="private-diary-entry" class="w-full h-64 bg-white/80 border-2 border-purple-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Your private thoughts are encrypted before they are saved on this device."></textarea>
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
-                <button id="record-btn" onclick="toggleVoiceRecording()" class="px-5 py-2.5 bg-rose-400 hover:bg-rose-500 text-white font-bold text-xs rounded-2xl shadow-sm transition flex items-center gap-2">
+                <button id="record-btn" data-action="toggleVoiceRecording" class="px-5 py-2.5 bg-rose-400 hover:bg-rose-500 text-white font-bold text-xs rounded-2xl shadow-sm transition flex items-center gap-2">
                     🎙️ <span id="record-text">Record Voice Note</span>
                 </button>
-                <div class="flex items-center gap-3"><p id="writing-save-status" class="text-xs text-purple-700 italic" role="status" aria-live="polite">Encrypted autosave is active.</p><button type="button" onclick="lockPrivateWriting()" class="px-3 py-2 bg-purple-100 border border-purple-300 text-purple-900 text-xs font-bold rounded-xl">Lock writing</button></div>
+                <div class="flex items-center gap-3"><p id="writing-save-status" class="text-xs text-purple-700 italic" role="status" aria-live="polite">Encrypted autosave is active.</p><button type="button" data-action="lockPrivateWriting" class="px-3 py-2 bg-purple-100 border border-purple-300 text-purple-900 text-xs font-bold rounded-xl">Lock writing</button></div>
             </div>
             <div id="audio-container" class="mt-4 hidden">
                 <p class="text-xs font-bold text-purple-900 mb-1">Today's Temporary Voice Note:</p>
@@ -346,7 +105,7 @@
     <!-- 📝 Main Checklist Wizard View -->
     <div id="view-checklist" class="hidden">
         <header class="bg-white/80 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="showPage('launcher')">
+            <div class="flex items-center space-x-3 cursor-pointer" data-action="showPage" data-page="launcher" role="button" tabindex="0">
                 <span class="text-3xl">💧</span>
                 <div>
                     <h1 class="text-2xl font-bold text-amber-900 handwriting text-3xl">Daily Mindful Pokes</h1>
@@ -356,10 +115,10 @@
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
                     <label for="currentDate" class="text-xs font-semibold text-amber-900">Date:</label>
-                    <input type="date" id="currentDate" class="bg-transparent text-sm font-medium focus:outline-none text-amber-900" onchange="handleDateChange()">
+                    <input type="date" id="currentDate" class="bg-transparent text-sm font-medium focus:outline-none text-amber-900" data-change-action="handleDateChange">
                 </div>
-                <button onclick="showPage('launcher')" class="text-xs text-amber-900 font-bold px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-xl">Home</button>
-                <button onclick="resetDayData()" class="text-xs text-rose-700 font-bold px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl">Reset</button>
+                <button data-action="showPage" data-page="launcher" class="text-xs text-amber-900 font-bold px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-xl">Home</button>
+                <button data-action="resetDayData" class="text-xs text-rose-700 font-bold px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl">Reset</button>
             </div>
         </header>
 
@@ -479,7 +238,7 @@
                 </div>
                 <p class="text-[10px] text-emerald-900/65 text-center mt-3">Your tree grows at your own pace. Missed a day? It never wilts; each date keeps its own progress on this device.</p>
             </section>
-            <div id="writing-lock-hint" class="writing-lock-hint rounded-xl p-3 mb-5 text-xs hidden">Your private reflection boxes are locked. <button type="button" onclick="showPage('diary')" class="font-bold underline">Open Safe Space Diary to unlock them.</button></div>
+            <div id="writing-lock-hint" class="writing-lock-hint rounded-xl p-3 mb-5 text-xs hidden">Your private reflection boxes are locked. <button type="button" data-action="showPage" data-page="diary" class="font-bold underline">Open Safe Space Diary to unlock them.</button></div>
 
             <!-- Grand Finale Celebration Banner -->
             <div id="trophy-banner" class="mb-6 hidden">
@@ -516,7 +275,7 @@
                     
                     <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl">
                         <span>Prayer / Positive Intention</span>
-                        <button onclick="openModal('prayer', 'start-2')" class="px-3 py-1.5 bg-emerald-200 text-emerald-900 rounded-xl text-xs font-bold hover:bg-emerald-300">🙏 Pray Animation</button>
+                        <button data-action="openModal" data-modal="prayer" data-target="start-2" class="px-3 py-1.5 bg-emerald-200 text-emerald-900 rounded-xl text-xs font-bold hover:bg-emerald-300">🙏 Pray Animation</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-2" class="app-chk sec-2" data-id="start-2" disabled> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE you)</span></label>
                     
@@ -524,7 +283,7 @@
                     
                     <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl">
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
-                        <button onclick="openModal('water', 'start-4')" class="px-3 py-1.5 bg-cyan-200 text-cyan-900 rounded-xl text-xs font-bold hover:bg-cyan-300">💧 Drinking Guide</button>
+                        <button data-action="openModal" data-modal="water" data-target="start-4" class="px-3 py-1.5 bg-cyan-200 text-cyan-900 rounded-xl text-xs font-bold hover:bg-cyan-300">💧 Drinking Guide</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-4" class="app-chk sec-2" data-id="start-4" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER (Beauty Potion) 💧</span></label>
                 </div>
@@ -541,20 +300,20 @@
                     
                     <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl">
                         <span class="text-xs font-semibold text-sky-900">Breathing Exercise (4-2-6 Ratio)</span>
-                        <button onclick="openModal('breathing', 'mid-2')" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">🌬️ Breathing Guide</button>
+                        <button data-action="openModal" data-modal="breathing" data-target="mid-2" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">🌬️ Breathing Guide</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-2" class="app-chk sec-3" data-id="mid-2" disabled> <span>1 Min Breathing Exercise</span></label>
                     
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
-                        <button onclick="openModal('water', 'mid-3')" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
+                        <button data-action="openModal" data-modal="water" data-target="mid-3" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-3" class="app-chk sec-3" data-id="mid-3" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧</span></label>
                     
                     <hr class="border-sky-200 my-2">
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-sky-800">Spiritual / Emotional Check</span>
-                        <button onclick="openModal('feeling', 'mid-4')" class="px-2 py-1 bg-rose-200 text-rose-900 rounded-lg text-xs font-bold">💓 Feel Check</button>
+                        <button data-action="openModal" data-modal="feeling" data-target="mid-4" class="px-2 py-1 bg-rose-200 text-rose-900 rounded-lg text-xs font-bold">💓 Feel Check</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-4" class="app-chk sec-3" data-id="mid-4" disabled> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"</span></label>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-5"> <span>Acknowledge existence & <strong>LET IT GO LIKE YOUR FART</strong> 💨</span></label>
@@ -576,7 +335,7 @@
 
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
-                        <button onclick="openModal('water', 'end-3')" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
+                        <button data-action="openModal" data-modal="water" data-target="end-3" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-end-3" class="app-chk sec-4" data-id="end-3" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧 </span></label>
                     
@@ -599,7 +358,7 @@
 
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-purple-900">Screen Curfew Animation</span>
-                        <button onclick="openModal('curfew', 'sleep-3')" class="px-2 py-1 bg-purple-200 text-purple-900 rounded-lg text-xs font-bold">📵 Curfew Guide</button>
+                        <button data-action="openModal" data-modal="curfew" data-target="sleep-3" class="px-2 py-1 bg-purple-200 text-purple-900 rounded-lg text-xs font-bold">📵 Curfew Guide</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-3" class="app-chk sec-5" data-id="sleep-3" disabled> <span>Screen Curfew (No Screens 30 min before sleep)</span></label>
                     
@@ -607,7 +366,7 @@
                     
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
-                        <button onclick="openModal('water', 'sleep-5')" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
+                        <button data-action="openModal" data-modal="water" data-target="sleep-5" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
                     </div>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-5" class="app-chk sec-5" data-id="sleep-5" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧 </span></label>
                 </div>
@@ -621,7 +380,7 @@
                 </div>
                 <div class="flex items-center justify-between bg-white/70 p-3 rounded-2xl mb-3">
                     <span class="text-xs text-sky-900 font-semibold">Interactive Cloud Fart Releasing</span>
-                    <button onclick="openModal('clouds', 'cloud-checked')" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">☁️ Cloud Animation</button>
+                    <button data-action="openModal" data-modal="clouds" data-target="cloud-checked" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">☁️ Cloud Animation</button>
                 </div>
                 <p class="text-xs text-sky-800/80 mb-3 italic">Tap all three cloud types one by one. Watch each one drift away, then tick the completion box.</p>
                 
@@ -629,17 +388,17 @@
                     <div class="bg-white/80 p-3 rounded-2xl border border-sky-100">
                         <span class="font-bold text-sky-900">Low-Level (Raw Emotions):</span>
                         <div class="mt-2 space-y-2">
-                            <button type="button" data-cloud="cumulus" aria-pressed="false" onclick="releaseCloud(this)" class="cloud-item cloud-cumulus">
+                            <button type="button" data-cloud="cumulus" aria-pressed="false" data-action="releaseCloud" class="cloud-item cloud-cumulus">
                                 <span class="cloud-art" aria-hidden="true">☁️</span>
                                 <span class="cloud-copy"><strong>Cumulus:</strong> Okay, just vibing. A soft, fluffy passing feeling.</span>
                                 <span class="cloud-status">Tap to release</span>
                             </button>
-                            <button type="button" data-cloud="stratus" aria-pressed="false" onclick="releaseCloud(this)" class="cloud-item cloud-stratus">
+                            <button type="button" data-cloud="stratus" aria-pressed="false" data-action="releaseCloud" class="cloud-item cloud-stratus">
                                 <span class="cloud-art" aria-hidden="true">🌫️</span>
                                 <span class="cloud-copy"><strong>Stratus:</strong> Feeling emotionally flat or grey. Just notice it gently.</span>
                                 <span class="cloud-status">Tap to release</span>
                             </button>
-                            <button type="button" data-cloud="stratocumulus" aria-pressed="false" onclick="releaseCloud(this)" class="cloud-item cloud-stratocumulus">
+                            <button type="button" data-cloud="stratocumulus" aria-pressed="false" data-action="releaseCloud" class="cloud-item cloud-stratocumulus">
                                 <span class="cloud-art" aria-hidden="true">🌥️<span class="cloud-rain">💧💧</span></span>
                                 <span class="cloud-copy"><strong>Stratocumulus:</strong> Low-energy droplets. Acknowledge the heaviness without judgment.</span>
                                 <span class="cloud-status">Tap to release</span>
@@ -655,8 +414,8 @@
 
             <!-- Wizard Navigation -->
             <div class="flex justify-between items-center mt-6">
-                <button id="btn-prev" onclick="changeStep(-1)" class="px-6 py-3 bg-amber-100 border border-amber-300 text-amber-900 font-bold rounded-2xl hover:bg-amber-200 transition opacity-50 cursor-not-allowed" disabled>← Previous Card</button>
-                <button id="btn-next" onclick="handleNextStep()" class="px-6 py-3 bg-amber-400 text-amber-950 font-bold rounded-2xl hover:bg-amber-500 shadow-md transition transform active:scale-95">Next Card ➔</button>
+                <button id="btn-prev" data-action="changeStep" data-direction="-1" class="px-6 py-3 bg-amber-100 border border-amber-300 text-amber-900 font-bold rounded-2xl hover:bg-amber-200 transition opacity-50 cursor-not-allowed" disabled>← Previous Card</button>
+                <button id="btn-next" data-action="handleNextStep" class="px-6 py-3 bg-amber-400 text-amber-950 font-bold rounded-2xl hover:bg-amber-500 shadow-md transition transform active:scale-95">Next Card ➔</button>
             </div>
             <p id="finish-status" class="hidden mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900" role="status" aria-live="polite"></p>
         </main>
@@ -665,12 +424,12 @@
     <!-- 🌟 ANIMATION MODAL POPUP -->
     <div id="anim-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div id="modal-content-box" class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative border-4 border-amber-300">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            <button data-action="closeModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
             
             <div id="modal-animation-target" class="my-6 flex flex-col items-center justify-center min-h-[180px]"></div>
             <div id="modal-instructions" class="text-sm font-semibold text-slate-700 mb-6"></div>
 
-            <button id="modal-complete-btn" onclick="completeAnimation()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-md transition transform active:scale-95">
+            <button id="modal-complete-btn" data-action="completeAnimation" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-md transition transform active:scale-95">
                 Complete & Unlock Checklist! ✨
             </button>
         </div>
@@ -684,1327 +443,13 @@
         <div class="bg-white/10 border-2 border-amber-300 px-6 py-3 rounded-2xl text-2xl font-bold text-amber-200 mb-8">
             +100 Confidence Points Awarded 🏆
         </div>
-        <button onclick="closeGrandFinale()" class="px-8 py-4 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-lg rounded-2xl shadow-xl transition transform active:scale-95">
+        <button data-action="closeGrandFinale" class="px-8 py-4 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-lg rounded-2xl shadow-xl transition transform active:scale-95">
             Claim Victory 👃✨
         </button>
     </div>
 
     <!-- Scripts Engine -->
-    <script>
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let currentStep = 1;
-        let activeModalType = null;
-        let activeTargetCheckboxId = null;
-        let mediaRecorder, audioChunks = [];
-
-        // PIN Gate
-        const defaultPin = "1234";
-
-        // The four-digit PIN is only an app gate; private writing uses a separate encryption key.
-        const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
-        const WRITING_DIARY_PREFIX='dmp_diary_cipher_v1_';
-        const WRITING_NOTES_PREFIX='dmp_notes_cipher_v1_';
-        const WRITING_KDF_ITERATIONS=600000;
-        const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
-        const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
-        let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
-
-        function hasWritingCrypto(){return !!(window.isSecureContext&&window.crypto&&window.crypto.subtle&&window.crypto.getRandomValues);}
-        function bytesToBase64(bytes){let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
-        function base64ToBytes(value){const binary=atob(value),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;}
-        async function derivePrivateWritingKey(passphrase,salt,iterations=WRITING_KDF_ITERATIONS){
-            const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveKey']);
-            return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-        }
-        function getSecureWritingStorageKey(kind,dateStr){return (kind==='diary'?WRITING_DIARY_PREFIX:WRITING_NOTES_PREFIX)+dateStr;}
-        function getWritingAad(kind,dateStr){return new TextEncoder().encode('Daily Mindful Pokes|private-writing|'+kind+'|v1|'+dateStr);}
-        async function encryptPrivatePayload(kind,dateStr,value,key=writingCryptoKey){
-            if(!key)throw new Error('Private writing is locked.');
-            const iv=crypto.getRandomValues(new Uint8Array(12));
-            const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:getWritingAad(kind,dateStr),tagLength:128},key,new TextEncoder().encode(JSON.stringify(value)));
-            return JSON.stringify({version:1,algorithm:'AES-256-GCM',iv:bytesToBase64(iv),ciphertext:bytesToBase64(new Uint8Array(ciphertext))});
-        }
-        async function decryptPrivatePayload(kind,dateStr,record,key=writingCryptoKey){
-            if(!key)throw new Error('Private writing is locked.');
-            const encrypted=typeof record==='string'?JSON.parse(record):record;
-            if(!encrypted||encrypted.version!==1||encrypted.algorithm!=='AES-256-GCM')throw new Error('Unsupported encrypted writing format.');
-            const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(encrypted.iv),additionalData:getWritingAad(kind,dateStr),tagLength:128},key,base64ToBytes(encrypted.ciphertext));
-            return JSON.parse(new TextDecoder().decode(plaintext));
-        }
-        function getCurrentWritingDate(){
-            const input=document.getElementById('currentDate');
-            if(input&&input.value)return input.value;
-            const now=new Date();
-            return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
-        }
-        function setWritingSecurityStatus(message,state='info'){
-            const status=document.getElementById('diary-security-status');
-            if(status){status.textContent=message;status.dataset.state=state;}
-            const saveStatus=document.getElementById('writing-save-status');
-            if(saveStatus&&state==='error')saveStatus.textContent=message;
-        }
-        function renderDiarySecurityUI(){
-            const configured=!!localStorage.getItem(WRITING_CONFIG_KEY);
-            const heading=document.getElementById('diary-lock-heading'),intro=document.getElementById('diary-lock-intro');
-            const confirmWrap=document.getElementById('diary-confirm-wrap'),button=document.getElementById('diary-key-action');
-            if(writingCryptoKey){document.getElementById('diary-lock-panel')?.classList.add('hidden');document.getElementById('diary-editor-panel')?.classList.remove('hidden');return;}
-            document.getElementById('diary-lock-panel')?.classList.remove('hidden');
-            document.getElementById('diary-editor-panel')?.classList.add('hidden');
-            if(heading)heading.textContent=configured?'Unlock your private writing':'Create your private writing key';
-            if(intro)intro.textContent=configured?'Enter your passphrase to decrypt your diary and checklist reflections on this device.':'Create a separate passphrase. Existing plain-text diary and checklist reflections will be encrypted during setup.';
-            confirmWrap?.classList.toggle('hidden',configured);
-            if(button)button.textContent=configured?'Unlock private writing':'Create encryption key';
-            const pass=document.getElementById('diary-passphrase');
-            if(pass){pass.autocomplete=configured?'current-password':'new-password';pass.placeholder=configured?'Enter your private writing passphrase':'Use 16+ characters or several words';}
-        }
-        function updatePrivateWritingAccess(){
-            const unlocked=!!writingCryptoKey;
-            document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{field.disabled=!unlocked;if(!unlocked)field.value='';});
-            document.getElementById('writing-lock-hint')?.classList.toggle('hidden',unlocked);
-            const lockButton=document.querySelector('#diary-editor-panel button[onclick="lockPrivateWriting()"]');
-            if(lockButton)lockButton.classList.toggle('hidden',!unlocked);
-            renderDiarySecurityUI();
-            if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing is encrypted before it is saved on this device.';}
-        }
-        async function migrateLegacyPrivateWriting(key){
-            const dates=new Set();
-            for(let i=0;i<localStorage.length;i++){
-                const storageKey=localStorage.key(i);
-                let match=storageKey&&storageKey.match(/^private_diary_(\d{4}-\d{2}-\d{2})$/);
-                if(match)dates.add(match[1]);
-                match=storageKey&&storageKey.match(/^mindful_pokes_data_(\d{4}-\d{2}-\d{2})$/);
-                if(match)dates.add(match[1]);
-            }
-            for(const dateStr of dates){
-                const oldDiaryKey='private_diary_'+dateStr,oldDiary=localStorage.getItem(oldDiaryKey);
-                const appDataKey='mindful_pokes_data_'+dateStr,rawAppData=localStorage.getItem(appDataKey);
-                let appData={},valid=true;
-                if(rawAppData){try{appData=JSON.parse(rawAppData)||{};}catch(error){valid=false;}}
-                const secureDiaryKey=getSecureWritingStorageKey('diary',dateStr);
-                if(oldDiary!==null&&!localStorage.getItem(secureDiaryKey))localStorage.setItem(secureDiaryKey,await encryptPrivatePayload('diary',dateStr,oldDiary,key));
-                if(oldDiary!==null)localStorage.removeItem(oldDiaryKey);
-                if(valid&&rawAppData){
-                    const hadFields=PRIVATE_NOTE_IDS.some(id=>Object.prototype.hasOwnProperty.call(appData,id));
-                    const legacyNotes={};let hasContent=false;
-                    PRIVATE_NOTE_IDS.forEach(id=>{if(typeof appData[id]==='string'){legacyNotes[id]=appData[id];hasContent=hasContent||appData[id].length>0;}delete appData[id];});
-                    const secureNotesKey=getSecureWritingStorageKey('notes',dateStr);
-                    if(hasContent&&!localStorage.getItem(secureNotesKey))localStorage.setItem(secureNotesKey,await encryptPrivatePayload('notes',dateStr,legacyNotes,key));
-                    if(hadFields)localStorage.setItem(appDataKey,JSON.stringify(appData));
-                }
-            }
-        }
-        async function handleDiaryKeyAction(){
-            const passInput=document.getElementById('diary-passphrase'),confirmInput=document.getElementById('diary-passphrase-confirm'),button=document.getElementById('diary-key-action');
-            const passphrase=passInput.value,configText=localStorage.getItem(WRITING_CONFIG_KEY);
-            if(!hasWritingCrypto()){setWritingSecurityStatus('Secure browser encryption is unavailable. Open this app over HTTPS in a modern browser.','error');return;}
-            if(!passphrase||passphrase.length<16){setWritingSecurityStatus('Please use a passphrase with at least 16 characters. Several unrelated words work well.','error');return;}
-            button.disabled=true;button.textContent='Securing private writing…';
-            try{
-                let key;
-                if(!configText){
-                    if(passphrase!==confirmInput.value)throw new Error('The two passphrases do not match.');
-                    const salt=crypto.getRandomValues(new Uint8Array(16));
-                    key=await derivePrivateWritingKey(passphrase,salt,WRITING_KDF_ITERATIONS);
-                    const verifyIv=crypto.getRandomValues(new Uint8Array(12));
-                    const verifier=await crypto.subtle.encrypt({name:'AES-GCM',iv:verifyIv,additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,new TextEncoder().encode(WRITING_CHECK_TEXT));
-                    localStorage.setItem(WRITING_CONFIG_KEY,JSON.stringify({version:1,algorithm:'AES-256-GCM',kdf:'PBKDF2-HMAC-SHA-256',iterations:WRITING_KDF_ITERATIONS,salt:bytesToBase64(salt),verifierIv:bytesToBase64(verifyIv),verifierCiphertext:bytesToBase64(new Uint8Array(verifier))}));
-                }else{
-                    const config=JSON.parse(configText);
-                    if(config.version!==1||config.algorithm!=='AES-256-GCM'||config.kdf!=='PBKDF2-HMAC-SHA-256'||config.iterations!==WRITING_KDF_ITERATIONS)throw new Error('The saved encryption settings are unsupported or have been changed.');
-                    key=await derivePrivateWritingKey(passphrase,base64ToBytes(config.salt),config.iterations);
-                    let verified;
-                    try{verified=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(config.verifierIv),additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,base64ToBytes(config.verifierCiphertext));}
-                    catch(error){throw new Error('The passphrase did not match.');}
-                    if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
-                }
-                writingCryptoKey=key;
-                await migrateLegacyPrivateWriting(key);
-                await loadPrivateWritingForDate(getCurrentWritingDate());
-                updatePrivateWritingAccess();
-                const saveStatus=document.getElementById('writing-save-status');
-                if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
-            }catch(error){
-                writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
-                const message=error?.message==='The passphrase did not match.'
-                    ?'That passphrase did not unlock this writing. Please check it and try again.'
-                    :error?.message==='The two passphrases do not match.'
-                        ?error.message
-                        :'Could not unlock or migrate private writing. Existing entries were left in place. '+(error?.message||'');
-                setWritingSecurityStatus(message,'error');
-            }finally{passInput.value='';confirmInput.value='';button.disabled=false;renderDiarySecurityUI();}
-        }
-        function getPrivateWritingPayload(){
-            const diary=document.getElementById('private-diary-entry')?.value||'',notes={};
-            PRIVATE_NOTE_IDS.forEach(id=>{notes[id]=document.getElementById(id)?.value||'';});
-            return {diary,notes};
-        }
-        async function savePrivateWritingForDate(dateStr=writingLoadedDate){
-            if(!writingCryptoKey||!dateStr||writingLoadedDate!==dateStr)return;
-            const key=writingCryptoKey,payload=getPrivateWritingPayload();
-            const task=async()=>{
-                const diary=await encryptPrivatePayload('diary',dateStr,payload.diary,key);
-                const notes=await encryptPrivatePayload('notes',dateStr,payload.notes,key);
-                localStorage.setItem(getSecureWritingStorageKey('diary',dateStr),diary);
-                localStorage.setItem(getSecureWritingStorageKey('notes',dateStr),notes);
-                const status=document.getElementById('writing-save-status');
-                if(status&&writingCryptoKey)status.textContent='Saved securely on this device.';
-            };
-            writingSavePromise=writingSavePromise.then(task,task);
-            return writingSavePromise;
-        }
-        function schedulePrivateWritingSave(){
-            if(!writingCryptoKey||!writingLoadedDate)return;
-            if(writingSaveTimer)clearTimeout(writingSaveTimer);
-            writingSaveTimer=setTimeout(()=>{
-                writingSaveTimer=null;
-                savePrivateWritingForDate(writingLoadedDate).catch(error=>setWritingSecurityStatus('Encrypted autosave failed. Your text is still visible; do not lock or close the page until saving succeeds. '+(error?.message||''),'error'));
-            },500);
-        }
-        async function loadPrivateWritingForDate(dateStr){
-            if(!writingCryptoKey)return;
-            if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
-            await writingSavePromise;
-            let diaryText='',notes={};
-            const diaryRecord=localStorage.getItem(getSecureWritingStorageKey('diary',dateStr)),notesRecord=localStorage.getItem(getSecureWritingStorageKey('notes',dateStr));
-            if(diaryRecord)diaryText=await decryptPrivatePayload('diary',dateStr,diaryRecord,writingCryptoKey);
-            if(notesRecord)notes=await decryptPrivatePayload('notes',dateStr,notesRecord,writingCryptoKey);
-            document.getElementById('private-diary-entry').value=typeof diaryText==='string'?diaryText:'';
-            PRIVATE_NOTE_IDS.forEach(id=>{const field=document.getElementById(id);if(field)field.value=typeof notes[id]==='string'?notes[id]:'';});
-            writingLoadedDate=dateStr;
-        }
-        async function lockPrivateWriting(){
-            if(!writingCryptoKey)return;
-            if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
-            try{
-                await savePrivateWritingForDate(writingLoadedDate);
-                await writingSavePromise;
-                writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
-                setWritingSecurityStatus('Locked. Your saved private writing remains encrypted on this device.','info');
-            }catch(error){setWritingSecurityStatus('Could not finish encrypted saving, so the writing remains unlocked. '+(error?.message||''),'error');}
-        }
-
-
-        document.querySelectorAll('.pin-box').forEach((box, idx, boxes) => {
-            box.addEventListener('input', () => {
-                if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
-            });
-        });
-
-        function unlockApp() {
-            let entered = "";
-            document.querySelectorAll('.pin-box').forEach(b => entered += b.value);
-            if (entered === defaultPin || localStorage.getItem('user_pin') === entered) {
-                document.getElementById('view-pin').classList.add('hidden');
-                showPage('launcher');
-            } else {
-                alert("Incorrect PIN! (Default is 1234)");
-            }
-        }
-
-        function showPage(pageId) {
-            ['view-launcher', 'view-diary', 'view-checklist'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            document.getElementById('view-' + pageId).classList.remove('hidden');
-            if (pageId === 'checklist') {
-                resizeEcosystemCanvas();
-                updateEcosystemTree();
-                replayEcosystemWelcome();
-            }
-            if (pageId === 'launcher') updateScoreDisplay();
-            if (pageId === 'diary') {
-                renderDiarySecurityUI();
-                if (writingCryptoKey && writingLoadedDate !== getCurrentWritingDate()) {
-                    loadPrivateWritingForDate(getCurrentWritingDate()).catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
-                }
-            }
-        }
-
-        function changeStep(direction) {
-            const nextStep = currentStep + direction;
-            if (nextStep >= 1 && nextStep <= 6) {
-                document.getElementById('card-step-' + currentStep).classList.add('hidden');
-                currentStep = nextStep;
-                document.getElementById('card-step-' + currentStep).classList.remove('hidden');
-
-                document.getElementById('current-step-num').innerText = currentStep;
-                
-                for (let i = 1; i <= 6; i++) {
-                    const dot = document.getElementById('dot-' + i);
-                    if (i <= currentStep) dot.classList.remove('opacity-30');
-                    else dot.classList.add('opacity-30');
-                }
-
-                document.getElementById('btn-prev').disabled = (currentStep === 1);
-                document.getElementById('btn-prev').classList.toggle('opacity-50', currentStep === 1);
-                document.getElementById('btn-prev').classList.toggle('cursor-not-allowed', currentStep === 1);
-
-                document.getElementById('btn-next').innerText = (currentStep === 6) ? "Finish Checklist 🏆" : "Next Card ➔";
-                document.getElementById('finish-status')?.classList.add('hidden');
-            }
-        }
-
-        function handleNextStep() {
-            if (currentStep === 6) {
-                finishChecklist();
-                return;
-            }
-            changeStep(1);
-        }
-
-        function isSectionComplete(sectionNumber) {
-            const checks = Array.from(document.querySelectorAll('.sec-' + sectionNumber));
-            if (!checks.length) return false;
-            // Card 1 is a location choice: one selected place completes that card.
-            return sectionNumber === 1
-                ? checks.some(check => check.checked)
-                : checks.every(check => check.checked);
-        }
-
-        function finishChecklist() {
-            const firstIncomplete = Array.from({length:6},(_,index)=>index+1).find(section => !isSectionComplete(section));
-            const status = document.getElementById('finish-status');
-
-            if (firstIncomplete) {
-                if (currentStep !== firstIncomplete) {
-                    changeStep(firstIncomplete - currentStep);
-                }
-                status.textContent = firstIncomplete === 6
-                    ? "Almost there! Release all three cloud types, then tick the completion checkbox."
-                    : "Almost there! Please complete the remaining activity or activities on Card " + firstIncomplete + ".";
-                status.classList.remove('hidden');
-                document.getElementById('card-step-' + firstIncomplete)?.scrollIntoView({behavior:'smooth',block:'start'});
-                return;
-            }
-
-            status.classList.add('hidden');
-            checkSectionCompletion();
-            document.getElementById('trophy-banner').classList.remove('hidden');
-            document.getElementById('grand-finale-overlay').classList.remove('hidden');
-        }
-
-
-        let breathingTimer = null;
-        let breathingTimeout = null;
-        let breathingCycle = 0;
-        let breathingPhaseIndex = 0;
-        let breathingSecondsLeft = 0;
-        const breathingPhases = [
-            {name:"Breathe in",seconds:4,tip:"Gently breathe in through your nose."},
-            {name:"Hold softly",seconds:2,tip:"Pause softly. No straining."},
-            {name:"Breathe out",seconds:6,tip:"Slowly breathe out. Let your shoulders soften."}
-        ];
-
-        const guideContent = {
-            "loc-home":{title:"Find your place",line:"Pause and look around. Are you at home? Choose the place that describes where you are.",person:"🧒",prop:"🏡",action:"Take a moment to notice your surroundings."},
-            "loc-office":{title:"Check in at work",line:"Take one calm look around. Are you at work right now? Choose your location when you're ready.",person:"🧑‍💻",prop:"💼",action:"Notice where you are."},
-            "loc-house":{title:"A guest today",line:"Are you visiting someone else's home? Look around and choose the place that fits.",person:"👧",prop:"🏠",action:"Notice your surroundings."},
-            "loc-out":{title:"Out and about",line:"You're out somewhere. Take a breath, notice your surroundings, and choose this option if it fits.",person:"🧍",prop:"🌳",action:"Pause and orient yourself."},
-            "start-1":{title:"Three grateful things",line:"Let's find three small things to appreciate. They can be as simple as a safe moment, a kind word, or a warm drink.",person:"🐻",prop:"🌼",action:"Think of three things. You can jot them down mentally or in your own words."},
-            "start-2":{title:"Prayer and intention",line:"Let's pause together. Set a kind intention for yourself and the people you care about. Take the moment in your own way.",person:"🐰",prop:"🙏",action:"Take a quiet moment for prayer or a positive intention."},
-            "start-3":{title:"Gentle movement",line:"Let's loosen up. Roll your shoulders gently, stretch your arms, and move only within a comfortable range.",person:"🐱",prop:"🙆",action:"Try a few gentle stretches. Stop if anything hurts."},
-            "start-4":{title:"A little hydration",line:"I brought my glass! Watch me take a refreshing sip. Now it's your turn—enjoy some water at a comfortable pace.",person:"👧",prop:"🥛",action:"Drink your water. No need to rush.",drink:true},
-            "mid-1":{title:"Posture and stretch",line:"Let's reset our posture. Unclench your jaw, relax your shoulders, sit or stand comfortably, then stretch gently.",person:"🐼",prop:"🧘",action:"Take a comfortable posture and stretch gently."},
-            "mid-2":{title:"Breathe with me",line:"We'll do five gentle 4–2–6 cycles: breathe in for 4, pause softly for 2, and breathe out for 6. Keep it comfortable—never force or hold if uncomfortable.",person:"🐨",prop:"🌬️",action:"Start the five guided breathing cycles.",breathing:true},
-            "mid-3":{title:"Midday water break",line:"A tiny water break can help you pause. Watch me take a sip, then have some water if it's available.",person:"👧",prop:"💧",action:"Drink some water at your own pace.",drink:true},
-            "mid-4":{title:"Check how you feel",line:"Let's gently check in. What emotion is here right now? What thought is asking for your attention? You don't have to judge or fix it.",person:"🦊",prop:"💗",action:"Name what you're feeling, even if the answer is 'not sure'."},
-            "mid-5":{title:"Let a thought drift by",line:"Imagine a thought floating past like a cloud. You can notice it without holding on. Let it drift away in its own time.",person:"🐣",prop:"☁️",action:"Notice one thought and practice letting it pass."},
-            "end-1":{title:"Three wins today",line:"Let's celebrate three things you managed today. Tiny wins count: showing up, trying again, or taking a pause.",person:"🐻",prop:"🏆",action:"Write or think of three things you feel good about."},
-            "end-2":{title:"Tomorrow's priorities",line:"Let's make tomorrow feel lighter. Choose up to three priorities that matter most. They don't need to be perfect.",person:"🐱",prop:"📝",action:"Write three realistic priorities for tomorrow."},
-            "end-3":{title:"Evening hydration",line:"One more gentle reminder from me: have some water if you'd like and if it suits your needs. Sip comfortably.",person:"👧",prop:"🥛",action:"Drink some water at a comfortable pace.",drink:true},
-            "end-4":{title:"Give yourself a GOOD JOB poke",line:"You made it through another day. Give yourself a gentle little nose boop and say, 'Good job. I kept going.'",person:"🐰",prop:"👃✨",action:"Give yourself a gentle nose poke and a kind word."},
-            "sleep-1":{title:"Gratitude for others",line:"Think of three things someone did that you appreciated today. They can be very small moments.",person:"🐼",prop:"💛",action:"Write or remember three gratitude points about others."},
-            "sleep-2":{title:"Gratitude for blessings",line:"Take a quiet moment to remember three blessings or things you're thankful for today, in your own words.",person:"🐰",prop:"✨",action:"Write or remember three gratitude points."},
-            "sleep-3":{title:"Screen sunset",line:"Let's give your eyes and mind a gentle break. Put your device aside for the last 30 minutes before sleep when you can.",person:"🦉",prop:"🌙📵",action:"Begin your screen-free wind-down."},
-            "sleep-4":{title:"A peaceful intention",line:"Before sleep, pause for a prayer or a gentle intention. Let the day settle; you can pick things up tomorrow.",person:"🐻",prop:"🙏",action:"Take a quiet moment for prayer or intention."},
-            "sleep-5":{title:"Bedtime water reminder",line:"If you're thirsty, have a comfortable sip of water. No need to drink more than feels right before bed.",person:"👧",prop:"💧",action:"Have water if you need it, at a comfortable pace.",drink:true},
-            "cloud-checked":{title:"Cloud check",line:"Choose a thought or feeling you want to release. Tap one of the clouds on your card and watch it drift away. You can leave any thought alone if you're not ready.",person:"🐥",prop:"☁️💨",action:"Release a cloud thought when you're ready."}
-        };
-
-        function stopBreathingTimer() {
-            if (breathingTimer) { clearInterval(breathingTimer); breathingTimer = null; }
-            if (breathingTimeout) { clearTimeout(breathingTimeout); breathingTimeout = null; }
-        }
-
-
-        function buildStretchingCartoon(mini = false) {
-            const label = 'Two people, a man and a woman, raising their arms overhead for a gentle stretch.';
-            return '<div class="stretch-demo-wrap'+(mini?' stretch-demo-preview':'')+'" role="img" aria-label="'+label+'">' +
-                '<svg class="stretch-demo-svg" viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg" focusable="false">' +
-                '<defs>' +
-                    '<linearGradient id="stretch-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5fbff"/><stop offset="1" stop-color="#fff8ec"/></linearGradient>' +
-                    '<linearGradient id="stretch-man-shirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#76b9a7"/><stop offset="1" stop-color="#3f8778"/></linearGradient>' +
-                    '<linearGradient id="stretch-woman-shirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb0a8"/><stop offset="1" stop-color="#e77e91"/></linearGradient>' +
-                '</defs>' +
-                '<rect x="4" y="4" width="312" height="180" rx="22" fill="url(#stretch-sky)"/>' +
-                '<circle class="stretch-demo-sun" cx="160" cy="26" r="11" fill="#f5cf72" opacity=".8"/>' +
-                '<path d="M145 26 H133 M187 26 H175 M160 11 V3 M160 49 V41 M148 14 L142 8 M178 44 L172 38 M148 38 L142 44 M178 8 L172 14" stroke="#e8bd58" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>' +
-                '<path d="M23 166 Q160 158 297 166" fill="none" stroke="#d7e7dc" stroke-width="3" stroke-linecap="round"/>' +
-                '<ellipse cx="95" cy="168" rx="34" ry="5" fill="#a9c3b7" opacity=".3"/><ellipse cx="225" cy="168" rx="34" ry="5" fill="#a9c3b7" opacity=".3"/>' +
-
-                /* Man: short dark hair, teal top and navy trousers. */
-                '<g class="stretch-man">' +
-                    '<path d="M78 117 Q72 137 72 160 M106 117 Q112 137 116 160" fill="none" stroke="#344b63" stroke-width="12" stroke-linecap="round"/>' +
-                    '<path d="M58 161 Q71 155 81 162 Q84 168 69 170 Q56 171 58 161Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
-                    '<path d="M106 162 Q118 155 130 162 Q132 169 117 170 Q105 171 106 162Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
-                    '<g class="stretch-man-upper">' +
-                        '<path d="M84 59 Q95 55 106 59 L116 118 Q95 127 74 118 Z" fill="url(#stretch-man-shirt)" stroke="#3a756b" stroke-width="2.3" stroke-linejoin="round"/>' +
-                        '<path d="M88 64 Q95 70 102 64" fill="none" stroke="#d6f1e7" stroke-width="2" stroke-linecap="round"/>' +
-                        '<path d="M95 72 V116" stroke="#3e8276" stroke-width="2" opacity=".35"/>' +
-                        '<path d="M86 112 Q95 116 104 112" fill="none" stroke="#a8d8c9" stroke-width="2" opacity=".75"/>' +
-                        '<path d="M87 42 L87 59 M103 42 L103 59" stroke="#bd805f" stroke-width="6" stroke-linecap="round"/>' +
-                        '<circle cx="95" cy="37" r="16" fill="#d99b78" stroke="#a86e50" stroke-width="2"/>' +
-                        '<path d="M79 37 Q77 17 95 17 Q112 17 112 36 Q103 28 94 30 Q86 29 79 37Z" fill="#493a36" stroke="#302b2b" stroke-width="2" stroke-linejoin="round"/>' +
-                        '<path d="M86 39 Q88 41 90 39 M100 39 Q102 41 104 39" fill="none" stroke="#3b302c" stroke-width="2" stroke-linecap="round"/>' +
-                        '<path d="M91 48 Q95 51 100 48" fill="none" stroke="#864e45" stroke-width="2" stroke-linecap="round"/>' +
-                    '</g>' +
-                    '<g class="stretch-arm stretch-man-left"><path d="M80 75 Q66 84 60 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="60" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
-                    '<g class="stretch-arm stretch-man-right"><path d="M110 75 Q124 84 130 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="130" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
-                '</g>' +
-
-                /* Woman: long dark hair, coral top and plum leggings. */
-                '<g class="stretch-woman">' +
-                    '<path d="M208 117 Q202 137 199 160 M238 117 Q244 137 248 160" fill="none" stroke="#58445f" stroke-width="12" stroke-linecap="round"/>' +
-                    '<path d="M184 161 Q197 155 207 162 Q210 168 195 170 Q182 171 184 161Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
-                    '<path d="M238 162 Q250 155 262 162 Q264 169 249 170 Q237 171 238 162Z" fill="#f0be74" stroke="#b17e49" stroke-width="1.8"/>' +
-                    '<g class="stretch-woman-upper">' +
-                        '<path d="M214 59 Q225 55 236 59 L246 118 Q225 127 204 118 Z" fill="url(#stretch-woman-shirt)" stroke="#bd6477" stroke-width="2.3" stroke-linejoin="round"/>' +
-                        '<path d="M218 65 Q225 71 232 65" fill="none" stroke="#ffe4df" stroke-width="2" stroke-linecap="round"/>' +
-                        '<path d="M225 72 V116" stroke="#bd6477" stroke-width="2" opacity=".3"/>' +
-                        '<path d="M216 112 Q225 116 234 112" fill="none" stroke="#ffe2df" stroke-width="2" opacity=".75"/>' +
-                        '<path d="M217 42 L217 59 M233 42 L233 59" stroke="#d99b78" stroke-width="6" stroke-linecap="round"/>' +
-                        '<path d="M208 38 Q205 13 226 13 Q246 14 243 42 L243 65 Q238 75 234 61 L237 39 Q226 28 216 39 L216 62 Q209 70 205 59Z" fill="#493a36" stroke="#302b2b" stroke-width="2" stroke-linejoin="round"/>' +
-                        '<circle cx="225" cy="37" r="16" fill="#d99b78" stroke="#a86e50" stroke-width="2"/>' +
-                        '<path d="M209 36 Q208 19 225 19 Q242 19 241 36 Q231 27 223 30 Q215 29 209 36Z" fill="#493a36"/>' +
-                        '<ellipse cx="219" cy="38" rx="1.8" ry="2.5" fill="#3b302c"/><ellipse cx="231" cy="38" rx="1.8" ry="2.5" fill="#3b302c"/>' +
-                        '<path d="M220 48 Q225 52 230 48" fill="none" stroke="#864e45" stroke-width="2" stroke-linecap="round"/>' +
-                        '<circle cx="211" cy="46" r="3" fill="#ee9b9b" opacity=".65"/><circle cx="239" cy="46" r="3" fill="#ee9b9b" opacity=".65"/>' +
-                    '</g>' +
-                    '<g class="stretch-arm stretch-woman-left"><path d="M210 75 Q196 84 190 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="190" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
-                    '<g class="stretch-arm stretch-woman-right"><path d="M240 75 Q254 84 260 105" fill="none" stroke="#d99b78" stroke-width="10" stroke-linecap="round"/><circle cx="260" cy="106" r="5.5" fill="#d99b78" stroke="#a86e50" stroke-width="1.5"/></g>' +
-                '</g>' +
-                '<g fill="#7aa99a" opacity=".8"><path d="M35 135 Q43 119 51 135 Q43 132 35 135Z"/><path d="M272 135 Q280 119 288 135 Q280 132 272 135Z"/></g>' +
-                '</svg></div>';
-        }
-
-        function openModal(type, checkboxId) {
-            stopBreathingTimer();
-            activeModalType = type;
-            activeTargetCheckboxId = checkboxId;
-            const guide = guideContent[checkboxId] || {
-                title:"Let's do this together",line:"Take a gentle moment for this activity. Go at your own pace.",person:"🐻",prop:"✨",action:"When you're ready, tell me you've completed the activity."
-            };
-            const target = document.getElementById('modal-animation-target');
-            const instructions = document.getElementById('modal-instructions');
-            const button = document.getElementById('modal-complete-btn');
-            document.querySelector('#modal-content-box h2')?.remove();
-            target.innerHTML = '';
-            instructions.innerHTML = '';
-            button.disabled = false;
-            button.classList.remove('opacity-50','cursor-not-allowed');
-            button.style.display = 'block';
-
-            const heading = document.createElement('h2');
-            heading.className = 'text-2xl font-bold text-amber-900 handwriting mb-2';
-            heading.textContent = guide.title;
-            document.getElementById('modal-content-box').insertBefore(heading,target);
-
-            if (type === 'clouds') {
-                target.innerHTML = '<div class="cloud-intro-gallery">' +
-                    '<div class="cloud-intro-item cloud-cumulus"><span class="cloud-art" aria-hidden="true">☁️</span><span>Cumulus</span></div>' +
-                    '<div class="cloud-intro-item cloud-stratus"><span class="cloud-art" aria-hidden="true">🌫️</span><span>Stratus</span></div>' +
-                    '<div class="cloud-intro-item cloud-stratocumulus"><span class="cloud-art" aria-hidden="true">🌥️<span class="cloud-rain">💧💧</span></span><span>Stratocumulus</span></div>' +
-                    '</div><div class="guide-speech cloud-intro-copy">Meet the three clouds. Tap each one on your card and watch it drift away. After all three have been released, your completion checkbox will appear.</div>';
-                instructions.textContent = 'Notice each feeling gently. You can release a cloud when you feel ready.';
-                button.textContent = 'Let’s release the clouds';
-                button.onclick = closeModal;
-            } else if (guide.breathing) {
-                target.innerHTML = '<div class="flex flex-col items-center gap-3 w-full"><div id="breathing-orb" class="guide-breath-orb"></div><div id="breathing-phase" class="text-xl font-bold text-blue-800">Ready?</div><div id="breathing-tip" class="text-sm text-slate-600">We will take five gentle cycles together.</div><div id="breathing-count" class="guide-timer">5 cycles</div><div id="breathing-clock" class="text-xs text-blue-700 font-semibold">12 seconds per cycle</div></div>';
-                instructions.textContent = guide.line;
-                button.textContent = 'Start 5 breathing cycles';
-                button.onclick = startBreathingExercise;
-            } else {
-                let motionClass = '';
-                if (guide.drink) motionClass = 'drinking';
-                else if (['start-3','mid-1'].includes(checkboxId)) motionClass = 'stretching';
-                else if (['start-2','sleep-4'].includes(checkboxId)) motionClass = 'praying';
-                else if (['start-1','end-1','sleep-1','sleep-2'].includes(checkboxId)) motionClass = 'thinking';
-                else if (['end-2'].includes(checkboxId)) motionClass = 'writing';
-                else if (['mid-5','cloud-checked'].includes(checkboxId)) motionClass = 'floating';
-                else if (['end-4'].includes(checkboxId)) motionClass = 'boop';
-                else if (['sleep-3'].includes(checkboxId)) motionClass = 'thinking';
-                const propMotion = ['end-2'].includes(checkboxId) ? 'writing' : (['mid-5','cloud-checked'].includes(checkboxId) ? 'floating' : (checkboxId === 'sleep-3' ? 'screen-away' : ''));
-                target.innerHTML = (['start-3','mid-1'].includes(checkboxId) ? buildStretchingCartoon(false) : '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup ':'')+propMotion+'">'+guide.prop+'</span></div>') + '<div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
-                document.getElementById('guide-speech').textContent = guide.line;
-                document.getElementById('guide-action').textContent = guide.action;
-                instructions.textContent = guide.drink ? "My turn... sip! Your turn next. Take your time." : "Let's do it at your own pace.";
-                button.textContent = guide.drink ? "I'm done drinking—show my checkbox" : "I've done it—show my checkbox";
-                button.onclick = completeAnimation;
-                if (guide.drink) {
-                    button.disabled = true;
-                    button.classList.add('opacity-50','cursor-not-allowed');
-                    breathingTimeout = setTimeout(() => {
-                        button.disabled = false;
-                        button.classList.remove('opacity-50','cursor-not-allowed');
-                        instructions.textContent = "Your turn! Are you done with your water?";
-                        document.getElementById('guide-speech').textContent = "Your turn! Are you done drinking your water?";
-                    }, 2200);
-                }
-            }
-            document.getElementById('anim-modal').classList.remove('hidden');
-        }
-
-        function startBreathingExercise() {
-            stopBreathingTimer();
-            breathingCycle = 1;
-            breathingPhaseIndex = 0;
-            breathingSecondsLeft = breathingPhases[0].seconds;
-            const button = document.getElementById('modal-complete-btn');
-            button.disabled = true;
-            button.classList.add('opacity-50','cursor-not-allowed');
-            button.textContent = 'Breathing with you...';
-            updateBreathingDisplay();
-            breathingTimer = setInterval(() => {
-                breathingSecondsLeft--;
-                if (breathingSecondsLeft <= 0) {
-                    breathingPhaseIndex++;
-                    if (breathingPhaseIndex >= breathingPhases.length) {
-                        breathingPhaseIndex = 0;
-                        breathingCycle++;
-                    }
-                    if (breathingCycle > 5) {
-                        stopBreathingTimer();
-                        document.getElementById('breathing-phase').textContent = 'Amazing work!';
-                        document.getElementById('breathing-tip').textContent = 'Five gentle cycles complete. Take a normal, comfortable breath.';
-                        document.getElementById('breathing-count').textContent = '5 / 5 cycles';
-                        document.getElementById('breathing-clock').textContent = 'You did it!';
-                        document.getElementById('breathing-orb').style.animation = 'none';
-                        const doneButton = document.getElementById('modal-complete-btn');
-                        doneButton.disabled = false;
-                        doneButton.classList.remove('opacity-50','cursor-not-allowed');
-                        doneButton.textContent = 'Good job! Show my checkbox';
-                        doneButton.onclick = completeAnimation;
-                        document.getElementById('modal-instructions').textContent = 'Good job! You are doing amazing!';
-                        playPopSound();
-                        return;
-                    }
-                    breathingSecondsLeft = breathingPhases[breathingPhaseIndex].seconds;
-                }
-                updateBreathingDisplay();
-            },1000);
-        }
-
-        function updateBreathingDisplay() {
-            const phase = breathingPhases[breathingPhaseIndex];
-            const phaseEl = document.getElementById('breathing-phase');
-            if (!phaseEl) return;
-            phaseEl.textContent = phase.name;
-            document.getElementById('breathing-tip').textContent = phase.tip;
-            document.getElementById('breathing-count').textContent = 'Cycle ' + breathingCycle + ' of 5';
-            document.getElementById('breathing-clock').textContent = breathingSecondsLeft + ' seconds';
-            const orb = document.getElementById('breathing-orb');
-            if (phase.name === 'Breathe in') {
-                orb.style.animation = 'guide-breath-in 4s ease-in-out 1 forwards';
-            } else if (phase.name === 'Hold softly') {
-                orb.style.animation = 'none';
-                orb.style.transform = 'scale(1.2)';
-            } else {
-                orb.style.animation = 'guide-breath-out 6s ease-in-out 1 forwards';
-            }
-        }
-
-        function closeModal() {
-            stopBreathingTimer();
-            document.getElementById('anim-modal').classList.add('hidden');
-        }
-
-        function completeAnimation() {
-            const chk = activeTargetCheckboxId
-                ? (document.getElementById('chk-' + activeTargetCheckboxId) || document.querySelector('[data-id="' + activeTargetCheckboxId + '"]'))
-                : null;
-            closeModal();
-            playPopSound();
-            if (chk) {
-                chk.disabled = false;
-                chk.dataset.guideUnlocked = 'true';
-                chk.classList.remove('guide-hidden');
-                const row = chk.closest('.guided-task-row');
-                const label = row?.querySelector('.guide-checkbox-label');
-                if (label) label.classList.add('is-unlocked');
-                // Leave Show me visible so the user can replay the demonstration.
-                saveData();
-            }
-        }
-
-        function restoreCloudProgress(data) {
-            document.querySelectorAll('.cloud-item[data-cloud]').forEach(item => {
-                const released = data['cloud_' + item.dataset.cloud] === true;
-                item.dataset.released = released ? 'true' : 'false';
-                item.disabled = released;
-                item.setAttribute('aria-pressed',released ? 'true' : 'false');
-                item.classList.toggle('cloud-released',released);
-                item.classList.toggle('is-restored',released);
-                const status = item.querySelector('.cloud-status');
-                if (status) status.textContent = released ? 'Released ✓' : 'Tap to release';
-            });
-            updateCloudProgress();
-        }
-
-        function updateCloudProgress() {
-            const items = Array.from(document.querySelectorAll('.cloud-item[data-cloud]'));
-            const releasedCount = items.filter(item => item.dataset.released === 'true').length;
-            const progress = document.getElementById('cloud-progress');
-            if (progress) {
-                progress.textContent = releasedCount === items.length
-                    ? '3 of 3 clouds released. Lovely work! Your completion checkbox is ready below.'
-                    : releasedCount + ' of ' + items.length + ' clouds released. Tap each cloud to let it drift away.';
-            }
-
-            const cloudChk = document.getElementById('chk-cloud-checked');
-            if (!cloudChk) return;
-            const allReleased = items.length > 0 && releasedCount === items.length;
-
-            if (allReleased) {
-                cloudChk.disabled = false;
-                cloudChk.dataset.guideUnlocked = 'true';
-                cloudChk.classList.remove('guide-hidden');
-                cloudChk.closest('.guided-task-row')?.querySelector('.guide-checkbox-label')?.classList.add('is-unlocked');
-            } else if (!cloudChk.checked) {
-                cloudChk.disabled = true;
-                cloudChk.dataset.guideUnlocked = 'false';
-                cloudChk.classList.add('guide-hidden');
-                cloudChk.closest('.guided-task-row')?.querySelector('.guide-checkbox-label')?.classList.remove('is-unlocked');
-            }
-        }
-
-        function releaseCloud(el) {
-            if (!el || !el.dataset.cloud || el.dataset.released === 'true') return;
-            el.dataset.released = 'true';
-            el.disabled = true;
-            el.setAttribute('aria-pressed','true');
-            el.classList.add('cloud-released');
-            const status = el.querySelector('.cloud-status');
-            if (status) status.textContent = 'Released ✓';
-            playPopSound();
-            confetti({ particleCount: 15, spread: 40, origin: { y: 0.6 } });
-            updateCloudProgress();
-            saveData();
-            updateEcosystemTree({trunk:true});
-        }
-
-        function speakProudCue() {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance("I am so proud of you!");
-                utterance.pitch = 1.2;
-                utterance.rate = 0.95;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        function playPopSound() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(450, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(850, audioCtx.currentTime + 0.08);
-            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.08);
-        }
-
-        function playFanfareSound() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const notes = [523.25, 659.25, 783.99, 1046.50];
-            notes.forEach((freq, index) => {
-                setTimeout(() => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.35);
-                }, index * 130);
-            });
-        }
-
-        function attachChecklistCartoons() {
-            document.querySelectorAll('.app-chk').forEach(chk => {
-                const label = chk.closest('label');
-                if (!label || label.closest('.guided-task-row')) return;
-                const row = document.createElement('div');
-                row.className = 'guided-task-row';
-                label.parentNode.insertBefore(row,label);
-                row.appendChild(label);
-                label.classList.add('guide-checkbox-label');
-                chk.classList.add('guide-hidden');
-                const id = chk.dataset.id;
-                // Card 6 is guided by its three individually animated cloud buttons.
-                if (id === 'cloud-checked') return;
-                const guideButton = document.createElement('button');
-                guideButton.type = 'button';
-                guideButton.className = 'guide-launch';
-                const buddy = guideContent[id];
-                guideButton.innerHTML = (['start-3','mid-1'].includes(id) ? buildStretchingCartoon(true) : '<span class="guide-buddy '+(buddy?.drink?'drink':'')+'" aria-hidden="true">'+(buddy?.person || '🐻')+'</span>') + '<span>Show me</span>';
-                guideButton.setAttribute('aria-label','Show animated guide for '+id);
-                guideButton.addEventListener('click',() => openModal('guided',id));
-                row.insertBefore(guideButton,label);
-            });
-            document.querySelectorAll('button[onclick^="openModal("]').forEach(button => {
-                // Hide only the old inline guide button; never hide its task heading or row.
-                // Card 6 keeps its dedicated cloud-animation launcher.
-                if (!button.closest('#card-step-6')) button.classList.add('legacy-guide-button');
-            });
-            syncChecklistCartoons();
-        }
-
-        function syncChecklistCartoons() {
-            document.querySelectorAll('.app-chk').forEach(chk => {
-                const row = chk.closest('.guided-task-row');
-                const label = row?.querySelector('.guide-checkbox-label');
-                const launch = row?.querySelector('.guide-launch');
-                const unlocked = chk.dataset.guideUnlocked === 'true' || chk.checked;
-                chk.classList.toggle('guide-hidden',!unlocked);
-                if (unlocked) {
-                    chk.disabled = false;
-                    label?.classList.add('is-unlocked');
-                    chk.dataset.guideUnlocked = 'true';
-                } else {
-                    label?.classList.remove('is-unlocked');
-                }
-                // Keep "Show me" available so the user can replay the demonstration anytime.
-                launch?.classList.remove('is-hidden');
-            });
-        }
-
-        function getStorageKey(dateStr) { return 'mindful_pokes_data_' + dateStr; }
-
-        function updateScoreDisplay() {
-            let totalScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
-            document.getElementById('launcher-score').innerText = totalScore;
-        }
-
-        function updateDailyActivityProgress() {
-            let total=1,completed=isSectionComplete(1)?1:0;
-            for(let section=2;section<=6;section++){
-                const checks=Array.from(document.querySelectorAll('.sec-'+section));
-                total+=checks.length;completed+=checks.filter(check=>check.checked).length;
-            }
-            const label=document.getElementById('daily-progress-count'),bar=document.getElementById('daily-progress-bar'),track=document.getElementById('daily-progress-track');
-            const percent=total?Math.round((completed/total)*100):0;
-            if(label)label.textContent=completed+' of '+total+' steps';
-            if(bar)bar.style.width=percent+'%';
-            if(track)track.setAttribute('aria-valuenow',String(completed));
-        }
-
-
-        function replayEcosystemEffect(selector,className){
-            const element=document.querySelector(selector);
-            if(!element)return;
-            element.classList.remove(className);
-            void element.getBoundingClientRect();
-            element.classList.add(className);
-        }
-
-        const ecosystemCanvasMotion={roots:0,clouds:0,flowers:0,seedDrop:0};
-        const ecosystemCanvasTargets={roots:0,clouds:0,flowers:0,seedDrop:0};
-        let ecosystemCanvasParticles=[];
-        let ecosystemCanvasContext=null;
-        let ecosystemCanvasFrame=null;
-
-        function ecosystemCanvasReducedMotion(){
-            return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-        }
-
-        function resizeEcosystemCanvas(){
-            const canvas=document.getElementById('ecosystem-canvas');
-            const fallback=document.getElementById('ecosystem-tree-art');
-            if(!canvas)return;
-            if(!ecosystemCanvasContext){
-                try{ecosystemCanvasContext=canvas.getContext('2d');}catch(error){ecosystemCanvasContext=null;}
-            }
-            if(!ecosystemCanvasContext){
-                canvas.style.display='none';
-                if(fallback)fallback.style.display='block';
-                return;
-            }
-            if(fallback)fallback.style.display='none';
-            canvas.style.display='block';
-            const rect=canvas.getBoundingClientRect();
-            if(rect.width<1||rect.height<1)return;
-            const dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
-            const pixelWidth=Math.max(1,Math.round(rect.width*dpr));
-            const pixelHeight=Math.max(1,Math.round(rect.height*dpr));
-            if(canvas.width!==pixelWidth)canvas.width=pixelWidth;
-            if(canvas.height!==pixelHeight)canvas.height=pixelHeight;
-            const scale=Math.min(rect.width/320,rect.height/240);
-            const offsetX=(rect.width-320*scale)/2;
-            const offsetY=(rect.height-240*scale)/2;
-            try{ecosystemCanvasContext.setTransform(scale*dpr,0,0,scale*dpr,offsetX*dpr,offsetY*dpr);}
-            catch(error){
-                ecosystemCanvasContext=null;
-                canvas.style.display='none';
-                if(fallback)fallback.style.display='block';
-                return;
-            }
-            drawEcosystemCanvas();
-        }
-
-        function traceEcosystemRoot(ctx,x0,y0,cx,cy,x1,y1,progress){
-            const amount=Math.max(0,Math.min(1,progress));
-            if(amount<=0)return;
-            const steps=28;
-            const last=Math.max(1,Math.ceil(steps*amount));
-            ctx.beginPath();
-            ctx.moveTo(x0,y0);
-            for(let i=1;i<=last;i++){
-                const t=Math.min(amount,i/steps);
-                const inverse=1-t;
-                ctx.lineTo(inverse*inverse*x0+2*inverse*t*cx+t*t*x1,inverse*inverse*y0+2*inverse*t*cy+t*t*y1);
-            }
-            ctx.stroke();
-        }
-
-        function drawEcosystemFlower(ctx,x,y,scale){
-            if(scale<=0.01)return;
-            ctx.save();
-            ctx.translate(x,y);
-            ctx.scale(scale,scale);
-            ctx.fillStyle='#f48fb1';
-            ctx.strokeStyle='#d5799a';
-            ctx.lineWidth=1;
-            for(let i=0;i<5;i++){
-                ctx.save();
-                ctx.rotate((Math.PI*2*i)/5);
-                ctx.beginPath();
-                ctx.ellipse(0,-5.2,3.2,5.8,0,0,Math.PI*2);
-                ctx.fill();
-                ctx.stroke();
-                ctx.restore();
-            }
-            ctx.beginPath();
-            ctx.fillStyle='#fff1a8';
-            ctx.arc(0,0,2.7,0,Math.PI*2);
-            ctx.fill();
-            ctx.restore();
-        }
-
-        function drawEcosystemCanvas(){
-            const ctx=ecosystemCanvasContext;
-            if(!ctx)return;
-            const roots=Math.max(0,Math.min(1,ecosystemCanvasMotion.roots));
-            const clouds=Math.max(0,Math.min(3,ecosystemCanvasMotion.clouds));
-            const flowers=Math.max(0,Math.min(1,ecosystemCanvasMotion.flowers));
-            const seedDrop=Math.max(0,ecosystemCanvasMotion.seedDrop);
-            const centerX=160;
-            const groundY=184;
-            ctx.clearRect(0,0,320,240);
-
-            const sky=ctx.createRadialGradient(160,84,8,160,104,150);
-            sky.addColorStop(0,'rgba(255,255,245,.88)');
-            sky.addColorStop(1,'rgba(220,235,220,0)');
-            ctx.fillStyle=sky;
-            ctx.fillRect(8,4,304,210);
-
-            const soil=ctx.createLinearGradient(0,groundY,0,240);
-            soil.addColorStop(0,'#a77b4f');
-            soil.addColorStop(1,'#705034');
-            ctx.fillStyle=soil;
-            ctx.fillRect(12,groundY,296,56);
-            ctx.beginPath();
-            ctx.moveTo(18,groundY+1);
-            ctx.quadraticCurveTo(78,groundY-5,128,groundY+1);
-            ctx.quadraticCurveTo(190,groundY+6,244,groundY);
-            ctx.quadraticCurveTo(279,groundY-3,302,groundY+1);
-            ctx.strokeStyle='#9dbd91';
-            ctx.lineWidth=4;
-            ctx.lineCap='round';
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(24,groundY+8);
-            ctx.quadraticCurveTo(160,groundY+14,296,groundY+7);
-            ctx.strokeStyle='rgba(231,238,213,.45)';
-            ctx.lineWidth=1.5;
-            ctx.setLineDash([3,5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            if(roots>0.001){
-                ctx.save();
-                ctx.strokeStyle='#6f5037';
-                ctx.lineCap='round';
-                ctx.lineJoin='round';
-                ctx.lineWidth=5;
-                traceEcosystemRoot(ctx,centerX,groundY,158,groundY+20,160,groundY+51,roots);
-                ctx.lineWidth=3.8;
-                traceEcosystemRoot(ctx,159,groundY+13,143,groundY+23,112,groundY+37,roots);
-                traceEcosystemRoot(ctx,161,groundY+13,179,groundY+23,207,groundY+39,roots);
-                ctx.lineWidth=2.5;
-                traceEcosystemRoot(ctx,128,groundY+29,111,groundY+43,87,groundY+48,roots);
-                traceEcosystemRoot(ctx,192,groundY+30,209,groundY+43,233,groundY+49,roots);
-                ctx.restore();
-            }
-
-            // Each existing cloud release increases trunk width by exactly five percent.
-            const trunkX=1+clouds*0.05;
-            const trunkY=0.82+clouds*0.06;
-            ctx.save();
-            ctx.translate(centerX,groundY);
-            ctx.scale(trunkX,trunkY);
-            ctx.lineCap='round';
-            ctx.lineJoin='round';
-            ctx.beginPath();
-            ctx.moveTo(-3,-56);
-            ctx.quadraticCurveTo(-25,-78,-42,-91);
-            ctx.moveTo(3,-58);
-            ctx.quadraticCurveTo(27,-79,43,-92);
-            ctx.strokeStyle='#866347';
-            ctx.lineWidth=7;
-            ctx.stroke();
-
-            const bark=ctx.createLinearGradient(-14,0,14,0);
-            bark.addColorStop(0,'#806044');
-            bark.addColorStop(.48,'#b58b60');
-            bark.addColorStop(1,'#76573d');
-            ctx.beginPath();
-            ctx.moveTo(-13,0);
-            ctx.quadraticCurveTo(-8,-35,-7,-94);
-            ctx.lineTo(7,-94);
-            ctx.quadraticCurveTo(8,-38,13,0);
-            ctx.closePath();
-            ctx.fillStyle=bark;
-            ctx.fill();
-            ctx.strokeStyle='#75583e';
-            ctx.lineWidth=2;
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(-1,-12);
-            ctx.quadraticCurveTo(3,-48,0,-85);
-            ctx.strokeStyle='rgba(236,207,165,.65)';
-            ctx.lineWidth=3;
-            ctx.stroke();
-            ctx.restore();
-
-            const topY=groundY-94*trunkY;
-            const leafClusters=[
-                {x:centerX,y:topY-17,r:27,c:'#81ad78'},
-                {x:centerX-32,y:topY-4,r:22,c:'#8fbd83'},
-                {x:centerX+32,y:topY-5,r:22,c:'#6fa46f'},
-                {x:centerX-17,y:topY-34,r:18,c:'#a8c995'},
-                {x:centerX+18,y:topY-35,r:18,c:'#a4c48e'}
-            ];
-            leafClusters.forEach((leaf,index)=>{
-                ctx.beginPath();
-                ctx.fillStyle=leaf.c;
-                ctx.arc(leaf.x,leaf.y,leaf.r,0,Math.PI*2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.strokeStyle=index%2?'rgba(240,248,225,.75)':'rgba(231,244,218,.8)';
-                ctx.lineWidth=1.1;
-                ctx.moveTo(leaf.x,leaf.y+leaf.r*.55);
-                ctx.lineTo(leaf.x,leaf.y-leaf.r*.55);
-                ctx.stroke();
-            });
-            [
-                [centerX-33,topY-15],[centerX+28,topY-18],[centerX,topY-45],
-                [centerX-48,topY+7],[centerX+47,topY+5]
-            ].forEach((point,index)=>drawEcosystemFlower(ctx,point[0],point[1],flowers*(index===2?1:.88)));
-
-            const seedY=groundY-2-seedDrop*42;
-            ctx.save();
-            ctx.globalAlpha=Math.max(.28,1-roots*.72);
-            const seedGlow=ctx.createRadialGradient(centerX,seedY,1,centerX,seedY,16);
-            seedGlow.addColorStop(0,'rgba(255,236,151,.55)');
-            seedGlow.addColorStop(1,'rgba(255,236,151,0)');
-            ctx.fillStyle=seedGlow;
-            ctx.beginPath();
-            ctx.arc(centerX,seedY,16,0,Math.PI*2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(centerX,seedY,7,4.7,Math.PI/7,0,Math.PI*2);
-            ctx.fillStyle='#d4b18a';
-            ctx.fill();
-            ctx.strokeStyle='#7e5d42';
-            ctx.lineWidth=1.3;
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(centerX-2,seedY-1);
-            ctx.quadraticCurveTo(centerX+1,seedY-5,centerX+3,seedY-2);
-            ctx.strokeStyle='#f5dfbd';
-            ctx.lineWidth=1.1;
-            ctx.stroke();
-            ctx.restore();
-
-            ecosystemCanvasParticles.forEach(particle=>{
-                ctx.save();
-                ctx.globalAlpha=Math.max(0,particle.life);
-                ctx.fillStyle=particle.color;
-                ctx.beginPath();
-                ctx.arc(particle.x,particle.y,particle.radius*Math.max(.25,particle.life),0,Math.PI*2);
-                ctx.fill();
-                ctx.restore();
-            });
-        }
-
-        function scheduleEcosystemCanvasFrame(){
-            const canvas=document.getElementById('ecosystem-canvas');
-            if(!canvas||!ecosystemCanvasContext)return;
-            const rect=canvas.getBoundingClientRect();
-            if(rect.width<1||rect.height<1)return;
-            if(ecosystemCanvasFrame!==null)return;
-            if(ecosystemCanvasReducedMotion()){
-                ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
-                ecosystemCanvasMotion.clouds=ecosystemCanvasTargets.clouds;
-                ecosystemCanvasMotion.flowers=ecosystemCanvasTargets.flowers;
-                ecosystemCanvasMotion.seedDrop=ecosystemCanvasTargets.seedDrop;
-                ecosystemCanvasParticles=[];
-                drawEcosystemCanvas();
-                return;
-            }
-            ecosystemCanvasFrame=requestAnimationFrame(runEcosystemCanvasFrame);
-        }
-
-        function runEcosystemCanvasFrame(){
-            ecosystemCanvasFrame=null;
-            if(ecosystemCanvasReducedMotion()){
-                ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
-                ecosystemCanvasMotion.clouds=ecosystemCanvasTargets.clouds;
-                ecosystemCanvasMotion.flowers=ecosystemCanvasTargets.flowers;
-                ecosystemCanvasMotion.seedDrop=ecosystemCanvasTargets.seedDrop;
-                ecosystemCanvasParticles=[];
-                drawEcosystemCanvas();
-                return;
-            }
-            const lerp=(start,end,factor)=>start+(end-start)*factor;
-            ecosystemCanvasMotion.roots=lerp(ecosystemCanvasMotion.roots,ecosystemCanvasTargets.roots,.105);
-            ecosystemCanvasMotion.clouds=lerp(ecosystemCanvasMotion.clouds,ecosystemCanvasTargets.clouds,.105);
-            ecosystemCanvasMotion.flowers=lerp(ecosystemCanvasMotion.flowers,ecosystemCanvasTargets.flowers,.105);
-            ecosystemCanvasMotion.seedDrop=lerp(ecosystemCanvasMotion.seedDrop,ecosystemCanvasTargets.seedDrop,.16);
-            ecosystemCanvasParticles=ecosystemCanvasParticles.filter(particle=>{
-                particle.x+=particle.vx;
-                particle.y+=particle.vy;
-                particle.vy+=.025;
-                particle.life-=.035;
-                return particle.life>.04;
-            });
-            drawEcosystemCanvas();
-            const moving=['roots','clouds','flowers','seedDrop'].some(key=>Math.abs(ecosystemCanvasMotion[key]-ecosystemCanvasTargets[key])>.002);
-            if(moving||ecosystemCanvasParticles.length)ecosystemCanvasFrame=requestAnimationFrame(runEcosystemCanvasFrame);
-        }
-
-        function updateEcosystemCanvas(rootCount,cloudCount,canopyBloomed,animate={}){
-            const canvas=document.getElementById('ecosystem-canvas');
-            if(!canvas)return;
-            ecosystemCanvasTargets.roots=Math.max(0,Math.min(1,rootCount/6));
-            ecosystemCanvasTargets.clouds=Math.max(0,Math.min(3,cloudCount));
-            ecosystemCanvasTargets.flowers=canopyBloomed?1:0;
-            const reduced=ecosystemCanvasReducedMotion();
-            if(animate.roots)spawnEcosystemCanvasParticles(160,190);
-            if(animate.trunk)spawnEcosystemCanvasParticles(160,100);
-            if(animate.flower)spawnEcosystemCanvasParticles(206,64);
-            if(reduced){
-                ecosystemCanvasMotion.roots=ecosystemCanvasTargets.roots;
-                ecosystemCanvasMotion.clouds=ecosystemCanvasTargets.clouds;
-                ecosystemCanvasMotion.flowers=ecosystemCanvasTargets.flowers;
-                ecosystemCanvasParticles=[];
-                drawEcosystemCanvas();
-                return;
-            }
-            const changed=['roots','clouds','flowers'].some(key=>Math.abs(ecosystemCanvasMotion[key]-ecosystemCanvasTargets[key])>.002);
-            if(changed||ecosystemCanvasParticles.length)scheduleEcosystemCanvasFrame();
-            else drawEcosystemCanvas();
-        }
-
-        function spawnEcosystemCanvasParticles(x,y){
-            const colors=['#8fbd83','#f48fb1','#f5d37c','#a7c8df'];
-            for(let i=0;i<12&&ecosystemCanvasParticles.length<36;i++){
-                const angle=(Math.PI*2*i)/12;
-                const speed=.55+Math.random()*1.05;
-                ecosystemCanvasParticles.push({
-                    x:x+(Math.random()-.5)*9,y:y+(Math.random()-.5)*7,
-                    vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-.35,
-                    color:colors[i%colors.length],radius:1.4+Math.random()*1.4,life:.9+Math.random()*.1
-                });
-            }
-        }
-
-        function replayEcosystemWelcome(){
-            const panel=document.getElementById('ecosystem-panel');
-            if(panel&&!panel.classList.contains('has-roots')){
-                ecosystemCanvasMotion.seedDrop=1;
-                ecosystemCanvasTargets.seedDrop=0;
-                scheduleEcosystemCanvasFrame();
-                replayEcosystemEffect('#ecosystem-seed','is-arriving');
-            }
-        }
-
-        function updateEcosystemTree(animate = {}) {
-            const dateStr=document.getElementById('currentDate')?.value;
-            if(!dateStr)return;
-            let data={};
-            try{data=JSON.parse(localStorage.getItem(getStorageKey(dateStr))||'{}')||{};}catch(error){data={};}
-
-            const rootActions=['start-2','sleep-4','start-4','mid-3','end-3','sleep-5'];
-            const rootCount=rootActions.filter(id=>data[id]===true).length;
-            const cloudCount=['cumulus','stratus','stratocumulus'].filter(name=>data['cloud_'+name]===true).length;
-            const canopyBloomed=data['sleep-3']===true;
-
-            const panel=document.getElementById('ecosystem-panel');
-            const seed=document.getElementById('ecosystem-seed');
-            const roots=document.getElementById('ecosystem-roots');
-            const trunk=document.getElementById('ecosystem-trunk');
-            const canopy=document.getElementById('ecosystem-canopy');
-            const rootStatus=document.getElementById('ecosystem-root-status');
-            const trunkStatus=document.getElementById('ecosystem-trunk-status');
-            const canopyStatus=document.getElementById('ecosystem-canopy-status');
-            const intro=document.getElementById('ecosystem-intro-copy');
-
-            panel?.classList.toggle('has-roots',rootCount>0);
-            if(rootCount>0)seed?.classList.remove('is-arriving');
-            if(roots){
-                const rootProgress=rootCount/rootActions.length;
-                roots.style.setProperty('--root-scale',(1+rootCount*.065).toFixed(3));
-                roots.querySelectorAll('path').forEach(path=>{
-                    let length=Number(path.dataset.ecoLength||0);
-                    if(!length){
-                        try{
-                            length=path.getTotalLength();
-                            path.dataset.ecoLength=String(length);
-                            path.style.strokeDasharray=length.toFixed(2);
-                        }catch(error){length=0;}
-                    }
-                    if(length)path.style.strokeDashoffset=(length*(1-rootProgress)).toFixed(2);
-                });
-            }
-            if(trunk){
-                trunk.style.setProperty('--trunk-x',(1+cloudCount*.05).toFixed(3));
-                trunk.style.setProperty('--trunk-y',(0.82+cloudCount*.06).toFixed(3));
-            }
-            canopy?.classList.toggle('has-flower',canopyBloomed);
-
-            if(rootStatus)rootStatus.textContent=rootCount
-                ?rootCount+' of 6 prayer and water actions completed · roots reaching farther'
-                :'0 of 6 actions · plant the seed with prayer or water';
-            if(trunkStatus)trunkStatus.textContent=(cloudCount*5)+'% growth · '+cloudCount+' of 3 clouds released';
-            if(canopyStatus)canopyStatus.textContent=canopyBloomed
-                ?'1 of 1 · a flower has bloomed'
-                :'0 of 1 · waiting for Screen Curfew';
-            if(intro)intro.textContent=rootCount
-                ?'Your small, steady actions are helping the roots reach farther. The trunk and canopy grow in their own time.'
-                :'A fresh day begins with a seed. Choose one small prayer or water action to help it take root.';
-
-            const updateMeter=(trackId,fillId,value,max)=>{
-                const track=document.getElementById(trackId);
-                const fill=document.getElementById(fillId);
-                if(track)track.setAttribute('aria-valuenow',String(value));
-                if(fill)fill.style.width=(max?Math.round((value/max)*100):0)+'%';
-            };
-            updateMeter('ecosystem-root-meter','ecosystem-root-meter-fill',rootCount,6);
-            updateMeter('ecosystem-trunk-meter','ecosystem-trunk-meter-fill',cloudCount,3);
-            updateMeter('ecosystem-canopy-meter','ecosystem-canopy-meter-fill',canopyBloomed?1:0,1);
-            updateEcosystemCanvas(rootCount,cloudCount,canopyBloomed,animate);
-
-            if(animate.roots&&rootCount)replayEcosystemEffect('#ecosystem-roots','is-pulsing');
-            if(animate.trunk&&cloudCount)replayEcosystemEffect('#ecosystem-trunk','is-growing');
-            if(animate.flower&&canopyBloomed)replayEcosystemEffect('#ecosystem-canopy','has-flower');
-        }
-
-        function checkSectionCompletion() {
-            updateDailyActivityProgress();
-            let completedCards = 0;
-            for (let i = 1; i <= 6; i++) {
-                const chks = document.querySelectorAll('.sec-' + i);
-                const allChecked = isSectionComplete(i);
-                
-                const trophy = document.getElementById('trophy-' + i);
-                if (allChecked && chks.length > 0) {
-                    trophy.classList.remove('opacity-30');
-                    trophy.classList.add('scale-125', 'opacity-100');
-                    completedCards++;
-                } else {
-                    trophy.classList.add('opacity-30');
-                    trophy.classList.remove('scale-125', 'opacity-100');
-                }
-            }
-
-            const trophyBanner = document.getElementById('trophy-banner');
-            const dateStr = document.getElementById('currentDate').value;
-            const scoreAwardedKey = 'score_awarded_' + dateStr;
-
-            if (completedCards === 6) {
-                if (trophyBanner.classList.contains('hidden')) {
-                    trophyBanner.classList.remove('hidden');
-                    playFanfareSound();
-                    setTimeout(speakProudCue, 400);
-                    confetti({ particleCount: 120, spread: 90, origin: { y: 0.3 } });
-                    
-                    document.getElementById('grand-finale-overlay').classList.remove('hidden');
-
-                    if (!localStorage.getItem(scoreAwardedKey)) {
-                        let currentScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
-                        localStorage.setItem('user_confidence_score', currentScore + 100);
-                        localStorage.setItem(scoreAwardedKey, 'true');
-                        updateScoreDisplay();
-                    }
-                }
-            } else {
-                trophyBanner.classList.add('hidden');
-            }
-        }
-
-        function closeGrandFinale() {
-            document.getElementById('grand-finale-overlay').classList.add('hidden');
-        }
-
-        function loadData() {
-            const dateStr = document.getElementById('currentDate').value;
-            const saved = localStorage.getItem(getStorageKey(dateStr));
-            const data = saved ? JSON.parse(saved) : {};
-
-            // Older versions marked the cloud task complete after only one click.
-            // Clear that legacy completion before restoring the checkbox state.
-            if (data.cloud_flow_version !== 1 && data['cloud-checked'] === true) {
-                data['cloud-checked'] = false;
-                data['cloud-checked__guided'] = false;
-            }
-
-            document.querySelectorAll('.app-chk').forEach(chk => {
-                const id = chk.dataset.id;
-                const isChecked = data[id] !== undefined ? data[id] : false;
-                chk.checked = isChecked;
-                const guided = data[id + '__guided'] === true || isChecked;
-                chk.dataset.guideUnlocked = guided ? 'true' : 'false';
-                if (guided) chk.disabled = false;
-            });
-
-            // Private diary and reflections are loaded only after the passphrase unlocks them.
-            restoreCloudProgress(data);
-            syncChecklistCartoons();
-            updateEcosystemTree();
-
-            checkSectionCompletion();
-            updateScoreDisplay();
-        }
-
-        function saveData(e) {
-            if(e?.target&&(e.target.id==='private-diary-entry'||e.target.id==='diary-passphrase'||e.target.id==='diary-passphrase-confirm'||e.target.classList?.contains('text-input')))return;
-            const dateStr=document.getElementById('currentDate').value;
-            // Preserve old note values until they have been encrypted during first-time setup.
-            let data={};
-            try{data=JSON.parse(localStorage.getItem(getStorageKey(dateStr))||'{}')||{};}catch(error){data={};}
-
-            document.querySelectorAll('.app-chk').forEach(chk => {
-                data[chk.dataset.id] = chk.checked;
-                data[chk.dataset.id + '__guided'] = chk.dataset.guideUnlocked === 'true' || chk.checked;
-            });
-
-            // Private reflection text is saved separately using AES-256-GCM.
-            data.cloud_flow_version = 1;
-            document.querySelectorAll('.cloud-item[data-cloud]').forEach(item => {
-                data['cloud_' + item.dataset.cloud] = item.dataset.released === 'true';
-            });
-
-            localStorage.setItem(getStorageKey(dateStr), JSON.stringify(data));
-
-            const changedId=e?.type==='change'&&e.target?.type==='checkbox'&&e.target.checked?e.target.dataset.id:null;
-            updateEcosystemTree({
-                roots:['start-2','sleep-4','start-4','mid-3','end-3','sleep-5'].includes(changedId),
-                flower:changedId==='sleep-3'
-            });
-
-            if (e && e.target && e.target.type === 'checkbox' && e.target.checked) {
-                playPopSound();
-                confetti({ particleCount: 30, spread: 50, origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight } });
-            }
-
-            checkSectionCompletion();
-        }
-
-        async function handleDateChange() {
-            if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
-            const previousDate=writingLoadedDate;
-            if(writingCryptoKey&&previousDate)await savePrivateWritingForDate(previousDate);
-            loadData();
-            if(writingCryptoKey){
-                try{await loadPrivateWritingForDate(getCurrentWritingDate());}
-                catch(error){setWritingSecurityStatus('Could not decrypt this date’s private writing. Nothing was overwritten. '+(error?.message||''),'error');}
-            }
-        }
-
-        async function resetDayData() {
-            const dateStr=document.getElementById('currentDate').value;
-            if(confirm("Reset today's checklist?")){
-                if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
-                await writingSavePromise;
-                localStorage.removeItem(getStorageKey(dateStr));
-                localStorage.removeItem(getSecureWritingStorageKey('notes',dateStr));
-                loadData();
-                if(writingCryptoKey){
-                    try{await loadPrivateWritingForDate(dateStr);}
-                    catch(error){setWritingSecurityStatus('Checklist reset, but saved private writing could not be read. '+(error?.message||''),'error');}
-                }
-            }
-        }
-
-        async function toggleVoiceRecording() {
-            const recordBtn = document.getElementById('record-btn');
-            const recordText = document.getElementById('record-text');
-
-            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        const blob = new Blob(audioChunks, { type: 'audio/mp3' });
-                        const audioUrl = URL.createObjectURL(blob);
-                        const audioEl = document.getElementById('diary-audio');
-                        audioEl.src = audioUrl;
-                        document.getElementById('audio-container').classList.remove('hidden');
-                    };
-                    mediaRecorder.start();
-                    recordText.innerText = "Stop Recording";
-                    recordBtn.classList.replace('bg-rose-400', 'bg-red-600');
-                } catch (err) {
-                    alert("Microphone access denied or unavailable.");
-                }
-            } else {
-                mediaRecorder.stop();
-                recordText.innerText = "Record Voice Note";
-                recordBtn.classList.replace('bg-red-600', 'bg-rose-400');
-            }
-        }
-
-        window.onload = function() {
-            const now=new Date();
-            const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
-            document.getElementById('currentDate').value=today;
-            attachChecklistCartoons();
-            loadData();
-            updatePrivateWritingAccess();
-        };
-
-        window.addEventListener('resize',resizeEcosystemCanvas,{passive:true});
-        document.addEventListener('change',saveData);
-        document.addEventListener('input',saveData);
-        document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
-            field.addEventListener('input',schedulePrivateWritingSave);
-            field.addEventListener('change',schedulePrivateWritingSave);
-        });
-        document.addEventListener('visibilitychange',()=>{
-            if(document.visibilityState==='hidden'&&writingCryptoKey&&writingLoadedDate){
-                if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
-                savePrivateWritingForDate(writingLoadedDate).catch(error=>setWritingSecurityStatus('Encrypted save failed. '+(error?.message||''),'error'));
-            }
-        });
-    </script>
+    <script type="module" src="./assets/app.js"></script>
+<canvas id="celebration-canvas" aria-hidden="true"></canvas>
 </body>
 </html>

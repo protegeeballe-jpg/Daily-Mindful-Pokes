@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {APP_PIN_CONFIG_KEY,APP_PIN_KDF_ITERATIONS,createAppPinRecord,isValidAppPin,migrateLegacyAppPin,verifyAppPin} from '../assets/app-gate.js';
+function memoryStorage(initial={}){const data=new Map(Object.entries(initial));return {getItem:k=>data.has(k)?data.get(k):null,setItem:(k,v)=>data.set(k,String(v)),removeItem:k=>data.delete(k)};}
+test('new PINs require 6–12 numeric digits',()=>{assert.equal(isValidAppPin('583920'),true);for(const pin of ['1234','12345','1234567890123','12ab56',''])assert.equal(isValidAppPin(pin),false);});
+test('PIN is stored as a salted PBKDF2 verifier, not clear text',async()=>{const pin='583920',record=await createAppPinRecord(pin,webcrypto);assert.equal(record.kdf,'PBKDF2-HMAC-SHA-256');assert.equal(record.iterations,APP_PIN_KDF_ITERATIONS);assert.equal(JSON.stringify(record).includes(pin),false);assert.equal(await verifyAppPin(pin,record,webcrypto),true);assert.equal(await verifyAppPin('583921',record,webcrypto),false);});
+test('the same PIN receives different salts',async()=>{const a=await createAppPinRecord('740291',webcrypto),b=await createAppPinRecord('740291',webcrypto);assert.notEqual(a.salt,b.salt);assert.notEqual(a.verifier,b.verifier);});
+test('tampered records fail closed',async()=>{const record=await createAppPinRecord('583920',webcrypto);assert.equal(await verifyAppPin('583920',{...record,iterations:1},webcrypto),false);assert.equal(await verifyAppPin('583920',{...record,verifier:'bad'},webcrypto),false);});
+test('legacy PIN migration upgrades short PINs',async()=>{const storage=memoryStorage({user_pin:'1234'});const record=await migrateLegacyAppPin(storage,webcrypto);assert.equal(record.requiresUpgrade,true);assert.equal(await verifyAppPin('1234',record,webcrypto),true);assert.equal(storage.getItem('user_pin'),null);assert.ok(storage.getItem(APP_PIN_CONFIG_KEY));assert.deepEqual(await migrateLegacyAppPin(storage,webcrypto),record);});
+test('new install has no universal default PIN',async()=>{const storage=memoryStorage();assert.equal(await migrateLegacyAppPin(storage,webcrypto),null);assert.equal(storage.getItem(APP_PIN_CONFIG_KEY),null);});

@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
+const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
+test('HTML uses a local JS module and no inline handlers or scripts',()=>{assert.match(html,/type="module" src="\.\/assets\/app\.js"/);assert.doesNotMatch(html,/\son(?:click|change|input|submit)\s*=/i);assert.doesNotMatch(html,/<script\s*>/i);assert.match(html,/id="app-pin-form"/);assert.doesNotMatch(app,/defaultPin\s*=\s*["']1234["']/);});
+test('private-writing implementation retains AES-GCM and PBKDF2',()=>{assert.match(writing,/AES-GCM/);assert.match(writing,/PBKDF2/);assert.match(writing,/WRITING_KDF_ITERATIONS=600000/);assert.match(writing,/tagLength:128/);assert.match(writing,/PRIVATE_NOTE_IDS/);assert.match(app,/handleDiaryKeyAction/);});
+test('ordinary progress storage is documented as not encrypted',()=>{assert.match(app,/mindful_pokes_data_/);assert.match(readme,/Checklist checkboxes/i);assert.match(readme,/not encrypted/i);});
+test('checklist, cloud controls and tree remain present',()=>{assert.equal((html.match(/class="[^"]*app-chk/g)||[]).length,23);assert.equal((html.match(/data-cloud="(?:cumulus|stratus|stratocumulus)"/g)||[]).length,3);for(const feature of ['finishChecklist','guide-launch','ecosystem-canvas'])assert.ok(html.includes(feature)||app.includes(feature),feature);});

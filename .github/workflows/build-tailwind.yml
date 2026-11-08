@@ -1,0 +1,35 @@
+name: Build local Tailwind stylesheet
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tailwind-css
+  cancel-in-progress: true
+
+jobs:
+  build-css:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compile pinned Tailwind CSS
+        run: npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i assets/tailwind.input.css -o assets/tailwind.generated.css --minify
+      - name: Commit generated CSS if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/tailwind.generated.css
+          if git diff --cached --quiet; then
+            echo "Compiled stylesheet is current."
+          else
+            git commit -m "Build local Tailwind stylesheet"
+            git push
+          fi
