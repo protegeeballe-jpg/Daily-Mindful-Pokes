@@ -118,7 +118,10 @@ body.garden-overlay-open { overflow: hidden; }
     .garden-small-button { padding:.55rem .65rem; font-size:.76rem; }
 }
 @media (prefers-reduced-motion:reduce) {
-    .garden-small-button,.garden-action-button,.garden-meter-fill,.garden-room-scene.is-open::after { animation:none; }
+    .garden-small-button,.garden-action-button,.garden-meter-fill,.garden-room-scene.is-open::after {
+        transition:none;
+        animation:none;
+    }
 }
 
 /* Shared garden hub presentation for the checklist and encrypted diary. */
