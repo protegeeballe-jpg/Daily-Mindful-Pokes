@@ -7,7 +7,6 @@ const overlay = document.getElementById('little-garden');
 if (overlay) initializeGarden(overlay);
 
 function initializeGarden(root) {
-    let lastFocusedElement = null;
     let windowIsOpen = false;
 
     const byId = id => root.querySelector('#' + id);
@@ -62,7 +61,7 @@ function initializeGarden(root) {
         });
         const heading = byId('garden-scene-heading');
         if (heading) {
-            const labels = { room: 'The little room', outdoors: 'The garden', journal: 'Garden notes', checklist: 'My Health Checklist', diary: 'Personal Diary' };
+            const labels = { room: 'The little room', outdoors: 'The garden', checklist: 'My Health Checklist', diary: 'Personal Diary' };
             heading.textContent = labels[sceneName] || 'The little room';
         }
         const intro = byId('garden-scene-intro');
@@ -70,7 +69,6 @@ function initializeGarden(root) {
             const descriptions = {
                 room: 'A quiet little place to grow two seeds, enjoy fresh air, and watch time do its lovely work.',
                 outdoors: 'Your plants grow gently with the passing days. Watering is a kind moment, never a race.',
-                journal: 'Keep small garden observations here. For private thoughts, use your encrypted Personal Diary.',
                 checklist: 'Small steps, friendly guides, and daily wins. Move through the cards at your own pace.',
                 diary: 'A private place for your thoughts. Your writing is encrypted with your separate passphrase.'
             };
@@ -93,7 +91,10 @@ function initializeGarden(root) {
         }
         const windowButton = byId('garden-window-button');
         const roomWindow = byId('garden-window');
-        if (windowButton) windowButton.setAttribute('aria-pressed', String(windowIsOpen));
+        if (windowButton) {
+            windowButton.setAttribute('aria-pressed', String(windowIsOpen));
+            windowButton.textContent = windowIsOpen ? 'Close the window 🍃' : 'Open the window 🍃';
+        }
         if (roomWindow) roomWindow.classList.toggle('is-open', windowIsOpen);
     }
 
@@ -160,35 +161,7 @@ function initializeGarden(root) {
         }
     }
 
-    function renderJournal() {
-        const list = byId('garden-notes-list');
-        if (!list) return;
-        list.replaceChildren();
-
-        if (!garden || garden.notes.length === 0) {
-            const empty = document.createElement('p');
-            empty.className = 'garden-empty-note';
-            empty.textContent = 'Your journal is waiting for its first little observation.';
-            list.append(empty);
-            return;
-        }
-
-        [...garden.notes].reverse().forEach(note => {
-            const entry = document.createElement('article');
-            entry.className = 'garden-note-entry';
-            const date = document.createElement('p');
-            date.className = 'garden-note-date';
-            date.textContent = note.date;
-            const body = document.createElement('p');
-            body.className = 'garden-note-copy';
-            body.textContent = note.text;
-            entry.append(date, body);
-            list.append(entry);
-        });
-    }
-
     function openOverlay() {
-        lastFocusedElement = document.activeElement;
         overlay.classList.remove('hidden');
         document.body.classList.add('garden-overlay-open');
         windowIsOpen = false;
@@ -249,14 +222,6 @@ function initializeGarden(root) {
                 renderRoom();
                 setScene('room');
                 break;
-            case 'open-journal':
-                renderJournal();
-                setScene('journal');
-                break;
-            case 'back-to-garden':
-                renderGarden();
-                setScene('outdoors');
-                break;
             case 'water-garden': {
                 if (!garden) return;
                 const today = todayISO();
@@ -269,23 +234,6 @@ function initializeGarden(root) {
                 saveGarden();
                 renderGarden();
                 showStatus('A gentle drink for both plants. Watering is a caring moment, not a growth shortcut.', 'success');
-                break;
-            }
-            case 'save-garden-note': {
-                if (!garden) return;
-                const field = byId('garden-note-input');
-                const text = field?.value.trim().slice(0, 500) || '';
-                if (!text) {
-                    showStatus('Write a small observation first, then save it in your garden journal.', 'error');
-                    field?.focus();
-                    return;
-                }
-                garden.notes.push({ date: todayISO(), text });
-                garden.notes = garden.notes.slice(-100);
-                saveGarden();
-                if (field) field.value = '';
-                renderJournal();
-                showStatus('Your garden observation has been added to the journal.', 'success');
                 break;
             }
             default:
