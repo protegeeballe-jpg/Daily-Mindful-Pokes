@@ -46,7 +46,7 @@ test('Onnea garden is a separate local module and does not replace existing feat
  assert.match(html,/assets\/garden\.css/);
  assert.match(html,/type="module" src="\.\/assets\/garden\.js"/);
  assert.match(html,/aria-modal="true"/);
- assert.match(html,/prefers-reduced-motion:reduce/);
+ assert.match(readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8'),/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(html,/<script\\s*>/i);
  assert.match(readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8'),/GARDEN_STORAGE_KEY/);
 });
