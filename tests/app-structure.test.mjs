@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
 const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 test('HTML uses a local app module and no inline handlers or scripts',()=>{
@@ -49,6 +50,14 @@ test('Garden hub is a separate local module and does not replace existing featur
  assert.match(readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8'),/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(html,/<script\\s*>/i);
  assert.match(readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8'),/GARDEN_STORAGE_KEY/);
+});
+
+test('garden startup selector matches the actual overlay and enables scene navigation',()=>{
+ assert.match(html,/id="little-garden"/);
+ assert.match(garden,/document\.getElementById\('little-garden'\)/);
+ assert.doesNotMatch(garden,/document\.getElementById\('-garden'\)/);
+ assert.match(garden,/document\.addEventListener\('garden:open'/);
+ assert.match(garden,/document\.addEventListener\('garden:show-scene'/);
 });
 
 test('the product interface does not expose the private inspiration name',()=>{

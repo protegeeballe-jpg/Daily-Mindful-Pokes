@@ -3,7 +3,7 @@ import {
     getFlowerStage, getPlantAgeDays, getTreeStage, validateGardenState
 } from './garden-model.js';
 
-const overlay = document.getElementById('-garden');
+const overlay = document.getElementById('little-garden');
 if (overlay) initializeGarden(overlay);
 
 function initializeGarden(root) {
