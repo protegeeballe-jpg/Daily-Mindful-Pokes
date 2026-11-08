@@ -5,7 +5,7 @@ A local-first daily wellness and habit-building application.
 ## Security model
 
 - **App access PIN:** A local screen gate. New PINs must contain 6–12 digits and are stored as salted PBKDF2-HMAC-SHA-256 verifiers (600,000 iterations). There is no universal default PIN. Legacy plaintext `user_pin` values are converted to a verifier at first launch; legacy values shorter than six digits must be upgraded.
-- **Private writing:** The Safe Space Diary and four checklist reflection fields retain the existing browser-native AES-256-GCM encryption. A separate passphrase is derived with PBKDF2-HMAC-SHA-256 (600,000 iterations). The encryption key remains in memory for the unlocked session.
+- **Private writing:** The single Personal Diary and four checklist reflection fields retain the existing browser-native AES-256-GCM encryption. A separate passphrase is derived with PBKDF2-HMAC-SHA-256 (600,000 iterations). The encryption key remains in memory for the unlocked session.
 
 **Not encrypted:** Checklist checkboxes, guided-task unlock flags, cloud-release flags, daily progress, confidence score, and app settings remain ordinary browser local-storage values. The app PIN does not encrypt this progress data.
 
@@ -28,10 +28,11 @@ The HTML sets a meta-delivered Content Security Policy: scripts and other fetche
 ## The Little Garden
 
 - `assets/garden.js` and `assets/garden-model.js` provide the shared room, garden, care log, and calendar-based plant growth experience.
+- `assets/garden-room-background.jpg` is the locally stored room artwork used on the app home and whenever the Room scene is opened.
 - The health checklist and encrypted Personal Diary are presented as scenes inside the garden hub. Their existing activity logic and encryption module remain separate.
 - The garden stores its own versioned state under `daily_mindful_pokes_garden_v1`. It does not read or write checklist progress or encrypted diary records.
 - The fruit tree progresses through seed, sprout, seedling, young tree, sapling, and a one-year milestone. The flower follows its own growth stages. Repeated visits and watering do not accelerate growth; missed days do not harm plants.
-- Garden journal notes and care dates are local browser storage and are **not encrypted**. They are separate from the Safe Space Diary’s encrypted private writing. Clearing site data can delete the garden.
+- The app has one encrypted Personal Diary. The separate Garden Notes feature has been removed; older garden-note records are ignored by the current garden model. Garden planting and watering data remain local browser storage and are **not encrypted**. Clearing site data can delete the garden.
 
 ## Local recovery
 
