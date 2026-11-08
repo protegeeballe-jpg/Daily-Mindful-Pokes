@@ -143,3 +143,15 @@ body.garden-overlay-open { overflow: hidden; }
 @media (prefers-reduced-motion:reduce) {
     .garden-small-button,.garden-action-button,.garden-meter-fill,.garden-window.is-open .garden-window-cloud { transition:none; animation:none; }
 }
+
+/* Shared garden hub presentation for the checklist and encrypted diary. */
+.garden-topbar { position:sticky; top:0; z-index:45; }
+.garden-checklist-scene { padding-bottom:2rem; }
+.garden-checklist-scene > header { position:relative; top:auto; z-index:1; margin:0 auto 1rem; border:1px solid #d4e0cf; border-radius:1.2rem; }
+.garden-checklist-scene .step-card { border-radius:1.35rem; box-shadow:3px 4px 0 rgba(105,86,66,.12),inset 0 0 18px rgba(255,255,255,.38); }
+.garden-checklist-scene .watercolor-progress,.garden-checklist-scene .ecosystem-card {
+    border-radius:1.25rem; box-shadow:0 3px 0 rgba(87,119,88,.1);
+}
+#view-diary .card-lavender { border-radius:1.4rem; box-shadow:3px 4px 0 rgba(105,86,66,.12); }
+#anim-modal { z-index:85; }
+#grand-finale-overlay { z-index:95; }
