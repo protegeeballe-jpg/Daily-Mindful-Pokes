@@ -1,0 +1,78 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+    FLOWER_TYPES, TREE_TYPES, createGardenState, daysBetweenDates,
+    getFlowerStage, getPlantAgeDays, getTreeStage, isISODate, validateGardenState
+} from '../assets/garden-model.js';
+
+test('the first garden contains one supported fruit tree seed and one flower seed', () => {
+    const garden = createGardenState('mango', 'sunflower', '2026-11-08');
+    assert.equal(garden.version, 1);
+    assert.equal(garden.treeType, 'mango');
+    assert.equal(garden.flowerType, 'sunflower');
+    assert.equal(garden.wateringDates.length, 0);
+    assert.equal(garden.notes.length, 0);
+    assert.equal(Object.keys(TREE_TYPES).length, 3);
+    assert.equal(Object.keys(FLOWER_TYPES).length, 3);
+});
+
+test('tree growth follows calendar milestones through its first year', () => {
+    assert.equal(getTreeStage(0).id, 'seed');
+    assert.equal(getTreeStage(6).id, 'seed');
+    assert.equal(getTreeStage(7).id, 'sprout');
+    assert.equal(getTreeStage(30).id, 'seedling');
+    assert.equal(getTreeStage(90).id, 'young-tree');
+    assert.equal(getTreeStage(180).id, 'sapling');
+    assert.equal(getTreeStage(365).id, 'one-year-tree');
+    assert.equal(getTreeStage(900).id, 'one-year-tree');
+    assert.equal(getTreeStage(365).progress, 100);
+});
+
+test('flower growth reaches bloom on its own slower calendar', () => {
+    assert.equal(getFlowerStage(0).id, 'seed');
+    assert.equal(getFlowerStage(4).id, 'sprout');
+    assert.equal(getFlowerStage(14).id, 'seedling');
+    assert.equal(getFlowerStage(30).id, 'bud');
+    assert.equal(getFlowerStage(60).id, 'first-bloom');
+    assert.equal(getFlowerStage(90).id, 'full-bloom');
+});
+
+test('calendar age is timezone-independent and handles leap days', () => {
+    assert.equal(daysBetweenDates('2024-02-28', '2024-03-01'), 2);
+    assert.equal(daysBetweenDates('2026-11-08', '2026-11-08'), 0);
+    assert.equal(getPlantAgeDays('2026-11-08', '2026-11-18'), 10);
+    assert.equal(daysBetweenDates('2026-11-18', '2026-11-08'), 0);
+});
+
+test('invalid dates and impossible calendar days are rejected', () => {
+    for (const value of ['2026-02-29', '2026-13-01', '2026-00-10', 'not-a-date', '2026-1-01']) {
+        assert.equal(isISODate(value), false);
+    }
+    assert.equal(daysBetweenDates('bad', '2026-11-08'), null);
+});
+
+test('garden creation rejects unsupported or invalid values', () => {
+    assert.throws(() => createGardenState('banana', 'sunflower', '2026-11-08'), TypeError);
+    assert.throws(() => createGardenState('mango', 'rose', '2026-11-08'), TypeError);
+    assert.throws(() => createGardenState('mango', 'sunflower', '2026-02-29'), TypeError);
+});
+
+test('saved garden data is normalized and unsafe fields are discarded', () => {
+    const restored = validateGardenState({
+        version: 1,
+        plantedOn: '2026-11-08',
+        treeType: 'mango',
+        flowerType: 'cosmos',
+        wateringDates: ['2026-11-08', 'bad', '2026-11-08'],
+        notes: [{ date: '2026-11-08', text: '  First leaf!  ' }, { date: '2026-11-09', text: '<script>' }],
+        unexpected: 'ignored'
+    });
+    assert.deepEqual(restored.wateringDates, ['2026-11-08']);
+    assert.deepEqual(restored.notes, [
+        { date: '2026-11-08', text: 'First leaf!' },
+        { date: '2026-11-09', text: '<script>' }
+    ]);
+    assert.equal(Object.hasOwn(restored, 'unexpected'), false);
+    assert.equal(validateGardenState({ ...restored, treeType: 'data:text/html' }), null);
+    assert.equal(validateGardenState({ ...restored, version: 2 }), null);
+});
