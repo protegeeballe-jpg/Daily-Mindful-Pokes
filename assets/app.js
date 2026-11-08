@@ -165,20 +165,36 @@ import {
         function finishAppGateUnlock(){
             document.getElementById('app-pin-form')?.reset();
             document.getElementById('view-pin')?.classList.add('hidden');
-            showPage('launcher');
+            showPage('garden');
         }
 
         function showPage(pageId) {
+            // The garden room is now the app's home. Checklist and diary remain
+            // separate feature views, presented inside that shared environment.
+            if (pageId === 'launcher') pageId = 'garden';
+
             ['view-launcher', 'view-diary', 'view-checklist'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
+                document.getElementById(id)?.classList.add('hidden');
             });
-            document.getElementById('view-' + pageId).classList.remove('hidden');
+
+            if (['garden', 'checklist', 'diary'].includes(pageId)) {
+                const garden = document.getElementById('little-garden');
+                if (!garden) return;
+                if (pageId === 'garden') {
+                    document.dispatchEvent(new CustomEvent('garden:open'));
+                } else {
+                    document.dispatchEvent(new CustomEvent('garden:show-scene', { detail: { scene: pageId } }));
+                }
+            } else {
+                document.getElementById('view-' + pageId)?.classList.remove('hidden');
+            }
+
             if (pageId === 'checklist') {
                 resizeEcosystemCanvas();
                 updateEcosystemTree();
                 replayEcosystemWelcome();
             }
-            if (pageId === 'launcher') updateScoreDisplay();
+            if (pageId === 'garden') updateScoreDisplay();
             if (pageId === 'diary') {
                 renderDiarySecurityUI();
                 if (writingCryptoKey && writingLoadedDate !== getCurrentWritingDate()) {
