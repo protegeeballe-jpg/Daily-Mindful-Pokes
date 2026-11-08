@@ -11,7 +11,7 @@ test('the first garden contains one supported fruit tree seed and one flower see
     assert.equal(garden.treeType, 'mango');
     assert.equal(garden.flowerType, 'sunflower');
     assert.equal(garden.wateringDates.length, 0);
-    assert.equal(garden.notes.length, 0);
+    assert.equal(Object.hasOwn(garden, 'notes'), false);
     assert.equal(Object.keys(TREE_TYPES).length, 3);
     assert.equal(Object.keys(FLOWER_TYPES).length, 3);
 });
@@ -68,10 +68,7 @@ test('saved garden data is normalized and unsafe fields are discarded', () => {
         unexpected: 'ignored'
     });
     assert.deepEqual(restored.wateringDates, ['2026-11-08']);
-    assert.deepEqual(restored.notes, [
-        { date: '2026-11-08', text: 'First leaf!' },
-        { date: '2026-11-09', text: '<script>' }
-    ]);
+    assert.equal(Object.hasOwn(restored, 'notes'), false);
     assert.equal(Object.hasOwn(restored, 'unexpected'), false);
     assert.equal(validateGardenState({ ...restored, treeType: 'data:text/html' }), null);
     assert.equal(validateGardenState({ ...restored, version: 2 }), null);

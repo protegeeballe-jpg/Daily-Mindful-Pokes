@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync, existsSync} from 'node:fs';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
 const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
@@ -77,4 +77,20 @@ test('the health checklist and encrypted diary are scenes inside the garden hub'
  assert.ok(gardenStart < checklistStart && checklistStart < gardenEnd);
  assert.match(app,/garden:show-scene/);
  assert.match(app,/showPage\('garden'\)/);
+});
+
+test('the room uses the supplied local artwork and has one Personal Diary view',()=>{
+ const gardenStart=html.indexOf('<section id="little-garden"');
+ const gardenEnd=html.indexOf('<!-- 🌟 ANIMATION MODAL POPUP -->',gardenStart);
+ const gardenMarkup=html.slice(gardenStart,gardenEnd);
+ const roomStart=gardenMarkup.indexOf('<section data-garden-scene="room"');
+ const outdoorStart=gardenMarkup.indexOf('<section data-garden-scene="outdoors"');
+ const roomMarkup=gardenMarkup.slice(roomStart,outdoorStart);
+ assert.equal((roomMarkup.match(/data-page="diary"/g)||[]).length,1);
+ assert.equal((html.match(/<div id="view-diary"/g)||[]).length,1);
+ assert.doesNotMatch(gardenMarkup,/Garden notes|garden-note|garden-journal|open-journal|data-garden-scene="journal"/i);
+ assert.match(gardenMarkup,/id="garden-window" class="garden-room-scene"/);
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ assert.match(gardenCss,/garden-room-background\.jpg/);
+ assert.ok(existsSync(new URL('../assets/garden-room-background.jpg',import.meta.url)));
 });

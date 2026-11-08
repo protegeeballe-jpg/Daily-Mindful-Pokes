@@ -106,8 +106,7 @@ export function createGardenState(treeType, flowerType, plantedOn) {
         plantedOn,
         treeType,
         flowerType,
-        wateringDates: [],
-        notes: []
+        wateringDates: []
     };
 }
 
@@ -120,20 +119,11 @@ export function validateGardenState(value) {
         ? [...new Set(value.wateringDates.filter(isISODate))].slice(-3660)
         : [];
 
-    const notes = Array.isArray(value.notes)
-        ? value.notes.slice(-100).flatMap(note => {
-            if (!note || typeof note !== 'object' || !isISODate(note.date) || typeof note.text !== 'string') return [];
-            const text = note.text.trim().slice(0, 500);
-            return text ? [{ date: note.date, text }] : [];
-        })
-        : [];
-
     return {
         version: 1,
         plantedOn: value.plantedOn,
         treeType: value.treeType,
         flowerType: value.flowerType,
-        wateringDates,
-        notes
+        wateringDates
     };
 }
