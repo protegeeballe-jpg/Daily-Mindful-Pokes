@@ -62,8 +62,19 @@ function initializeOnneaGarden(root) {
         });
         const heading = byId('garden-scene-heading');
         if (heading) {
-            const labels = { room: 'The little room', outdoors: 'The garden', journal: 'Garden journal' };
-            heading.textContent = labels[sceneName] || 'Onnea’s Little Garden';
+            const labels = { room: 'The little room', outdoors: 'The garden', journal: 'Garden notes', checklist: 'My Health Checklist', diary: 'Personal Diary' };
+            heading.textContent = labels[sceneName] || 'The little room';
+        }
+        const intro = byId('garden-scene-intro');
+        if (intro) {
+            const descriptions = {
+                room: 'A quiet little place to grow two seeds, enjoy fresh air, and watch time do its lovely work.',
+                outdoors: 'Your plants grow gently with the passing days. Watering is a kind moment, never a race.',
+                journal: 'Keep small garden observations here. For private thoughts, use your encrypted Personal Diary.',
+                checklist: 'Small steps, friendly guides, and daily wins. Move through the cards at your own pace.',
+                diary: 'A private place for your thoughts. Your writing is encrypted with your separate passphrase.'
+            };
+            intro.textContent = descriptions[sceneName] || descriptions.room;
         }
     }
 
@@ -186,10 +197,10 @@ function initializeOnneaGarden(root) {
     }
 
     function closeOverlay() {
-        overlay.classList.add('hidden');
-        document.body.classList.remove('garden-overlay-open');
-        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
-        lastFocusedElement = null;
+        // Escape and the room control return to the room; the garden remains the app home.
+        renderRoom();
+        setScene('room');
+        byId('garden-close')?.focus();
     }
 
     function handleAction(action, trigger) {
@@ -285,6 +296,21 @@ function initializeOnneaGarden(root) {
         const trigger = event.target.closest('[data-garden-action]');
         if (!trigger) return;
         handleAction(trigger.dataset.gardenAction, trigger);
+    });
+
+    document.addEventListener('garden:open', () => {
+        if (overlay.classList.contains('hidden')) openOverlay();
+        else {
+            renderRoom();
+            setScene('room');
+        }
+    });
+
+    document.addEventListener('garden:show-scene', event => {
+        const sceneName = event.detail?.scene;
+        if (!['checklist', 'diary'].includes(sceneName)) return;
+        if (overlay.classList.contains('hidden')) openOverlay();
+        setScene(sceneName);
     });
 
     document.addEventListener('keydown', event => {
