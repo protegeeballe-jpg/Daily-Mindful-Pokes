@@ -40,7 +40,7 @@ test('all existing checklist, cloud and ecosystem features remain',()=>{
  for(const feature of ['finishChecklist','guide-launch','ecosystem-canvas'])assert.ok(html.includes(feature)||app.includes(feature),feature);
 });
 
-test('Onnea garden is a separate local module and does not replace existing features',()=>{
+test('Garden hub is a separate local module and does not replace existing features',()=>{
  assert.match(html,/id="onnea-garden"/);
  assert.match(html,/data-garden-action="open-garden"/);
  assert.match(html,/assets\/garden\.css/);
@@ -49,4 +49,17 @@ test('Onnea garden is a separate local module and does not replace existing feat
  assert.match(readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8'),/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(html,/<script\\s*>/i);
  assert.match(readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8'),/GARDEN_STORAGE_KEY/);
+});
+
+test('the product interface does not expose the private inspiration name',()=>{
+ assert.doesNotMatch(html,/Onnea/i);
+ assert.doesNotMatch(readme,/Onnea/i);
+});
+test('the health checklist and encrypted diary are scenes inside the garden hub',()=>{
+ assert.match(html,/id="view-checklist" data-garden-scene="checklist"/);
+ assert.match(html,/id="view-diary" data-garden-scene="diary"/);
+ assert.match(html,/data-page="checklist"/);
+ assert.match(html,/data-page="diary"/);
+ assert.match(app,/garden:show-scene/);
+ assert.match(app,/showPage\('garden'\)/);
 });
