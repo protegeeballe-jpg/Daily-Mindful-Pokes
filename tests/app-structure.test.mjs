@@ -92,6 +92,6 @@ test('the room uses the supplied local artwork and has one Personal Diary view',
  assert.match(gardenMarkup,/id="garden-window" class="garden-room-scene"/);
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  assert.match(gardenCss,/garden-room-background\.jpg/);
- assert.equal((gardenCss.match(/\\{/g)||[]).length,(gardenCss.match(/\\}/g)||[]).length);
+ assert.equal([...gardenCss].filter(char=>char==='{').length,[...gardenCss].filter(char=>char==='}').length);
  assert.ok(existsSync(new URL('../assets/garden-room-background.jpg',import.meta.url)));
 });
