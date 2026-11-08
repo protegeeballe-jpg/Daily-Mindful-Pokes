@@ -228,18 +228,32 @@
         .ecosystem-card{position:relative;overflow:hidden;border:1.5px solid #b9cbb4;border-radius:1.5rem;padding:1rem;background:radial-gradient(ellipse at 18% 8%,rgba(255,255,255,.9),transparent 42%),radial-gradient(ellipse at 85% 78%,rgba(197,222,194,.28),transparent 48%),linear-gradient(145deg,#f4f6e9,#edf4ee 55%,#f8f2e6);box-shadow:3px 4px 0 rgba(93,121,94,.13)}
         .ecosystem-svg{display:block;width:100%;max-width:330px;height:auto;margin:0 auto;overflow:visible}
         .ecosystem-roots{transform-box:view-box;transform-origin:160px 208px;transform:scaleX(var(--root-scale,1));transition:transform .45s ease}
+        .ecosystem-roots path{transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)}
         .ecosystem-roots.is-pulsing{animation:ecosystem-root-pulse .9s ease-out}
-        .ecosystem-trunk{transform-box:view-box;transform-origin:160px 192px;transform:scale(var(--trunk-x,1),var(--trunk-y,1));transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+        .ecosystem-trunk{transform-box:view-box;transform-origin:160px 202px;transform:scale(var(--trunk-x,1),var(--trunk-y,.82));transition:transform .65s cubic-bezier(.2,.8,.2,1)}
         .ecosystem-trunk.is-growing{animation:ecosystem-trunk-grow .75s ease-out}
+        .ecosystem-seed{opacity:1;transform-box:view-box;transform-origin:160px 217px}
+        .ecosystem-seed.is-arriving{animation:ecosystem-seed-drop 1.15s cubic-bezier(.2,.85,.3,1.15) both}
+        .ecosystem-seed-heart{transform-box:view-box;transform-origin:178px 202px;animation:ecosystem-heart-float 2.2s ease-in-out infinite}
+        .ecosystem-card.has-roots #ecosystem-seed{opacity:0;transform:scale(.55);transition:opacity .35s ease,transform .4s ease;pointer-events:none}
         .ecosystem-canopy-flower{opacity:0;transform:scale(.35);transform-box:view-box;transform-origin:239px 61px;transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
         .ecosystem-canopy.has-flower .ecosystem-canopy-flower{opacity:1;transform:scale(1);filter:drop-shadow(0 0 5px rgba(244,191,95,.75));animation:ecosystem-flower-pop .8s ease-out}
         .ecosystem-status{display:flex;align-items:flex-start;gap:.5rem;padding:.55rem .65rem;border-radius:.85rem;background:rgba(255,255,255,.62);border:1px solid rgba(121,145,115,.17);font-size:.72rem;line-height:1.4;color:#405847}
+        .ecosystem-status>span{flex:0 0 auto;font-size:1.15rem;line-height:1.2}
+        .ecosystem-status-copy{flex:1;min-width:0}
         .ecosystem-status strong{display:block;color:#35513d;font-size:.74rem}
-        .ecosystem-status span{display:block;color:#5c7060}
+        .ecosystem-status-copy>span{display:block;color:#5c7060;line-height:1.35}
+        .ecosystem-meter{height:6px;margin-top:.42rem;overflow:hidden;border-radius:999px;background:rgba(110,139,109,.16)}
+        .ecosystem-meter-fill{height:100%;width:0;border-radius:inherit;transition:width .65s cubic-bezier(.2,.8,.2,1)}
+        .roots-fill{background:linear-gradient(90deg,#a7c995,#648f70)}
+        .trunk-fill{background:linear-gradient(90deg,#d2a878,#98714f)}
+        .canopy-fill{background:linear-gradient(90deg,#f1d18a,#d68c9b)}
+        @keyframes ecosystem-seed-drop{0%{opacity:0;transform:translateY(-48px) scale(.7)}62%{opacity:1;transform:translateY(5px) scale(1.08)}82%{transform:translateY(-2px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes ecosystem-heart-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.06)}}
         @keyframes ecosystem-root-pulse{0%{transform:scaleX(.92)}45%{transform:scaleX(1.13)}100%{transform:scaleX(var(--root-scale,1))}}
         @keyframes ecosystem-trunk-grow{0%{filter:brightness(1)}35%{filter:brightness(1.14)}100%{filter:brightness(1)}}
         @keyframes ecosystem-flower-pop{0%{transform:scale(.25) rotate(-24deg)}65%{transform:scale(1.18) rotate(9deg)}100%{transform:scale(1) rotate(0)}}
-        @media(prefers-reduced-motion:reduce){.ecosystem-roots,.ecosystem-trunk,.ecosystem-canopy-flower{transition:none!important;animation:none!important}}
+        @media(prefers-reduced-motion:reduce){.ecosystem-roots,.ecosystem-roots path,.ecosystem-trunk,.ecosystem-seed,.ecosystem-seed-heart,.ecosystem-canopy-flower,.ecosystem-meter-fill{transition:none!important;animation:none!important}}
 
     </style>
 </head>
@@ -369,10 +383,10 @@
                     </div>
                     <span class="text-xs font-bold text-emerald-900 bg-white/65 border border-emerald-200 rounded-full px-3 py-1">Today’s tree</span>
                 </div>
-                <p class="text-xs text-emerald-900/75 mb-2">Every small action nurtures a different part of your tree. Watch it grow as you care for yourself.</p>
+                <p id="ecosystem-intro-copy" class="text-xs text-emerald-900/75 mb-2">Start with one small action. Your seed is ready to take root.</p>
                 <svg id="ecosystem-tree-art" class="ecosystem-svg" viewBox="0 0 320 240" role="img" aria-labelledby="ecosystem-tree-title ecosystem-tree-desc" xmlns="http://www.w3.org/2000/svg">
                     <title id="ecosystem-tree-title">A watercolor tree that grows with your daily actions</title>
-                    <desc id="ecosystem-tree-desc">Prayer and water nourish the roots. Releasing clouds strengthens the trunk. Completing Screen Curfew adds a flower to the canopy.</desc>
+                    <desc id="ecosystem-tree-desc">A seed settles into the soil. Prayer and water grow the roots, releasing clouds strengthens the trunk, and Screen Curfew blooms a flower.</desc>
                     <defs>
                         <radialGradient id="eco-wash" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#fffef1" stop-opacity=".9"/><stop offset="1" stop-color="#dcebdc" stop-opacity="0"/></radialGradient>
                         <linearGradient id="eco-bark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e7454"/><stop offset=".48" stop-color="#b18a5d"/><stop offset="1" stop-color="#80664d"/></linearGradient>
@@ -424,14 +438,44 @@
                         <path d="M143 207 Q122 209 110 227 M181 208 Q201 213 214 228" stroke-width="2.6" opacity=".8"/>
                         <path d="M125 213 Q112 220 97 221 M202 214 Q221 221 234 222" stroke-width="2.1" opacity=".7"/>
                     </g>
+                    <g id="ecosystem-seed" class="ecosystem-seed is-arriving" aria-hidden="true">
+                        <ellipse cx="160" cy="217" rx="7" ry="4.5" fill="#a8794f" stroke="#78583f" stroke-width="1.5"/>
+                        <path d="M159 214 Q163 210 165 214" fill="none" stroke="#dfbd8d" stroke-width="1.4" stroke-linecap="round"/>
+                        <g class="ecosystem-seed-heart">
+                            <path d="M178 199 C174 194 167 198 170 203 L178 210 L186 203 C189 198 182 194 178 199Z" fill="#df8d9b" stroke="#b96d7c" stroke-width="1"/>
+                            <path d="M174 200 Q177 198 179 201" fill="none" stroke="#fff2ee" stroke-width="1.2" stroke-linecap="round"/>
+                        </g>
+                        <path d="M145 211 L147 207 M145 207 L149 207 M193 214 L195 210 M193 210 L197 210" fill="none" stroke="#d8bd7c" stroke-width="1.4" stroke-linecap="round"/>
+                    </g>
                     <g fill="#8fb483" opacity=".9"><path d="M40 208 Q47 192 55 208 Q48 205 40 208Z"/><path d="M270 207 Q279 190 286 207 Q278 204 270 207Z"/></g>
                 </svg>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2" aria-live="polite">
-                    <div class="ecosystem-status"><span aria-hidden="true">🌱</span><div><strong>Spiritual Roots</strong><span id="ecosystem-root-status">Waiting for prayer or water</span></div></div>
-                    <div class="ecosystem-status"><span aria-hidden="true">🌳</span><div><strong>Emotional Trunk</strong><span id="ecosystem-trunk-status">0% growth · release a cloud</span></div></div>
-                    <div class="ecosystem-status"><span aria-hidden="true">🌸</span><div><strong>Mental Canopy</strong><span id="ecosystem-canopy-status">Waiting for Screen Curfew</span></div></div>
+                    <div class="ecosystem-status">
+                        <span aria-hidden="true">🌱</span>
+                        <div class="ecosystem-status-copy">
+                            <strong>Spiritual Roots</strong>
+                            <span id="ecosystem-root-status">0 of 6 actions · plant the seed</span>
+                            <div id="ecosystem-root-meter" class="ecosystem-meter" role="progressbar" aria-label="Spiritual roots growth" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div id="ecosystem-root-meter-fill" class="ecosystem-meter-fill roots-fill"></div></div>
+                        </div>
+                    </div>
+                    <div class="ecosystem-status">
+                        <span aria-hidden="true">🌳</span>
+                        <div class="ecosystem-status-copy">
+                            <strong>Emotional Trunk</strong>
+                            <span id="ecosystem-trunk-status">0% growth · 0 of 3 clouds released</span>
+                            <div id="ecosystem-trunk-meter" class="ecosystem-meter" role="progressbar" aria-label="Emotional trunk growth" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><div id="ecosystem-trunk-meter-fill" class="ecosystem-meter-fill trunk-fill"></div></div>
+                        </div>
+                    </div>
+                    <div class="ecosystem-status">
+                        <span aria-hidden="true">🌸</span>
+                        <div class="ecosystem-status-copy">
+                            <strong>Mental Canopy</strong>
+                            <span id="ecosystem-canopy-status">0 of 1 · waiting for Screen Curfew</span>
+                            <div id="ecosystem-canopy-meter" class="ecosystem-meter" role="progressbar" aria-label="Mental canopy bloom" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div id="ecosystem-canopy-meter-fill" class="ecosystem-meter-fill canopy-fill"></div></div>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-[10px] text-emerald-900/65 text-center mt-3">Your tree is a gentle visual record of today's actions. It grows from what you actually complete.</p>
+                <p class="text-[10px] text-emerald-900/65 text-center mt-3">Your tree grows at your own pace. Missed a day? It never wilts; each date keeps its own progress on this device.</p>
             </section>
             <div id="writing-lock-hint" class="writing-lock-hint rounded-xl p-3 mb-5 text-xs hidden">Your private reflection boxes are locked. <button type="button" onclick="showPage('diary')" class="font-bold underline">Open Safe Space Diary to unlock them.</button></div>
 
@@ -860,6 +904,10 @@
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById('view-' + pageId).classList.remove('hidden');
+            if (pageId === 'checklist') {
+                updateEcosystemTree();
+                replayEcosystemWelcome();
+            }
             if (pageId === 'launcher') updateScoreDisplay();
             if (pageId === 'diary') {
                 renderDiarySecurityUI();
@@ -1362,6 +1410,13 @@
             element.classList.add(className);
         }
 
+        function replayEcosystemWelcome(){
+            const panel=document.getElementById('ecosystem-panel');
+            if(panel&&!panel.classList.contains('has-roots')){
+                replayEcosystemEffect('#ecosystem-seed','is-arriving');
+            }
+        }
+
         function updateEcosystemTree(animate = {}) {
             const dateStr=document.getElementById('currentDate')?.value;
             if(!dateStr)return;
@@ -1373,27 +1428,57 @@
             const cloudCount=['cumulus','stratus','stratocumulus'].filter(name=>data['cloud_'+name]===true).length;
             const canopyBloomed=data['sleep-3']===true;
 
+            const panel=document.getElementById('ecosystem-panel');
             const roots=document.getElementById('ecosystem-roots');
             const trunk=document.getElementById('ecosystem-trunk');
             const canopy=document.getElementById('ecosystem-canopy');
             const rootStatus=document.getElementById('ecosystem-root-status');
             const trunkStatus=document.getElementById('ecosystem-trunk-status');
             const canopyStatus=document.getElementById('ecosystem-canopy-status');
+            const intro=document.getElementById('ecosystem-intro-copy');
 
-            if(roots)roots.style.setProperty('--root-scale',(1+rootCount*.065).toFixed(3));
+            panel?.classList.toggle('has-roots',rootCount>0);
+            if(roots){
+                const rootProgress=rootCount/rootActions.length;
+                roots.style.setProperty('--root-scale',(1+rootCount*.065).toFixed(3));
+                roots.querySelectorAll('path').forEach(path=>{
+                    let length=Number(path.dataset.ecoLength||0);
+                    if(!length){
+                        try{
+                            length=path.getTotalLength();
+                            path.dataset.ecoLength=String(length);
+                            path.style.strokeDasharray=length.toFixed(2);
+                        }catch(error){length=0;}
+                    }
+                    if(length)path.style.strokeDashoffset=(length*(1-rootProgress)).toFixed(2);
+                });
+            }
             if(trunk){
                 trunk.style.setProperty('--trunk-x',(1+cloudCount*.05).toFixed(3));
-                trunk.style.setProperty('--trunk-y',(1+cloudCount*.025).toFixed(3));
+                trunk.style.setProperty('--trunk-y',(0.82+cloudCount*.06).toFixed(3));
             }
             canopy?.classList.toggle('has-flower',canopyBloomed);
 
             if(rootStatus)rootStatus.textContent=rootCount
-                ?rootCount+' of 6 prayer and water actions completed · roots nourished'
-                :'Waiting for prayer or a water break';
+                ?rootCount+' of 6 prayer and water actions completed · roots reaching farther'
+                :'0 of 6 actions · plant the seed with prayer or water';
             if(trunkStatus)trunkStatus.textContent=(cloudCount*5)+'% growth · '+cloudCount+' of 3 clouds released';
             if(canopyStatus)canopyStatus.textContent=canopyBloomed
-                ?'A flower has bloomed · Screen Curfew completed'
-                :'Waiting for Screen Curfew';
+                ?'1 of 1 · a flower has bloomed'
+                :'0 of 1 · waiting for Screen Curfew';
+            if(intro)intro.textContent=rootCount
+                ?'Your small, steady actions are helping the roots reach farther. The trunk and canopy grow in their own time.'
+                :'A fresh day begins with a seed. Choose one small prayer or water action to help it take root.';
+
+            const updateMeter=(trackId,fillId,value,max)=>{
+                const track=document.getElementById(trackId);
+                const fill=document.getElementById(fillId);
+                if(track)track.setAttribute('aria-valuenow',String(value));
+                if(fill)fill.style.width=(max?Math.round((value/max)*100):0)+'%';
+            };
+            updateMeter('ecosystem-root-meter','ecosystem-root-meter-fill',rootCount,6);
+            updateMeter('ecosystem-trunk-meter','ecosystem-trunk-meter-fill',cloudCount,3);
+            updateMeter('ecosystem-canopy-meter','ecosystem-canopy-meter-fill',canopyBloomed?1:0,1);
 
             if(animate.roots&&rootCount)replayEcosystemEffect('#ecosystem-roots','is-pulsing');
             if(animate.trunk&&cloudCount)replayEcosystemEffect('#ecosystem-trunk','is-growing');
