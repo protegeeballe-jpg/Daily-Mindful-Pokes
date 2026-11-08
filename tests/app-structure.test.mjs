@@ -39,3 +39,14 @@ test('all existing checklist, cloud and ecosystem features remain',()=>{
  assert.equal((html.match(/data-cloud="(?:cumulus|stratus|stratocumulus)"/g)||[]).length,3);
  for(const feature of ['finishChecklist','guide-launch','ecosystem-canvas'])assert.ok(html.includes(feature)||app.includes(feature),feature);
 });
+
+test('Onnea garden is a separate local module and does not replace existing features',()=>{
+ assert.match(html,/id="onnea-garden"/);
+ assert.match(html,/data-garden-action="open-garden"/);
+ assert.match(html,/assets\/garden\.css/);
+ assert.match(html,/type="module" src="\.\/assets\/garden\.js"/);
+ assert.match(html,/aria-modal="true"/);
+ assert.match(readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8'),/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(html,/<script\\s*>/i);
+ assert.match(readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8'),/GARDEN_STORAGE_KEY/);
+});

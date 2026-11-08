@@ -22,5 +22,7 @@ jobs:
           node --check assets/app.js
           node --check assets/app-gate.js
           node --check assets/writing-security.js
+          node --check assets/garden.js
+          node --check assets/garden-model.js
       - name: Run regression and security tests
         run: node --test tests/*.test.mjs

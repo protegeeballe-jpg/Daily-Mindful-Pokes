@@ -1,0 +1,145 @@
+/* Onnea's Little Garden — an isolated, local-only game space. */
+body.garden-overlay-open { overflow: hidden; }
+.garden-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    overflow-y: auto;
+    padding: clamp(.65rem, 2.5vw, 1.5rem);
+    background:
+        radial-gradient(ellipse at 12% 8%, rgba(255,255,255,.88), transparent 35%),
+        radial-gradient(ellipse at 88% 14%, rgba(255,240,202,.68), transparent 34%),
+        linear-gradient(160deg, #eaf4e9, #fbf4e8 48%, #e7f1e7);
+    color: #344b3b;
+}
+.garden-shell { width: min(100%, 1050px); margin: 0 auto; }
+.garden-topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: .8rem;
+    margin: 0 auto 1rem; padding: .65rem .85rem;
+    border: 1px solid rgba(112,143,111,.28); border-radius: 1.2rem;
+    background: rgba(255,255,255,.7); box-shadow: 0 3px 0 rgba(96,119,91,.10);
+}
+.garden-brand { font-family: Georgia,serif; font-weight: 800; color: #355b43; font-size: clamp(1.05rem,3vw,1.45rem); }
+.garden-small-button,.garden-action-button {
+    border: 1px solid #b5cdb1; border-radius: .9rem; padding: .65rem .9rem;
+    background: #fffdf4; color: #31533d; font-weight: 800; cursor: pointer;
+    box-shadow: 0 2px 0 rgba(88,117,88,.12); transition: transform .16s ease, background .16s ease;
+}
+.garden-small-button:hover,.garden-action-button:hover { background: #f2f7e9; transform: translateY(-1px); }
+.garden-small-button:focus-visible,.garden-action-button:focus-visible,.garden-overlay select:focus-visible,.garden-overlay textarea:focus-visible {
+    outline: 3px solid #709e82; outline-offset: 3px;
+}
+.garden-screen-title { margin: .4rem 0 1rem; text-align: center; color: #355b43; font: 800 clamp(1.8rem,5vw,2.8rem)/1.15 Georgia,serif; }
+.garden-intro { max-width: 650px; margin: 0 auto 1rem; text-align: center; color: #5d715f; }
+.garden-room-card,.garden-outdoor-card,.garden-journal-card {
+    overflow: hidden; border: 1.5px solid #c1d2b8; border-radius: 1.6rem;
+    background: rgba(255,255,255,.72); box-shadow: 4px 5px 0 rgba(87,119,88,.12);
+}
+.garden-room-scene {
+    position: relative; display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem;
+    min-height: 270px; padding: clamp(1rem,4vw,2rem);
+    background: linear-gradient(180deg,#f5e9d5 0%,#fbf5e9 68%,#dce8d4 68%,#dce8d4 100%);
+}
+.garden-window-wrap { align-self: start; }
+.garden-window {
+    position: relative; width: min(100%,350px); aspect-ratio: 1.25 / 1; margin: 0 auto;
+    overflow: hidden; border: 10px solid #ad805e; border-radius: .6rem;
+    background: linear-gradient(#bfe3f1 0 62%,#d9edc9 63% 100%);
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,.6), 3px 5px 0 rgba(99,72,52,.16);
+}
+.garden-window::before,.garden-window::after { content:""; position:absolute; z-index:2; background:#ad805e; }
+.garden-window::before { top:0; bottom:0; left:50%; width:7px; transform:translateX(-50%); }
+.garden-window::after { left:0; right:0; top:50%; height:7px; transform:translateY(-50%); }
+.garden-window-sun { position:absolute; top:12%; right:13%; width:2.8rem; height:2.8rem; border-radius:50%; background:#f6d27d; box-shadow:0 0 22px #f6d27d88; }
+.garden-window-cloud { position:absolute; top:34%; left:12%; font-size:2rem; }
+.garden-window-hill { position:absolute; bottom:-18%; left:-8%; width:120%; height:48%; border-radius:50% 50% 0 0; background:#95bd91; }
+.garden-window.is-open { background:linear-gradient(#b7e8f7 0 62%,#d9edc9 63% 100%); }
+.garden-window.is-open .garden-window-cloud { animation:garden-cloud-drift 5s ease-in-out infinite alternate; }
+.garden-room-furniture { display:flex; flex-direction:column; align-items:center; justify-content:space-around; gap:.65rem; }
+.garden-bookshelf {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:.25rem; width:min(100%,210px);
+    padding:.65rem; border:6px solid #ad805e; border-radius:.5rem; background:#d2ad7e;
+}
+.garden-bookshelf span { display:block; height:2.4rem; border-radius:.2rem; background:#6f9b81; }
+.garden-bookshelf span:nth-child(2) { background:#d68e83; }
+.garden-bookshelf span:nth-child(3) { background:#e4c36f; }
+.garden-bookshelf span:nth-child(4) { background:#8ba6c4; }
+.garden-bookshelf span:nth-child(5) { background:#b89ac5; }
+.garden-bookshelf span:nth-child(6) { background:#8b9c69; }
+.garden-table {
+    position:relative; display:flex; align-items:center; justify-content:center;
+    width:min(100%,220px); min-height:65px; border-radius:.6rem .6rem .4rem .4rem;
+    background:#bd8d65; border-bottom:10px solid #946847; color:#fff8e9;
+    font-size:2rem; box-shadow:0 10px 0 -5px #946847;
+}
+.garden-window-caption { margin:.55rem 0 0; text-align:center; color:#536c58; font-size:.8rem; font-weight:700; }
+.garden-room-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.7rem; padding:1rem; }
+.garden-planting-panel {
+    width:min(100%,700px); margin:0 auto 1.1rem; padding:1.2rem;
+    border:1.5px dashed #b4caaa; border-radius:1.4rem; background:#f8fbf2;
+}
+.garden-planting-panel h3 { margin:0 0 .35rem; color:#355b43; font:800 1.3rem Georgia,serif; }
+.garden-planting-panel p { color:#647665; font-size:.88rem; }
+.garden-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; margin:1rem 0; }
+.garden-choice label { display:block; margin-bottom:.3rem; color:#46634a; font-size:.8rem; font-weight:800; }
+.garden-choice select {
+    width:100%; min-height:46px; padding:.65rem; border:1px solid #b9cdb1; border-radius:.8rem;
+    background:white; color:#36533e; font-weight:700;
+}
+.garden-action-button.primary { border-color:#759c78; background:#dcebd4; }
+.garden-action-button:disabled { cursor:default; opacity:.68; transform:none; }
+.garden-status {
+    width:min(100%,700px); min-height:2.6rem; margin:1rem auto 0; padding:.7rem .9rem;
+    border-radius:.9rem; background:rgba(255,255,255,.72); color:#506a54; font-size:.82rem;
+}
+.garden-status[data-state="success"] { background:#edf7e9; color:#315b3b; }
+.garden-status[data-state="error"] { background:#fff0ed; color:#8b3f39; }
+.garden-outdoor-stage {
+    position:relative; min-height:235px; overflow:hidden; padding:1rem;
+    background:linear-gradient(180deg,#c9e9ef 0%,#e8f4e8 65%,#b4cf9f 66%,#9fbe87 100%);
+}
+.garden-sun { position:absolute; top:1.1rem; right:9%; width:3.4rem; height:3.4rem; border-radius:50%; background:#f5d580; box-shadow:0 0 30px #f5d58088; }
+.garden-cloud { position:absolute; top:1.2rem; left:9%; font-size:2.1rem; opacity:.8; }
+.garden-bed-row { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; width:min(100%,730px); margin:3.1rem auto 0; }
+.garden-bed {
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:.35rem;
+    min-height:142px; padding:.8rem .5rem .65rem; border:2px solid #987a59; border-radius:48% 48% 18% 18% / 28% 28% 14% 14%;
+    background:linear-gradient(#a67c58 0 14%,#805b40 15% 100%); box-shadow:inset 0 4px 0 #c79a6b,0 4px 0 #748d60;
+    color:#fff9eb; text-align:center;
+}
+.garden-plant-visual { display:block; min-height:3.6rem; font-size:3.15rem; line-height:1.2; filter:drop-shadow(0 3px 1px #526c4e33); }
+.garden-plant-label { font-size:.75rem; font-weight:900; }
+.garden-growth-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; padding:1rem; }
+.garden-growth-card { padding:1rem; border:1px solid #d4e0cf; border-radius:1.1rem; background:#fffdf7; }
+.garden-growth-card h3 { margin:0; color:#355b43; font:800 1.1rem Georgia,serif; }
+.garden-growth-description { min-height:1.4rem; margin:.45rem 0; color:#647665; font-size:.82rem; }
+.garden-growth-meta { display:flex; justify-content:space-between; gap:.5rem; color:#718070; font-size:.7rem; }
+.garden-meter { height:.6rem; margin:.55rem 0 .35rem; overflow:hidden; border-radius:99px; background:#e7ecdf; }
+.garden-meter-fill { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#a9cf99,#6f9f78); transition:width .5s ease; }
+.garden-growth-foot { color:#607460; font-size:.75rem; font-weight:800; }
+.garden-game-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.65rem; padding:0 1rem 1.2rem; }
+.garden-care-copy { margin:0 auto 1rem; max-width:700px; padding:0 .8rem; color:#687a67; font-size:.82rem; text-align:center; }
+.garden-one-year { margin:0 1rem 1rem; padding:.85rem 1rem; border-radius:1rem; background:#f1f6e9; color:#486849; font-size:.82rem; text-align:center; }
+.garden-journal-card { padding:clamp(1rem,3vw,1.5rem); }
+.garden-journal-card h3 { margin:0 0 .35rem; color:#355b43; font:800 1.25rem Georgia,serif; }
+.garden-note-input { width:100%; min-height:100px; padding:.8rem; border:1px solid #c8d8c0; border-radius:.9rem; background:#fffef9; color:#3b5140; resize:vertical; }
+.garden-note-entry { margin-top:.65rem; padding:.8rem; border:1px solid #dbe5d5; border-radius:.85rem; background:#fffdf8; }
+.garden-note-date { margin:0 0 .25rem; color:#748371; font-size:.7rem; font-weight:900; }
+.garden-note-copy { margin:0; color:#465b49; white-space:pre-wrap; overflow-wrap:anywhere; }
+.garden-empty-note { color:#71816f; font-size:.85rem; }
+@keyframes garden-cloud-drift { from { transform:translateX(0); } to { transform:translateX(12px); } }
+@media (max-width:620px) {
+    .garden-room-scene { grid-template-columns:1fr; }
+    .garden-room-furniture { flex-direction:row; align-items:end; }
+    .garden-bookshelf { width:48%; }
+    .garden-table { width:42%; }
+    .garden-choice-grid,.garden-growth-grid { grid-template-columns:1fr; }
+    .garden-bed-row { gap:.6rem; }
+    .garden-bed { min-height:125px; }
+    .garden-plant-visual { font-size:2.6rem; }
+    .garden-brand { font-size:1rem; }
+    .garden-small-button { padding:.55rem .65rem; font-size:.76rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .garden-small-button,.garden-action-button,.garden-meter-fill,.garden-window.is-open .garden-window-cloud { transition:none; animation:none; }
+}
