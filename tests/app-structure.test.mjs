@@ -341,16 +341,16 @@ test('Lexend is self-hosted and applied consistently across every app scene',()=
 });
 
 
-test('Google Drive backup loads GIS and permits only the required Google endpoints',()=>{
- assert.match(html,/id="google-identity-services" src="https:\/\/accounts\.google\.com\/gsi\/client" async/);
- assert.match(html,/script-src 'self' https:\/\/accounts\.google\.com\/gsi\/client/);
- assert.match(html,/connect-src 'self' https:\/\/accounts\.google\.com\/gsi\/ https:\/\/www\.googleapis\.com/);
- assert.match(html,/frame-src https:\/\/accounts\.google\.com\/gsi\//);
- assert.match(html,/type="module" src="\.\/assets\/drive-sync\.js"/);
+test('Google Drive sign-in remains paused while policy permission is pending',()=>{
+ const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ assert.match(html,/script-src 'self'/);
+ assert.match(html,/connect-src 'self'/);
+ assert.equal(html.includes('accounts.google.com/gsi/client') || html.includes('googleapis.com'),false);
+ assert.ok(html.includes('type="module" src="./assets/drive-sync.js"'));
  assert.match(html,/id="drive-sync-panel"/);
- assert.match(html,/id="drive-backup-button"/);
- assert.match(html,/id="drive-restore-button"/);
- assert.doesNotMatch(html,/drive-sync[\\s\\S]{0,500}on(?:click|change|input|submit)\\s*=/i);
+ assert.match(html,/id="drive-connect-button"[^>]*disabled/);
+ assert.match(html,/Google Drive Backup Paused/);
+ assert.match(drive,/const DRIVE_BACKUP_ENABLED = false/);
 });
 
 test('Google Drive backup preserves the local security boundary and encrypted diary',()=>{
@@ -380,4 +380,30 @@ test('Google Drive restore allowlist excludes app PIN and rejects plaintext refl
  assert.ok(drive.includes('ENCRYPTED_RECORD_PATTERN'));
  assert.ok(drive.includes('score_awarded_'));
  assert.ok(readme.includes("The device's app PIN verifier is deliberately excluded"));
+});
+
+test('public legal pages are available and linked from the app',()=>{
+ const home=readFileSync(new URL('../home.html',import.meta.url),'utf8');
+ const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
+ const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
+ assert.match(home,/Application Privacy Policy/);
+ assert.match(home,/Terms of Service/);
+ assert.match(home,/href="\.\/privacy\.html"/);
+ assert.match(home,/href="\.\/terms\.html"/);
+ assert.match(privacy,/Google Drive backup is currently paused/);
+ assert.match(privacy,/AES-256-GCM/);
+ assert.match(privacy,/not encrypted/);
+ assert.match(terms,/not a medical device/);
+ assert.match(html,/href="\.\/privacy\.html"/);
+ assert.match(html,/href="\.\/terms\.html"/);
+ assert.match(readme,/Google Drive backup is currently paused/);
+});
+
+test('Google Drive OAuth is paused pending prior written API permission',()=>{
+ const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ assert.match(drive,/const DRIVE_BACKUP_ENABLED = false/);
+ assert.match(drive,/if \(!DRIVE_BACKUP_ENABLED\)/);
+ assert.match(drive,/No Google sign-in or Drive requests are made/);
+ assert.doesNotMatch(html,/accounts\.google\.com\/gsi\/client/);
+ assert.doesNotMatch(html,/connect-src[^"]*googleapis\.com/);
 });

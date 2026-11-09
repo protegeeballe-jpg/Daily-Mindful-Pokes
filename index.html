@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://accounts.google.com/gsi/ https://www.googleapis.com; frame-src https://accounts.google.com/gsi/; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests">
     <meta name="referrer" content="no-referrer">
     <title>Faith & Focus | Your Daily Armor</title>
     <!-- Tailwind CSS -->
@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="./assets/tailwind.generated.css">
     <link rel="stylesheet" href="./assets/app.css">
     <link rel="stylesheet" href="./assets/garden.css">
-    <script id="google-identity-services" src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
@@ -36,6 +35,11 @@
                 <button id="app-pin-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition transform active:scale-95">Set PIN &amp; Continue</button>
             </form>
             <p class="text-[10px] text-amber-900/70 mt-4">This is a local app screen gate. It does not encrypt checklist progress. Use your separate private-writing passphrase for diary protection.</p>
+            <nav class="legal-inline-links" aria-label="Legal information">
+                <a href="./privacy.html">Privacy Policy</a>
+                <span aria-hidden="true">·</span>
+                <a href="./terms.html">Terms of Service</a>
+            </nav>
         </div>
     </div>
 
@@ -122,16 +126,16 @@
                 <section id="drive-sync-panel" class="drive-sync-panel" aria-labelledby="drive-sync-heading">
                     <div class="drive-sync-copy">
                         <h3 id="drive-sync-heading">Google Drive Backup</h3>
-                        <p>Keep a private app backup of your checklist, confidence points, garden, and encrypted writing.</p>
+                        <p>Optional cloud backup is being reviewed against Google Drive API requirements. Your app continues to work locally.</p>
                     </div>
                     <div class="drive-sync-controls">
-                        <button id="drive-connect-button" type="button" class="garden-action-button primary" disabled>Loading Google sign-in…</button>
+                        <button id="drive-connect-button" type="button" class="garden-action-button primary" disabled>Google Drive Backup Paused</button>
                         <div id="drive-sync-actions" class="drive-sync-actions hidden">
-                            <button id="drive-backup-button" type="button" class="garden-action-button primary">Back Up This Device</button>
-                            <button id="drive-restore-button" type="button" class="garden-action-button">Restore From Drive</button>
+                            <button id="drive-backup-button" type="button" class="garden-action-button primary" disabled>Back Up This Device</button>
+                            <button id="drive-restore-button" type="button" class="garden-action-button" disabled>Restore From Drive</button>
                         </div>
                     </div>
-                    <p id="drive-sync-status" class="drive-sync-status" role="status" aria-live="polite">Google sign-in is loading. Your data stays on this device until you choose a backup action.</p>
+                    <p id="drive-sync-status" class="drive-sync-status" role="status" aria-live="polite">Drive access is not currently requested. No app data is sent to Google Drive by this feature.</p>
                 </section>
             </section>
 
@@ -554,6 +558,14 @@
             </button>
         </div>
     </div>
+
+    <footer class="legal-app-footer" aria-label="Legal information">
+        <a href="./privacy.html">Privacy Policy</a>
+        <span aria-hidden="true">·</span>
+        <a href="./terms.html">Terms of Service</a>
+        <span aria-hidden="true">·</span>
+        <a href="./home.html">About this app</a>
+    </footer>
 
     <!-- Scripts Engine -->
     <script type="module" src="./assets/app.js"></script>

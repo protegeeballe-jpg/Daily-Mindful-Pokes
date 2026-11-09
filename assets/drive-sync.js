@@ -2,6 +2,7 @@ import { GARDEN_STORAGE_KEY, validateGardenState } from './garden-model.js';
 
 const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh.apps.googleusercontent.com';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_BACKUP_ENABLED = false; // Keep disabled until Google's prior written permission is confirmed for app-content backups.
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 const BACKUP_FILE_NAME = 'faith-focus-daily-armor-backup-v1.json';
@@ -89,6 +90,15 @@ function waitForGoogleIdentity(timeoutMs = 12000) {
 }
 
 async function initializeGoogleSignIn() {
+    if (!DRIVE_BACKUP_ENABLED) {
+        if (connectButton) {
+            connectButton.disabled = true;
+            connectButton.textContent = 'Google Drive Backup Paused';
+        }
+        if (actions) actions.classList.add('hidden');
+        setStatus('Drive access is paused while Google API authorization requirements are reviewed. No Google sign-in or Drive requests are made.', 'info');
+        return;
+    }
     try {
         const oauth2 = await waitForGoogleIdentity();
         tokenClient = oauth2.initTokenClient({
