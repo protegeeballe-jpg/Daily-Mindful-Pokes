@@ -234,7 +234,7 @@ body.garden-overlay-open { overflow: hidden; }
 .garden-screen-title {flex:0 0 auto;margin:.05rem 0;font-size:clamp(1.2rem,3.2vh,2rem);line-height:1.05;}
 .garden-intro {flex:0 0 auto;margin:0 auto .2rem;font-size:clamp(.62rem,1.35vh,.82rem);line-height:1.25;}
 .garden-room-card,.garden-outdoor-card,#view-diary,.garden-checklist-scene {flex:1 1 0;min-height:0;max-height:100%;}
-.garden-room-card {display:flex;flex-direction:column;}
+ .garden-room-card:not(.hidden) {display:flex;flex-direction:column;}
 .garden-room-scene {flex:1 1 0;min-height:clamp(70px,14vh,170px);height:auto;}
 .garden-planting-panel {flex:0 0 auto;width:min(calc(100% - .8rem),700px);margin:.2rem auto;padding:clamp(.4rem,1vh,.7rem);}
 .garden-planting-panel h3 {font-size:clamp(.9rem,1.9vh,1.15rem);}
@@ -247,7 +247,7 @@ body.garden-overlay-open { overflow: hidden; }
 .garden-room-actions .garden-action-button {width:100%;min-width:0;line-height:1.2;}
 .garden-status {flex:0 0 auto;min-height:0;max-height:2.6rem;overflow:hidden;margin:.15rem auto 0;padding:.3rem .55rem;font-size:.68rem;line-height:1.2;}
 .garden-shell > .garden-care-copy {flex:0 0 auto;margin:.1rem auto 0;padding:.15rem .4rem;font-size:.64rem;line-height:1.15;}
-.garden-outdoor-card {display:flex;flex-direction:column;}
+ .garden-outdoor-card:not(.hidden) {display:flex;flex-direction:column;}
 .garden-outdoor-stage {flex:0 0 25%;min-height:80px;padding:.45rem;}
 .garden-bed-row {margin:1.1rem auto 0;gap:.55rem;}
 .garden-bed {min-height:76px;padding:.35rem .25rem .3rem;}
@@ -263,8 +263,8 @@ body.garden-overlay-open { overflow: hidden; }
 .garden-care-copy {margin:.1rem auto;font-size:.65rem;line-height:1.2;}
 .garden-game-actions {flex:0 0 auto;padding:.3rem;gap:.35rem;}
 .garden-one-year {flex:0 0 auto;margin:.2rem;padding:.35rem .5rem;font-size:.62rem;line-height:1.2;}
-#view-diary {display:flex;align-items:center;justify-content:center;margin:0 auto !important;padding:0 .2rem !important;max-width:100% !important;overflow:hidden;}
-#view-diary > .card-lavender {width:min(100%,900px);max-height:100%;overflow:hidden;padding:clamp(.5rem,1.2vh,.9rem) !important;}
+#view-diary:not(.hidden) {display:flex;align-items:center;justify-content:center;margin:0 auto !important;padding:0 .2rem !important;max-width:100% !important;overflow:hidden;}
+#view-diary:not(.hidden) > .card-lavender {width:min(100%,900px);max-height:100%;overflow:hidden;padding:clamp(.5rem,1.2vh,.9rem) !important;}
 #private-diary-entry {height:clamp(105px,25vh,230px) !important;}
 @media (max-width:620px) {
  .garden-choice-grid {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
