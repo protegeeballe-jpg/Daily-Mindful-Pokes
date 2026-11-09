@@ -1158,14 +1158,19 @@ import {
             const dateStr = document.getElementById('currentDate').value;
             const scoreAwardedKey = 'score_awarded_' + dateStr;
 
+            const grandFinale = document.getElementById('grand-finale-overlay');
             if (completedCards === 6) {
                 if (trophyBanner.classList.contains('hidden')) {
                     trophyBanner.classList.remove('hidden');
                     playFanfareSound();
                     setTimeout(speakProudCue, 400);
                     confetti({ particleCount: 120, spread: 90, origin: { y: 0.3 } });
-                    
-                    document.getElementById('grand-finale-overlay').classList.remove('hidden');
+
+                    grandFinale.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        resizeEcosystemCanvas();
+                        updateEcosystemTree();
+                    });
 
                     if (!localStorage.getItem(scoreAwardedKey)) {
                         let currentScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
@@ -1176,6 +1181,7 @@ import {
                 }
             } else {
                 trophyBanner.classList.add('hidden');
+                grandFinale.classList.add('hidden');
             }
         }
 
