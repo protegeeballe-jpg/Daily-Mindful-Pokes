@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    FLOWER_TYPES, TREE_TYPES, createGardenState, daysBetweenDates,
+    FLOWER_TYPES, GARDEN_STORAGE_KEY, TREE_TYPES, createGardenState, daysBetweenDates,
     getFlowerStage, getPlantAgeDays, getTreeStage, isISODate, validateGardenState
 } from '../assets/garden-model.js';
 
@@ -16,6 +16,13 @@ test('the first garden contains one supported fruit tree seed and one flower see
     assert.equal(Object.keys(FLOWER_TYPES).length, 3);
 });
 
+test('Faith & Focus growth descriptions and legacy garden storage remain aligned',()=>{
+    assert.equal(GARDEN_STORAGE_KEY, 'daily_mindful_pokes_garden_v1');
+    assert.equal(getTreeStage(0).label, 'A seed of Hope and Faith');
+    assert.equal(getFlowerStage(0).label, 'A seed of Hope and Faith');
+    assert.equal(getTreeStage(7).label, 'Hope and Faith taking root');
+    assert.equal(getFlowerStage(60).label, 'The first bloom of hope');
+});
 test('tree growth follows calendar milestones through its first year', () => {
     assert.equal(getTreeStage(0).id, 'seed');
     assert.equal(getTreeStage(6).id, 'seed');
