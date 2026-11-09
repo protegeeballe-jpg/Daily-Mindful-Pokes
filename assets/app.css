@@ -349,3 +349,52 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
  .garden-checklist-scene .step-card {padding:.75rem !important;}
 }
 @media (prefers-reduced-motion:reduce) {.guide-play-icon {transition:none !important;}}
+
+
+/* Health Checklist: show only its compact toolbar, not the shared Room header. */
+#little-garden.garden-checklist-active .garden-topbar,
+#little-garden.garden-checklist-active .garden-screen-title,
+#little-garden.garden-checklist-active .garden-intro,
+#little-garden.garden-checklist-active .garden-status,
+#little-garden.garden-checklist-active > .garden-shell > .garden-care-copy {
+ display:none !important;
+}
+#little-garden.garden-checklist-active .garden-shell {gap:0;}
+#view-checklist > header {margin-bottom:.1rem !important;}
+#view-checklist .checklist-header-title {white-space:nowrap;}
+#view-checklist main {padding-top:0 !important;}
+#view-checklist .watercolor-progress {padding-top:.55rem !important;padding-bottom:.55rem !important;}
+#view-checklist .watercolor-progress p {line-height:1.25;}
+
+/* The ecosystem belongs to the completion celebration, not the daily card flow. */
+#grand-finale-overlay {padding-top:max(.5rem,env(safe-area-inset-top));padding-bottom:max(.5rem,env(safe-area-inset-bottom));}
+.finale-content {flex:0 0 auto;}
+.finale-trophy-banner {width:min(100%,38rem);}
+.finale-trophy-banner > div {padding:clamp(.7rem,1.5vh,1.1rem);}
+.finale-ecosystem-card {
+ width:min(100%,42rem);margin:0 !important;padding:clamp(.6rem,1.5vw,1rem) !important;
+}
+.finale-ecosystem-card h2 {font-size:clamp(1.1rem,2.5vw,1.5rem) !important;}
+.finale-ecosystem-card .ecosystem-canvas,
+.finale-ecosystem-card .ecosystem-svg-fallback {max-width:min(300px,70vw);}
+.finale-ecosystem-card .ecosystem-status {padding:.4rem .5rem;}
+@media (max-width:620px) {
+ #little-garden.garden-checklist-active .garden-shell {gap:0;}
+ .finale-content {gap:.55rem;padding-top:.25rem;padding-bottom:.25rem;}
+ .finale-trophy-banner > div {padding:.65rem;}
+ .finale-trophy-banner .text-5xl {font-size:2.5rem;line-height:1.1;}
+ .finale-trophy-banner h2 {font-size:1.2rem;line-height:1.2;}
+ .finale-ecosystem-card {padding:.55rem !important;}
+ .finale-ecosystem-card .ecosystem-canvas,
+ .finale-ecosystem-card .ecosystem-svg-fallback {max-width:min(245px,68vw);}
+ .finale-ecosystem-card .ecosystem-status {font-size:.68rem;padding:.35rem .4rem;}
+ #grand-finale-overlay > .finale-content > button {min-height:44px;padding:.65rem 1.1rem;}
+}
+@media (max-height:650px) {
+ #grand-finale-overlay {justify-content:flex-start;}
+ .finale-content {gap:.45rem;padding-top:.15rem;padding-bottom:.15rem;}
+ .finale-content > .animate-bounce {font-size:2.25rem;line-height:1;}
+ .finale-content > h1 {font-size:1.4rem;line-height:1.15;}
+ .finale-ecosystem-card .ecosystem-canvas,
+ .finale-ecosystem-card .ecosystem-svg-fallback {max-width:205px;}
+}
