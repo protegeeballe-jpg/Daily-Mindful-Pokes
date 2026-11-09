@@ -146,3 +146,41 @@ test('the supplied artwork fills the Room home background and the Diary remains 
  assert.equal([...gardenCss].filter(char=>char==='{').length,[...gardenCss].filter(char=>char==='}').length);
  assert.ok(existsSync(new URL('../assets/garden-room-background.jpg',import.meta.url)));
 });
+
+test('the app is fixed to the device viewport without vertical page scrolling',()=>{
+ const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ assert.match(html,/id="checklist-fit-content" class="checklist-fit-content"/);
+ assert.match(appCss,/html,body\s*\{[^}]*overflow:hidden/s);
+ assert.match(appCss,/body\s*\{[^}]*position:fixed/s);
+ assert.match(appCss,/\.checklist-fit-content\s*\{[^}]*transform:scale\(var\(--checklist-fit-scale\)\)/s);
+ assert.match(app,/function fitChecklistToViewport\(\)/);
+ assert.match(app,/requestAnimationFrame\(fitChecklistToViewport\)/);
+ assert.doesNotMatch(app,/scrollIntoView\s*\(/);
+ assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
+ assert.doesNotMatch(gardenCss,/overflow-y:\s*(auto|scroll)/);
+});
+test('breathing guide uses a single explicit modal action and completes five 4-2-6 cycles',()=>{
+ assert.match(app,/function handleModalPrimaryAction\(\)/);
+ assert.match(app,/activeModalAction\s*=\s*'start-breathing'/);
+ assert.match(app,/activeModalAction\s*=\s*'complete'/);
+ assert.match(app,/function startBreathingExercise\(\)/);
+ assert.match(app,/breathingCycle > 5/);
+ assert.doesNotMatch(app,/button\.onclick\s*=/);
+ assert.match(appCss,/@keyframes guide-breath-in/);
+ assert.match(appCss,/@keyframes guide-breath-out/);
+});
+test('water animation runs for five seconds before asking the user to take their turn',()=>{
+ assert.match(app,/drinkGuideTimeout\s*=\s*setTimeout\([\s\S]*?\},\s*5000\)/);
+ assert.match(app,/Now it is your turn—have water if appropriate for you/);
+ assert.match(app,/I've had my water—show my checkbox/);
+ assert.match(app,/activeModalAction\s*=\s*'waiting-for-drink'/);
+});
+test('animal stickers are removed from checklist launchers while Show me animations remain',()=>{
+ assert.match(app,/guideButton\.innerHTML = '<span class="guide-play-icon"/);
+ assert.doesNotMatch(app,/guide-buddy/);
+ const guideBlock=app.slice(app.indexOf('const guideContent'),app.indexOf('function stopBreathingTimer'));
+ assert.doesNotMatch(guideBlock,/🐻|🐰|🐱|🐼|🐨|🦊|🐣|🐥|🦉/);
+ assert.match(app,/guide-person /);
+ assert.match(app,/function buildStretchingCartoon/);
+});
