@@ -204,7 +204,7 @@
            <div class="checklist-header-right flex min-w-0 items-center justify-end gap-2">
     <div class="checklist-header-date-time flex min-w-0 items-center gap-1.5 bg-amber-40 px-1 py-0.5 rounded-lg border border-amber-200">
         <label for="currentDate" class="text-[10px] font-semibold text-amber-600">Date</label>
-        <input type="date" id="currentDate" aria-label="Checklist date" class="checklist-date-input bg-transparent text-[12px] font-medium focus:outline-none text-amber-700" data-change-action="handleDateChange">
+        <input type="date" id="currentDate" aria-label="Checklist date" class="checklist-date-input bg-transparent text-[10px] font-medium focus:outline-none text-amber-700" data-change-action="handleDateChange">
         <span class="text-amber-700/50" aria-hidden="true">·</span>
         <time id="device-clock" class="checklist-device-clock text-[10px] font-semibold text-amber-900 tabular-nums whitespace-nowrap" aria-label="Current local time on this device">--:--</time>
     </div>
@@ -224,7 +224,6 @@
             <section class="watercolor-progress rounded-xl px-2 py-1 mb-2" aria-label="Daily activity progress">
                 <div class="flex justify-between items-center gap-2 mb-1"><span class="text-sm font-bold text-slate-400">Today's Priceless Wins</span><span id="daily-progress-count" class="text-xs font-bold text-emerald-900 tabular-nums">0 of 20 steps</span></div>
                 <div class="watercolor-track" role="progressbar" aria-label="Completed health checklist activities" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="daily-progress-track"><div id="daily-progress-bar" class="watercolor-fill"></div></div>
-                <p class="text-xs text-slate-300 mt-1">One card at a time. Small steps count, and you can pause whenever you need.</p>
             </section>
             
             <!-- CARD 1 -->
