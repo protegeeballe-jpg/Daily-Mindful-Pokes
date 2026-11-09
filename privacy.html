@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Privacy Policy for Faith & Focus: Daily Armor. Learn what stays in your browser and how personal writing is protected.">
+    <meta name="theme-color" content="#FBF9F5">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; form-action 'self'; upgrade-insecure-requests">
+    <title>Privacy Policy | Faith &amp; Focus: Daily Armor</title>
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./assets/lexend.css">
+    <link rel="stylesheet" href="./assets/legal.css">
+</head>
+<body class="legal-page">
+    <main class="legal-shell">
+        <a class="legal-brand" href="./home.html">
+            <img src="./assets/icon.svg" alt="">
+            <span>Faith &amp; Focus: Daily Armor</span>
+        </a>
+        <article class="legal-card">
+            <p class="legal-meta">Effective date: November 9, 2026 · Last updated: November 9, 2026</p>
+            <h1>Privacy Policy</h1>
+            <p>This Privacy Policy explains how Faith &amp; Focus: Daily Armor (the “App”) handles information when you use the web application. The App is maintained by the owner of the public project repository. It is designed to keep routine and writing records in your own browser rather than in an operator-managed account or server.</p>
+
+            <h2>1. Information stored by the App</h2>
+            <p>The App stores information locally in your browser using browser storage. Depending on the features you use, this can include:</p>
+            <ul>
+                <li><strong>App access settings:</strong> a salted password-derived verifier for the local app PIN. The App does not store the PIN itself as plain text.</li>
+                <li><strong>Checklist and progress:</strong> selected dates, checklist completion states, guided-step states, released-cloud states, completion markers, and confidence points.</li>
+                <li><strong>Garden information:</strong> your selected tree and flower, planting date, and watering dates.</li>
+                <li><strong>Private writing:</strong> diary entries and the four checklist reflection fields. These are encrypted in the browser with AES-256-GCM. A separate passphrase is processed with PBKDF2 to derive the encryption key. The key is held in memory while the writing is unlocked; the passphrase is not saved by the App.</li>
+            </ul>
+
+            <h2>2. What is and is not encrypted</h2>
+            <p>The app PIN is a local screen gate; it does not encrypt ordinary checklist progress, confidence points, or garden information. Those records remain in browser storage in their normal data format. Private diary entries and checklist reflections are stored separately as encrypted records. Anyone with access to the browser profile or developer tools may be able to inspect or change ordinary local records.</p>
+            <p>Choose a strong, memorable private-writing passphrase and keep it safe. The App cannot recover private writing if that passphrase is lost. Clearing browser or site data can permanently remove local records.</p>
+
+            <h2>3. Google account and Google Drive data</h2>
+            <div class="legal-notice">
+                <p><strong>Google Drive backup is currently paused and unavailable.</strong> The App does not load Google sign-in, request Google Drive authorization, access Google account data, or send App data to Google Drive while this feature is paused.</p>
+            </div>
+            <p>A Drive integration has been developed but is not active for users. It will remain paused while the project reviews Google's Drive API requirements and any required written permission. This policy will be revised and users will receive an in-product notice before any future Google data access is enabled.</p>
+            <p>The App remains usable locally without a Google account. No Google access token is requested or stored by the currently deployed App.</p>
+
+            <h2>4. Microphone and voice notes</h2>
+            <p>If you choose the voice-recording control, the browser asks for microphone permission. Audio is used to create a temporary in-page preview for that session. The current App does not upload that recording to an operator server or save it as a permanent App record.</p>
+
+            <h2>5. Where information is processed</h2>
+            <p>Routine, garden, PIN-verifier, and encrypted-writing records are processed in your browser and stored on your device. The App does not operate a user account database or an operator-managed application server for this information.</p>
+            <p>The public website is hosted through GitHub Pages. GitHub provides the website hosting and may process ordinary connection information under its own terms and privacy notices. The App's local records are not sent to GitHub by the App's ordinary local features.</p>
+
+            <h2>6. Sharing, sale, and advertising</h2>
+            <p>The App maintainer does not sell personal information and does not use App records for advertising. The App's current local features do not transmit diary entries, checklist progress, or garden records to third parties. This policy will be updated before any future feature changes those practices.</p>
+
+            <h2>7. Retention and deletion</h2>
+            <p>Local records remain in your browser until you remove them, clear the site's stored data, or use an App control that deletes the relevant record. Clearing site data may delete the app PIN verifier, checklist history, confidence points, garden records, and encrypted writing. Export or preserve anything important before clearing browser data. The current App does not provide a server-side recovery service.</p>
+
+            <h2>8. Children's privacy and family use</h2>
+            <p>The App can be used locally without creating an online account. A parent or guardian should supervise a child's use and should consider what personal or sensitive information is entered into a shared device. Google account and Drive features are currently paused. Any future use of Google APIs will be reviewed against Google's rules for child-directed and mixed-audience services before activation.</p>
+
+            <h2>9. Security</h2>
+            <p>The App uses browser-based encryption for private writing and a separate local PIN gate. No browser-based safeguard can guarantee protection if a device, browser profile, or operating system is compromised. Keep your device updated, use a device lock, and do not share your private-writing passphrase.</p>
+
+            <h2>10. Changes to this policy</h2>
+            <p>This policy may be updated when the App's features or data practices change. The updated version and effective date will be published on this page. Material changes to Google data access will be disclosed before the feature is enabled.</p>
+
+            <h2>11. Contact</h2>
+            <p>For questions about this policy or the App's data practices, contact the project maintainer through the <a href="https://github.com/protegeeballe-jpg/Faith-and-Focus-Daily-Armor/issues">project's GitHub issue page</a>. Do not post passphrases, PINs, diary text, access tokens, or other private information in a public issue.</p>
+        </article>
+        <footer class="legal-footer">
+            <a href="./home.html">Application Home</a>
+            <span aria-hidden="true">·</span>
+            <a href="./terms.html">Terms of Service</a>
+            <span aria-hidden="true">·</span>
+            <a href="./index.html">Open the App</a>
+        </footer>
+    </main>
+</body>
+</html>
