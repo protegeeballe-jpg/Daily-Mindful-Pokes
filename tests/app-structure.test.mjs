@@ -112,6 +112,11 @@ test('seed selection is a one-time setup and becomes visibly completed after sav
  assert.match(garden,/if \(!saveGarden\(\)\) \{/);
  assert.match(garden,/garden = null;/);
  assert.match(garden,/garden\.classList\.toggle\('is-complete', isComplete\)/);
+ const resetStart=app.indexOf('async function resetDayData()');
+ const resetEnd=app.indexOf('async function toggleVoiceRecording()',resetStart);
+ const dailyReset=app.slice(resetStart,resetEnd);
+ assert.match(dailyReset,/Reset today's checklist/);
+ assert.doesNotMatch(dailyReset,/GARDEN_STORAGE_KEY|daily_mindful_pokes_garden_v1/);
 });
 test('the supplied artwork fills the Room home background and the Diary remains single',()=>{
  const gardenStart=html.indexOf('<section id="little-garden"');
