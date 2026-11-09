@@ -286,3 +286,57 @@ body.garden-overlay-open { overflow: hidden; }
  .garden-outdoor-stage {min-height:65px;}
  .garden-growth-grid {padding:.2rem;}
 }
+
+/* Explicit Google Drive backup controls in the Forge Room. */
+.drive-sync-panel {
+    max-width: 720px;
+    margin: 1rem auto 0;
+    padding: .9rem 1rem;
+    border: 1px solid rgba(112,143,111,.28);
+    border-radius: 1.15rem;
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 3px 0 rgba(96,119,91,.08);
+}
+.drive-sync-copy h3 {
+    margin: 0 0 .2rem;
+    color: #355b43;
+    font-size: .98rem;
+    font-weight: 800;
+}
+.drive-sync-copy p {
+    margin: 0;
+    color: #5d715f;
+    font-size: .78rem;
+    line-height: 1.45;
+}
+.drive-sync-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .55rem;
+    margin-top: .7rem;
+}
+.drive-sync-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+}
+.drive-sync-panel button:disabled {
+    cursor: not-allowed;
+    opacity: .58;
+    transform: none;
+}
+.drive-sync-status {
+    min-height: 1.2rem;
+    margin: .6rem 0 0;
+    color: #647665;
+    font-size: .72rem;
+    line-height: 1.4;
+}
+.drive-sync-status[data-state="error"] { color: #a33745; }
+.drive-sync-status[data-state="success"] { color: #2f6b43; }
+@media (max-width: 420px) {
+    .drive-sync-panel { padding: .75rem; }
+    .drive-sync-controls, .drive-sync-actions { gap: .4rem; }
+    .drive-sync-panel .garden-action-button { padding: .5rem .65rem; font-size: .72rem; }
+}
