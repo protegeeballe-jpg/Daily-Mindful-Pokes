@@ -257,6 +257,7 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/garden-model.js',
   '../assets/garden.css',
   '../assets/garden.js',
+  '../assets/fonts/OFL-Lexend.txt',
   '../assets/icon.svg',
   '../assets/tailwind.generated.css',
   '../assets/tailwind.input.css',
@@ -310,4 +311,30 @@ test('The ecosystem canvas is measured after the Grand Finale opens and completi
  assert.match(completion,/localStorage\.setItem\(scoreAwardedKey, 'true'\)/);
  assert.match(completion,/grandFinale\.classList\.add\('hidden'\)/);
  assert.match(app,/function updateEcosystemTree\(animate = \{\}\)/);
+});
+
+
+test('Lexend is self-hosted and applied consistently across every app scene',()=>{
+ const fontCss=readFileSync(new URL('../assets/lexend.css',import.meta.url),'utf8');
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ const license=readFileSync(new URL('../assets/fonts/OFL-Lexend.txt',import.meta.url),'utf8');
+ assert.ok(html.includes('href="./assets/lexend.css"'));
+ assert.ok(html.includes("font-src 'self' data:"));
+ assert.equal(html.includes('fonts.googleapis.com')||html.includes('fonts.gstatic.com'),false);
+ assert.ok(html.indexOf('href="./assets/lexend.css"')<html.indexOf('tailwind.generated.css'));
+ assert.ok(fontCss.includes('font-family: "Lexend"'));
+ assert.ok(fontCss.includes('font-weight: 100 900'));
+ assert.ok(fontCss.includes('font-display: swap'));
+ const payload=fontCss.split('data:font/woff2;base64,')[1]?.split('")')[0]||'';
+ assert.ok(payload.length>40000);
+ assert.equal(payload.length%4,0);
+ assert.equal(/[^A-Za-z0-9+/=]/.test(payload),false);
+ assert.equal(payload.startsWith('d09GMg'),true);
+ assert.ok(appCss.includes('--app-font-family: "Lexend"'));
+ assert.ok(appCss.includes('html, body, body * {'));
+ assert.ok(appCss.includes('.heading-font, .handwriting { font-family: var(--app-font-family); }'));
+ assert.ok(gardenCss.includes('.garden-brand { font-family: var(--app-font-family);'));
+ assert.equal(/font-family: (Georgia|cursive)/i.test(appCss+gardenCss),false);
+ assert.ok(license.includes('SIL OPEN FONT LICENSE Version 1.1'));
+ assert.ok(existsSync(new URL('../assets/lexend.css',import.meta.url)));
 });
