@@ -249,7 +249,7 @@ body {
 html,body {width:100%;height:100%;overflow:hidden;overscroll-behavior:none;}
 body {position:fixed;inset:0;min-height:0 !important;padding-bottom:0 !important;}
 #little-garden {height:100vh;height:100dvh;overflow:hidden !important;}
-.garden-checklist-scene {display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;padding-bottom:0 !important;}
+.garden-checklist-scene:not(.hidden) {display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;padding-bottom:0 !important;}
 .garden-checklist-scene > header {flex:0 0 auto;margin:0 auto .3rem !important;padding:.45rem .7rem !important;gap:.35rem !important;}
 .garden-checklist-scene main {flex:1 1 auto;min-height:0;height:0;width:min(100%,42rem);max-width:42rem;margin:0 auto !important;padding:0 .45rem !important;overflow:hidden;}
 .checklist-fit-content {--checklist-fit-scale:1;width:calc(100% / var(--checklist-fit-scale));transform:scale(var(--checklist-fit-scale));transform-origin:top center;box-sizing:border-box;}
