@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
 const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
 const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
