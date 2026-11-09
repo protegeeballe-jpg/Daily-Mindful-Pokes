@@ -111,7 +111,7 @@ test('seed selection is a one-time setup and becomes visibly completed after sav
  assert.match(garden,/flowerChoice\.value = garden\.flowerType/);
  assert.match(garden,/if \(!saveGarden\(\)\) \{/);
  assert.match(garden,/garden = null;/);
- assert.match(garden,/garden\.classList\.toggle\('is-complete', isComplete\)/);
+ assert.match(garden,/setup\.classList\.toggle\('is-complete', isComplete\)/);
  const resetStart=app.indexOf('async function resetDayData()');
  const resetEnd=app.indexOf('async function toggleVoiceRecording()',resetStart);
  const dailyReset=app.slice(resetStart,resetEnd);
