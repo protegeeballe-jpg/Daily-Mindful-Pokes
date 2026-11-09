@@ -79,7 +79,7 @@ test('the health checklist and encrypted diary are scenes inside the garden hub'
  assert.match(app,/showPage\('garden'\)/);
 });
 
-test('the room uses the supplied local artwork and has one Personal Diary view',()=>{
+test('the supplied artwork fills the Room home background and the Diary remains single',()=>{
  const gardenStart=html.indexOf('<section id="little-garden"');
  const gardenEnd=html.indexOf('<!-- 🌟 ANIMATION MODAL POPUP -->',gardenStart);
  const gardenMarkup=html.slice(gardenStart,gardenEnd);
@@ -89,15 +89,17 @@ test('the room uses the supplied local artwork and has one Personal Diary view',
  assert.equal((roomMarkup.match(/data-page="diary"/g)||[]).length,1);
  assert.equal((html.match(/<div id="view-diary"/g)||[]).length,1);
  assert.doesNotMatch(gardenMarkup,/Garden notes|garden-note|garden-journal|open-journal|data-garden-scene="journal"/i);
- assert.match(gardenMarkup,/id="garden-window" class="garden-room-scene"/);
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
- const roomCardRule=gardenCss.match(/\.garden-room-card\s*\{([^}]*)\}/)?.[1]||'';
- const roomSceneRule=gardenCss.match(/\.garden-room-scene\s*\{([^}]*)\}/)?.[1]||'';
- assert.match(roomCardRule,/background-image:\s*url\("\.\/garden-room-background\.jpg"\)/);
- assert.match(roomCardRule,/background-size:\s*cover/);
- assert.match(roomSceneRule,/width:\s*100%/);
+ const homeRule=gardenCss.match(/\.garden-overlay\.garden-room-home\\s*\\{([^}]*)\\}/)?.[1]||'';
+ const roomCardRule=gardenCss.match(/\\.garden-room-card\\s*\\{([^}]*)\\}/)?.[1]||'';
+ const roomSceneRule=gardenCss.match(/\\.garden-room-scene\\s*\\{([^}]*)\\}/)?.[1]||'';
+ assert.match(homeRule,/background-image:[\\s\\S]*garden-room-background\\.jpg/);
+ assert.match(homeRule,/background-size:\\s*cover/);
+ assert.match(garden,/overlay\\.classList\\.toggle\\('garden-room-home', sceneName === 'room'\\)/);
+ assert.doesNotMatch(roomCardRule,/background-image/);
+ assert.match(roomSceneRule,/width:\\s*100%/);
  assert.doesNotMatch(roomSceneRule,/background-image|background-size/);
- assert.match(gardenCss,/backdrop-filter:blur\(8px\)/);
+ assert.match(gardenCss,/backdrop-filter:blur\\(7px\\)/);
  assert.equal([...gardenCss].filter(char=>char==='{').length,[...gardenCss].filter(char=>char==='}').length);
  assert.ok(existsSync(new URL('../assets/garden-room-background.jpg',import.meta.url)));
 });
