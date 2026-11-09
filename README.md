@@ -46,3 +46,7 @@ The HTML sets a meta-delivered Content Security Policy: scripts and other fetche
 ## Local recovery
 
 The app PIN verifier is stored under `dmp_app_gate_v1`. Deleting only that key allows first-run PIN setup again. Anyone able to use developer tools can do this; the gate is not high-assurance authentication. Do not clear all site data unless you intend to delete locally stored records.
+
+## Typography
+
+The app uses one locally hosted Lexend variable font (weights 100-900) across its screens, headings, labels, and form controls. The font is embedded in a same-origin stylesheet so it remains compatible with the app's Content Security Policy and does not depend on an external font service. Lexend is distributed under the SIL Open Font License 1.1; see [assets/fonts/OFL-Lexend.txt](assets/fonts/OFL-Lexend.txt).
