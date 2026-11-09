@@ -154,6 +154,8 @@ test('the fixed viewport uses full-width responsive checklist content without tr
  assert.match(appCss,/html,body\s*\{[^}]*overflow:hidden/s);
  assert.match(appCss,/body\s*\{[^}]*position:fixed/s);
  assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*overflow-y:auto/s);
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ assert.doesNotMatch(gardenCss,/overflow-y:\\s*auto/);
  assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*width:100%/s);
  assert.match(appCss,/\.checklist-fit-content\s*\{[^}]*width:100%[^}]*transform:none/s);
  assert.doesNotMatch(appCss,/transform-origin:top center/);
