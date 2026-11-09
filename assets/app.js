@@ -290,9 +290,9 @@ import {
             "start-1":{title:"Three grateful things",line:"Let's find three small things to appreciate. They can be as simple as a safe moment, a kind word, or a warm drink.",person:"🧑",prop:"🌼",action:"Think of three things. You can jot them down mentally or in your own words."},
             "start-2":{title:"Prayer and intention",line:"Let's pause together. Set a kind intention for yourself and the people you care about. Take the moment in your own way.",person:"🧑",prop:"🙏",action:"Take a quiet moment for prayer or a positive intention."},
             "start-3":{title:"Gentle movement",line:"Let's loosen up. Roll your shoulders gently, stretch your arms, and move only within a comfortable range.",person:"🧑",prop:"🙆",action:"Try a few gentle stretches. Stop if anything hurts."},
-            "start-4":{title:"A little hydration",line:"I brought my glass! Watch me take a refreshing sip. Now it's your turn—enjoy some water at a comfortable pace.",person:"👧",prop:"🥛",action:"Drink your water. No need to rush.",drink:true},
+            "start-4":{title:"A little hydration",line:"I brought my glass! Watch me take a refreshing sip. Now it's your turn. Enjoy some water at a comfortable pace.",person:"👧",prop:"🥛",action:"Drink your water. No need to rush.",drink:true},
             "mid-1":{title:"Posture and stretch",line:"Let's reset our posture. Unclench your jaw, relax your shoulders, sit or stand comfortably, then stretch gently.",person:"🧑",prop:"🧘",action:"Take a comfortable posture and stretch gently."},
-            "mid-2":{title:"Breathe with me",line:"We'll do five gentle 4–2–6 cycles: breathe in for 4, pause softly for 2, and breathe out for 6. Keep it comfortable—never force or hold if uncomfortable.",person:"🧑",prop:"🌬️",action:"Start the five guided breathing cycles.",breathing:true},
+            "mid-2":{title:"Breathe with me",line:"We'll do five gentle 4–2–6 cycles: breathe in for 4, pause softly for 2, and breathe out for 6. Keep it comfortable. Never force or hold if uncomfortable.",person:"🧑",prop:"🌬️",action:"Start the five guided breathing cycles.",breathing:true},
             "mid-3":{title:"Midday water break",line:"A tiny water break can help you pause. Watch me take a sip, then have some water if it's available.",person:"👧",prop:"💧",action:"Drink some water at your own pace.",drink:true},
             "mid-4":{title:"Check how you feel",line:"Let's gently check in. What emotion is here right now? What thought is asking for your attention? You don't have to judge or fix it.",person:"🧑",prop:"💗",action:"Name what you're feeling, even if the answer is 'not sure'."},
             "mid-5":{title:"Let a thought drift by",line:"Imagine a thought floating past like a cloud. You can notice it without holding on. Let it drift away in its own time.",person:"🧑",prop:"☁️",action:"Notice one thought and practice letting it pass."},
@@ -438,14 +438,14 @@ import {
                         activeModalAction = 'complete';
                         button.disabled = false;
                         button.classList.remove('opacity-50','cursor-not-allowed');
-                        instructions.textContent = 'The demonstration is done. Now it is your turn—have water if appropriate for you, at your own pace. When you are finished, tap below.';
+                        instructions.textContent = 'The demonstration is done. Now it is your turn. Have water if appropriate for you, at your own pace. When you are finished, tap below.';
                         const speech = document.getElementById('guide-speech');
                         if (speech) speech.textContent = 'My sip is done! Your turn now. Take your time and enjoy your water.';
-                        button.textContent = "I've had my water—show my checkbox";
+                        button.textContent = "I've had my water. Show my checkbox";
                     }, 5000);
                 } else {
                     activeModalAction = 'complete';
-                    button.textContent = "I've done it—show my checkbox";
+                    button.textContent = "I've done it. Show my checkbox";
                 }
             }
             document.getElementById('anim-modal').classList.remove('hidden');

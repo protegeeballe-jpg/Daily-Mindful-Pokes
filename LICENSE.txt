@@ -10,7 +10,7 @@ By accessing or downloading this Software, you agree to the following terms:
 
   a. NO COPYING OR REDISTRIBUTION: You may not copy, duplicate, modify, sub-license, host, publish, or redistribute the Software, in whole or in part, in any form or medium, without prior written permission from the Author.
   
-  b. NO COMMERCIAL USE: You may not use, leverage, sell, monetize, or distribute this Software—or any derivative work derived from its code, design, or assets—to gain profit, generate revenue, or achieve commercial advantage of any kind.
+  b. NO COMMERCIAL USE: You may not use, leverage, sell, monetize, or distribute this Software or any derivative work derived from its code, design, or assets, to gain profit, generate revenue, or achieve commercial advantage of any kind.
   
   c. NO AI OR MACHINE LEARNING MODEL TRAINING: You are expressly prohibited from using any portion of this Software, repository, source code, design elements, or associated media as input, training data, reference, or fine-tuning datasets for artificial intelligence (AI), machine learning models, neural networks, or automated code/content generation systems.
 
