@@ -198,7 +198,7 @@
     <div id="view-checklist" data-garden-scene="checklist" class="hidden garden-checklist-scene">
         <header id="checklist-header" class="bg-white/90 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 px-3 py-1.5 flex flex-wrap justify-between items-center gap-x-3 gap-y-1 shadow-sm">
             <div class="checklist-header-left flex min-w-0 items-center gap-2">
-                <h1 class="checklist-header-title text-lg font-bold text-amber-900 handwriting">My Health Checklist</h1>
+                <h1 id="checklist-page-title" tabindex="-1" class="checklist-header-title text-lg font-bold text-amber-900 handwriting">My Health Checklist</h1>
                 <button type="button" data-action="showPage" data-page="garden" class="checklist-header-button checklist-room-button text-xs text-amber-900 font-bold px-2.5 py-1 bg-amber-100 border border-amber-300 rounded-lg">Room</button>
             </div>
             <div class="checklist-header-right flex min-w-0 items-center justify-end gap-2">
@@ -214,131 +214,20 @@
 
         <main class="max-w-2xl mx-auto px-4 mt-8">
             <div id="checklist-fit-content" class="checklist-fit-content">
-            <div class="flex justify-between items-center mb-4 bg-white/70 p-4 rounded-2xl border border-amber-200 shadow-sm">
+            <div class="flex justify-between items-center mb-2 bg-white/70 px-3 py-2 rounded-xl border border-amber-200 shadow-sm">
                 <span class="text-sm font-bold text-amber-900">Card <span id="current-step-num">1</span> of 6</span>
                 <div class="flex gap-2 text-xl" id="step-dots" aria-label="Six activity cards">
                     <span id="dot-1">📍</span><span id="dot-2" class="opacity-30">🌅</span><span id="dot-3" class="opacity-30">🌤️</span>
                     <span id="dot-4" class="opacity-30">🌙</span><span id="dot-5" class="opacity-30">💤</span><span id="dot-6" class="opacity-30">☁️</span>
                 </div>
             </div>
-            <section class="watercolor-progress rounded-2xl p-4 mb-6" aria-label="Daily activity progress">
+            <section class="watercolor-progress rounded-xl px-3 py-2 mb-3" aria-label="Daily activity progress">
                 <div class="flex justify-between items-center gap-3 mb-2"><span class="text-sm font-bold text-slate-800">Today's Priceless Wins</span><span id="daily-progress-count" class="text-xs font-bold text-emerald-900 tabular-nums">0 of 20 steps</span></div>
                 <div class="watercolor-track" role="progressbar" aria-label="Completed health checklist activities" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="daily-progress-track"><div id="daily-progress-bar" class="watercolor-fill"></div></div>
-                <p class="text-xs text-slate-600 mt-2">One card at a time. Small steps count, and you can pause whenever you need.</p>
+                <p class="text-xs text-slate-600 mt-1">One card at a time. Small steps count, and you can pause whenever you need.</p>
             </section>
-            <section id="ecosystem-panel" class="ecosystem-card mb-6" aria-labelledby="ecosystem-heading">
-                <div class="flex justify-between items-center gap-3 mb-1">
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-800/70">Your daily growth</p>
-                        <h2 id="ecosystem-heading" class="text-2xl font-semibold handwriting text-emerald-950">The Interactive Ecosystem</h2>
-                    </div>
-                    <span class="text-xs font-bold text-emerald-900 bg-white/65 border border-emerald-200 rounded-full px-3 py-1">Today’s tree</span>
-                </div>
-                <p id="ecosystem-intro-copy" class="text-xs text-emerald-900/75 mb-2">Start with one small action. Your seed of Hope and Faith are ready to take root.</p>
-                <canvas id="ecosystem-canvas" class="ecosystem-canvas" width="640" height="480" role="img" aria-label="An animated watercolor-style tree. Prayer and water grow its roots, releasing each stress cloud strengthens its trunk, and Screen Curfew blooms flowers.">Your browser does not support the animated tree. The visual status is also provided in the progress summaries below.</canvas>
-                <svg id="ecosystem-tree-art" class="ecosystem-svg ecosystem-svg-fallback" viewBox="0 0 320 240" role="img" aria-labelledby="ecosystem-tree-title ecosystem-tree-desc" xmlns="http://www.w3.org/2000/svg">
-                    <title id="ecosystem-tree-title">A tree of faith and hope that grows with your daily actions</title>
-                    <desc id="ecosystem-tree-desc">A seed settles into the soil. Prayer and water grow the roots, releasing clouds of emotions strengthens the trunk, and Screen Curfew blooms a flower.</desc>
-                    <defs>
-                        <radialGradient id="eco-wash" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#fffef1" stop-opacity=".9"/><stop offset="1" stop-color="#dcebdc" stop-opacity="0"/></radialGradient>
-                        <linearGradient id="eco-bark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e7454"/><stop offset=".48" stop-color="#b18a5d"/><stop offset="1" stop-color="#80664d"/></linearGradient>
-                        <linearGradient id="eco-leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b6d69d"/><stop offset="1" stop-color="#6e9b78"/></linearGradient>
-                    </defs>
-                    <ellipse cx="160" cy="119" rx="145" ry="110" fill="url(#eco-wash)"/>
-                    <path d="M22 207 Q74 198 119 205 Q162 212 205 204 Q258 197 298 207" fill="none" stroke="#a8c29d" stroke-width="3" stroke-linecap="round" opacity=".8"/>
-                    <path d="M24 213 Q76 208 125 214 Q174 220 225 212 Q269 207 298 214" fill="none" stroke="#c2cfac" stroke-width="1.5" stroke-dasharray="3 5" opacity=".7"/>
-
-                    <g id="ecosystem-canopy">
-                        <g opacity=".23" fill="#a6c99a">
-                            <circle cx="111" cy="67" r="39"/><circle cx="160" cy="45" r="43"/><circle cx="208" cy="67" r="38"/><circle cx="139" cy="89" r="33"/><circle cx="187" cy="91" r="33"/>
-                        </g>
-                        <g fill="url(#eco-leaf)" stroke="#638b6a" stroke-width="1.4" stroke-linejoin="round">
-                            <path d="M72 77 Q53 39 93 29 Q101 62 72 77Z"/><path d="M94 48 Q83 14 123 14 Q124 45 94 48Z"/>
-                            <path d="M127 40 Q119 4 157 7 Q160 36 127 40Z"/><path d="M160 37 Q163 0 198 13 Q192 44 160 37Z"/>
-                            <path d="M195 49 Q205 15 238 34 Q225 61 195 49Z"/><path d="M221 79 Q236 44 263 66 Q245 93 221 79Z"/>
-                            <path d="M83 94 Q57 73 74 53 Q102 67 83 94Z"/><path d="M113 91 Q96 59 128 52 Q143 81 113 91Z"/>
-                            <path d="M151 91 Q135 58 167 51 Q180 81 151 91Z"/><path d="M188 94 Q176 62 209 58 Q218 87 188 94Z"/>
-                            <path d="M222 105 Q208 76 239 72 Q250 101 222 105Z"/>
-                        </g>
-                        <g fill="none" stroke="#e7f1d7" stroke-width="1.4" stroke-linecap="round" opacity=".85">
-                            <path d="M75 72 Q83 57 91 35 M99 44 L117 20 M132 38 L153 13 M165 36 L191 17 M202 48 L232 37 M228 77 L255 70"/>
-                        </g>
-                        <g class="ecosystem-canopy-flower">
-                            <path d="M239 61 Q238 47 245 43" fill="none" stroke="#648b64" stroke-width="2.5" stroke-linecap="round"/>
-                            <g fill="#f4c66c" stroke="#ce9850" stroke-width="1">
-                                <ellipse cx="239" cy="49" rx="5" ry="9"/><ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(72 239 56)"/>
-                                <ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(144 239 56)"/><ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(216 239 56)"/>
-                                <ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(288 239 56)"/>
-                            </g>
-                            <circle cx="239" cy="56" r="4.2" fill="#a87442"/>
-                            <path d="M243 74 Q255 62 260 70 Q254 83 243 74Z" fill="#8bb47c" stroke="#648b64" stroke-width="1"/>
-                        </g>
-                    </g>
-
-                    <g class="ecosystem-trunk" id="ecosystem-trunk">
-                        <path d="M142 202 Q151 164 146 129 Q138 98 125 80 Q144 88 157 113 Q156 79 168 61 Q179 91 172 117 Q194 88 215 83 Q192 108 178 137 Q172 166 181 202Z" fill="url(#eco-bark)" stroke="#755d46" stroke-width="3" stroke-linejoin="round"/>
-                        <path d="M160 192 Q166 151 159 114" fill="none" stroke="#d6b58a" stroke-width="4" stroke-linecap="round" opacity=".75"/>
-                        <path d="M148 166 Q161 158 174 164 M151 143 Q161 137 169 141" fill="none" stroke="#70583f" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
-                        <path d="M148 122 Q126 103 109 98 M172 132 Q194 108 211 104" fill="none" stroke="#795f45" stroke-width="7" stroke-linecap="round"/>
-                        <path d="M148 123 Q131 107 111 101 M172 132 Q193 112 209 107" fill="none" stroke="#b48b61" stroke-width="2" stroke-linecap="round"/>
-                    </g>
-                    <g id="ecosystem-roots" class="ecosystem-roots" fill="none" stroke="#956f4d" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M151 197 Q132 211 106 215 Q84 218 62 235" stroke-width="6"/>
-                        <path d="M155 201 Q147 217 137 231" stroke-width="4.5"/>
-                        <path d="M160 202 Q173 218 190 235" stroke-width="5.5"/>
-                        <path d="M168 197 Q190 209 220 216 Q242 220 265 235" stroke-width="5"/>
-                        <path d="M143 207 Q122 209 110 227 M181 208 Q201 213 214 228" stroke-width="2.6" opacity=".8"/>
-                        <path d="M125 213 Q112 220 97 221 M202 214 Q221 221 234 222" stroke-width="2.1" opacity=".7"/>
-                    </g>
-                    <g id="ecosystem-seed" class="ecosystem-seed is-arriving" aria-hidden="true">
-                        <ellipse cx="160" cy="217" rx="7" ry="4.5" fill="#a8794f" stroke="#78583f" stroke-width="1.5"/>
-                        <path d="M159 214 Q163 210 165 214" fill="none" stroke="#dfbd8d" stroke-width="1.4" stroke-linecap="round"/>
-                        <g class="ecosystem-seed-heart">
-                            <path d="M178 199 C174 194 167 198 170 203 L178 210 L186 203 C189 198 182 194 178 199Z" fill="#df8d9b" stroke="#b96d7c" stroke-width="1"/>
-                            <path d="M174 200 Q177 198 179 201" fill="none" stroke="#fff2ee" stroke-width="1.2" stroke-linecap="round"/>
-                        </g>
-                        <path d="M145 211 L147 207 M145 207 L149 207 M193 214 L195 210 M193 210 L197 210" fill="none" stroke="#d8bd7c" stroke-width="1.4" stroke-linecap="round"/>
-                    </g>
-                    <g fill="#8fb483" opacity=".9"><path d="M40 208 Q47 192 55 208 Q48 205 40 208Z"/><path d="M270 207 Q279 190 286 207 Q278 204 270 207Z"/></g>
-                </svg>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2" aria-live="polite">
-                    <div class="ecosystem-status">
-                        <span aria-hidden="true">🌱</span>
-                        <div class="ecosystem-status-copy">
-                            <strong>Spiritual Roots</strong>
-                            <span id="ecosystem-root-status">0 of 6 actions · plant the seed</span>
-                            <div id="ecosystem-root-meter" class="ecosystem-meter" role="progressbar" aria-label="Spiritual roots growth" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div id="ecosystem-root-meter-fill" class="ecosystem-meter-fill roots-fill"></div></div>
-                        </div>
-                    </div>
-                    <div class="ecosystem-status">
-                        <span aria-hidden="true">🌳</span>
-                        <div class="ecosystem-status-copy">
-                            <strong>Emotional Trunk</strong>
-                            <span id="ecosystem-trunk-status">0% growth · 0 of 3 clouds of Emotion released</span>
-                            <div id="ecosystem-trunk-meter" class="ecosystem-meter" role="progressbar" aria-label="Emotional trunk growth" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><div id="ecosystem-trunk-meter-fill" class="ecosystem-meter-fill trunk-fill"></div></div>
-                        </div>
-                    </div>
-                    <div class="ecosystem-status">
-                        <span aria-hidden="true">🌸</span>
-                        <div class="ecosystem-status-copy">
-                            <strong>Mental Canopy</strong>
-                            <span id="ecosystem-canopy-status">0 of 1 · waiting for Screen Curfew</span>
-                            <div id="ecosystem-canopy-meter" class="ecosystem-meter" role="progressbar" aria-label="Mental canopy bloom" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div id="ecosystem-canopy-meter-fill" class="ecosystem-meter-fill canopy-fill"></div></div>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-[10px] text-emerald-900/65 text-center mt-3">Your tree of Armor of God grows at your own pace.</p>
-            </section>
+            
             <div id="writing-lock-hint" class="writing-lock-hint rounded-xl p-3 mb-5 text-xs hidden">Your private reflection boxes are locked. <button type="button" data-action="showPage" data-page="diary" class="font-bold underline">Open Personal Diary to unlock them.</button></div>
-
-            <!-- Grand Finale Celebration Banner -->
-            <div id="trophy-banner" class="mb-6 hidden">
-                <div class="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 border-4 border-amber-400 p-6 rounded-3xl text-center shadow-lg">
-                    <div class="text-6xl animate-bounce">🏆✨</div>
-                    <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">All 6 Cards Completed!</h2>
-                    <p class="text-sm text-amber-800 font-semibold mt-1">"I am so proud of you!" You earned <strong>+100 Daily Confidence Points</strong> today! 💯</p>
-                </div>
-            </div>
 
             <!-- CARD 1 -->
             <div id="card-step-1" class="step-card card-yellow rounded-3xl p-8 relative">
@@ -533,16 +422,124 @@
     </div>
 
     <!-- 🏆 GRAND FINALE CONGRATULATORY OVERLAY -->
-    <div id="grand-finale-overlay" class="fixed inset-0 bg-amber-950/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-6 text-center text-white">
-        <div class="animate-bounce text-8xl mb-4">🎉✨</div>
-        <h1 class="text-5xl font-bold handwriting mb-2">BOOP! All Cards Done!</h1>
-        <p class="text-xl max-w-md text-amber-100 mb-6">"I am so proud of you!"</p>
-        <div class="bg-white/10 border-2 border-amber-300 px-6 py-3 rounded-2xl text-2xl font-bold text-amber-200 mb-8">
-            +100 Confidence Points Awarded 🏆
+    <div id="grand-finale-overlay" class="fixed inset-0 bg-amber-950/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-start p-3 sm:p-4 text-center text-white" role="dialog" aria-modal="true" aria-labelledby="finale-heading">
+        <div class="finale-content flex flex-col items-center gap-3 w-full max-w-3xl mx-auto py-3">
+            <div class="animate-bounce text-5xl sm:text-6xl" aria-hidden="true">🎉✨</div>
+            <h1 id="finale-heading" class="text-2xl sm:text-3xl font-bold handwriting">Your Daily Armor Is Complete!</h1>
+            <div id="trophy-banner" class="finale-trophy-banner hidden" role="status" aria-live="polite">
+            <div class="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 border-4 border-amber-400 p-3 sm:p-4 rounded-3xl text-center shadow-lg">
+                <div class="text-5xl animate-bounce">🏆✨</div>
+                <h2 class="text-xl sm:text-2xl font-bold text-amber-900 handwriting mt-1">All 6 Cards Completed!</h2>
+                <p class="text-xs sm:text-sm text-amber-800 font-semibold mt-1">"I am so proud of you!" You earned <strong>+100 Daily Confidence Points</strong> today! 💯</p>
+            </div>
         </div>
-        <button data-action="closeGrandFinale" class="px-8 py-4 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-lg rounded-2xl shadow-xl transition transform active:scale-95">
-            Claim Victory 👃✨
-        </button>
+            <section id="ecosystem-panel" class="ecosystem-card finale-ecosystem-card" aria-labelledby="ecosystem-heading">
+                <div class="flex justify-between items-center gap-3 mb-1">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-800/70">Your daily growth</p>
+                        <h2 id="ecosystem-heading" class="text-2xl font-semibold handwriting text-emerald-950">The Interactive Ecosystem</h2>
+                    </div>
+                    <span class="text-xs font-bold text-emerald-900 bg-white/65 border border-emerald-200 rounded-full px-3 py-1">Today’s tree</span>
+                </div>
+                <p id="ecosystem-intro-copy" class="text-xs text-emerald-900/75 mb-2">Start with one small action. Your seed of Hope and Faith are ready to take root.</p>
+                <canvas id="ecosystem-canvas" class="ecosystem-canvas" width="640" height="480" role="img" aria-label="An animated watercolor-style tree. Prayer and water grow its roots, releasing each stress cloud strengthens its trunk, and Screen Curfew blooms flowers.">Your browser does not support the animated tree. The visual status is also provided in the progress summaries below.</canvas>
+                <svg id="ecosystem-tree-art" class="ecosystem-svg ecosystem-svg-fallback" viewBox="0 0 320 240" role="img" aria-labelledby="ecosystem-tree-title ecosystem-tree-desc" xmlns="http://www.w3.org/2000/svg">
+                    <title id="ecosystem-tree-title">A tree of faith and hope that grows with your daily actions</title>
+                    <desc id="ecosystem-tree-desc">A seed settles into the soil. Prayer and water grow the roots, releasing clouds of emotions strengthens the trunk, and Screen Curfew blooms a flower.</desc>
+                    <defs>
+                        <radialGradient id="eco-wash" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#fffef1" stop-opacity=".9"/><stop offset="1" stop-color="#dcebdc" stop-opacity="0"/></radialGradient>
+                        <linearGradient id="eco-bark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e7454"/><stop offset=".48" stop-color="#b18a5d"/><stop offset="1" stop-color="#80664d"/></linearGradient>
+                        <linearGradient id="eco-leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b6d69d"/><stop offset="1" stop-color="#6e9b78"/></linearGradient>
+                    </defs>
+                    <ellipse cx="160" cy="119" rx="145" ry="110" fill="url(#eco-wash)"/>
+                    <path d="M22 207 Q74 198 119 205 Q162 212 205 204 Q258 197 298 207" fill="none" stroke="#a8c29d" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+                    <path d="M24 213 Q76 208 125 214 Q174 220 225 212 Q269 207 298 214" fill="none" stroke="#c2cfac" stroke-width="1.5" stroke-dasharray="3 5" opacity=".7"/>
+
+                    <g id="ecosystem-canopy">
+                        <g opacity=".23" fill="#a6c99a">
+                            <circle cx="111" cy="67" r="39"/><circle cx="160" cy="45" r="43"/><circle cx="208" cy="67" r="38"/><circle cx="139" cy="89" r="33"/><circle cx="187" cy="91" r="33"/>
+                        </g>
+                        <g fill="url(#eco-leaf)" stroke="#638b6a" stroke-width="1.4" stroke-linejoin="round">
+                            <path d="M72 77 Q53 39 93 29 Q101 62 72 77Z"/><path d="M94 48 Q83 14 123 14 Q124 45 94 48Z"/>
+                            <path d="M127 40 Q119 4 157 7 Q160 36 127 40Z"/><path d="M160 37 Q163 0 198 13 Q192 44 160 37Z"/>
+                            <path d="M195 49 Q205 15 238 34 Q225 61 195 49Z"/><path d="M221 79 Q236 44 263 66 Q245 93 221 79Z"/>
+                            <path d="M83 94 Q57 73 74 53 Q102 67 83 94Z"/><path d="M113 91 Q96 59 128 52 Q143 81 113 91Z"/>
+                            <path d="M151 91 Q135 58 167 51 Q180 81 151 91Z"/><path d="M188 94 Q176 62 209 58 Q218 87 188 94Z"/>
+                            <path d="M222 105 Q208 76 239 72 Q250 101 222 105Z"/>
+                        </g>
+                        <g fill="none" stroke="#e7f1d7" stroke-width="1.4" stroke-linecap="round" opacity=".85">
+                            <path d="M75 72 Q83 57 91 35 M99 44 L117 20 M132 38 L153 13 M165 36 L191 17 M202 48 L232 37 M228 77 L255 70"/>
+                        </g>
+                        <g class="ecosystem-canopy-flower">
+                            <path d="M239 61 Q238 47 245 43" fill="none" stroke="#648b64" stroke-width="2.5" stroke-linecap="round"/>
+                            <g fill="#f4c66c" stroke="#ce9850" stroke-width="1">
+                                <ellipse cx="239" cy="49" rx="5" ry="9"/><ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(72 239 56)"/>
+                                <ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(144 239 56)"/><ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(216 239 56)"/>
+                                <ellipse cx="239" cy="49" rx="5" ry="9" transform="rotate(288 239 56)"/>
+                            </g>
+                            <circle cx="239" cy="56" r="4.2" fill="#a87442"/>
+                            <path d="M243 74 Q255 62 260 70 Q254 83 243 74Z" fill="#8bb47c" stroke="#648b64" stroke-width="1"/>
+                        </g>
+                    </g>
+
+                    <g class="ecosystem-trunk" id="ecosystem-trunk">
+                        <path d="M142 202 Q151 164 146 129 Q138 98 125 80 Q144 88 157 113 Q156 79 168 61 Q179 91 172 117 Q194 88 215 83 Q192 108 178 137 Q172 166 181 202Z" fill="url(#eco-bark)" stroke="#755d46" stroke-width="3" stroke-linejoin="round"/>
+                        <path d="M160 192 Q166 151 159 114" fill="none" stroke="#d6b58a" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+                        <path d="M148 166 Q161 158 174 164 M151 143 Q161 137 169 141" fill="none" stroke="#70583f" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
+                        <path d="M148 122 Q126 103 109 98 M172 132 Q194 108 211 104" fill="none" stroke="#795f45" stroke-width="7" stroke-linecap="round"/>
+                        <path d="M148 123 Q131 107 111 101 M172 132 Q193 112 209 107" fill="none" stroke="#b48b61" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                    <g id="ecosystem-roots" class="ecosystem-roots" fill="none" stroke="#956f4d" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M151 197 Q132 211 106 215 Q84 218 62 235" stroke-width="6"/>
+                        <path d="M155 201 Q147 217 137 231" stroke-width="4.5"/>
+                        <path d="M160 202 Q173 218 190 235" stroke-width="5.5"/>
+                        <path d="M168 197 Q190 209 220 216 Q242 220 265 235" stroke-width="5"/>
+                        <path d="M143 207 Q122 209 110 227 M181 208 Q201 213 214 228" stroke-width="2.6" opacity=".8"/>
+                        <path d="M125 213 Q112 220 97 221 M202 214 Q221 221 234 222" stroke-width="2.1" opacity=".7"/>
+                    </g>
+                    <g id="ecosystem-seed" class="ecosystem-seed is-arriving" aria-hidden="true">
+                        <ellipse cx="160" cy="217" rx="7" ry="4.5" fill="#a8794f" stroke="#78583f" stroke-width="1.5"/>
+                        <path d="M159 214 Q163 210 165 214" fill="none" stroke="#dfbd8d" stroke-width="1.4" stroke-linecap="round"/>
+                        <g class="ecosystem-seed-heart">
+                            <path d="M178 199 C174 194 167 198 170 203 L178 210 L186 203 C189 198 182 194 178 199Z" fill="#df8d9b" stroke="#b96d7c" stroke-width="1"/>
+                            <path d="M174 200 Q177 198 179 201" fill="none" stroke="#fff2ee" stroke-width="1.2" stroke-linecap="round"/>
+                        </g>
+                        <path d="M145 211 L147 207 M145 207 L149 207 M193 214 L195 210 M193 210 L197 210" fill="none" stroke="#d8bd7c" stroke-width="1.4" stroke-linecap="round"/>
+                    </g>
+                    <g fill="#8fb483" opacity=".9"><path d="M40 208 Q47 192 55 208 Q48 205 40 208Z"/><path d="M270 207 Q279 190 286 207 Q278 204 270 207Z"/></g>
+                </svg>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2" aria-live="polite">
+                    <div class="ecosystem-status">
+                        <span aria-hidden="true">🌱</span>
+                        <div class="ecosystem-status-copy">
+                            <strong>Spiritual Roots</strong>
+                            <span id="ecosystem-root-status">0 of 6 actions · plant the seed</span>
+                            <div id="ecosystem-root-meter" class="ecosystem-meter" role="progressbar" aria-label="Spiritual roots growth" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div id="ecosystem-root-meter-fill" class="ecosystem-meter-fill roots-fill"></div></div>
+                        </div>
+                    </div>
+                    <div class="ecosystem-status">
+                        <span aria-hidden="true">🌳</span>
+                        <div class="ecosystem-status-copy">
+                            <strong>Emotional Trunk</strong>
+                            <span id="ecosystem-trunk-status">0% growth · 0 of 3 clouds of Emotion released</span>
+                            <div id="ecosystem-trunk-meter" class="ecosystem-meter" role="progressbar" aria-label="Emotional trunk growth" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><div id="ecosystem-trunk-meter-fill" class="ecosystem-meter-fill trunk-fill"></div></div>
+                        </div>
+                    </div>
+                    <div class="ecosystem-status">
+                        <span aria-hidden="true">🌸</span>
+                        <div class="ecosystem-status-copy">
+                            <strong>Mental Canopy</strong>
+                            <span id="ecosystem-canopy-status">0 of 1 · waiting for Screen Curfew</span>
+                            <div id="ecosystem-canopy-meter" class="ecosystem-meter" role="progressbar" aria-label="Mental canopy bloom" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div id="ecosystem-canopy-meter-fill" class="ecosystem-meter-fill canopy-fill"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-[10px] text-emerald-900/65 text-center mt-3">Your tree of Armor of God grows at your own pace.</p>
+            </section>
+            <button data-action="closeGrandFinale" class="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-base rounded-2xl shadow-xl transition transform active:scale-95">
+                Claim Victory 👃✨
+            </button>
+        </div>
     </div>
 
     <!-- Scripts Engine -->

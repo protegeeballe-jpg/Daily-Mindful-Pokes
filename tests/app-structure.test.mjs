@@ -271,3 +271,43 @@ test('repository text files avoid em dash punctuation',()=>{
   assert.equal(source.includes(emDash),false,path);
  }
 });
+
+test('Health Checklist hides the shared shell headers and keeps one compact toolbar',()=>{
+ assert.match(garden,/overlay\.classList\.toggle\('garden-checklist-active', sceneName === 'checklist'\)/);
+ assert.match(garden,/sceneName === 'checklist' \? byId\('checklist-page-title'\) : heading/);
+ assert.match(html,/id="checklist-page-title" tabindex="-1"/);
+ assert.match(html,/<header id="checklist-header"/);
+ assert.match(appCss,/#little-garden\.garden-checklist-active \.garden-topbar/);
+ assert.match(appCss,/#little-garden\.garden-checklist-active \.garden-screen-title/);
+ assert.match(appCss,/#little-garden\.garden-checklist-active \.garden-intro/);
+ assert.match(appCss,/#little-garden\.garden-checklist-active \.garden-status/);
+});
+test('Interactive Ecosystem and trophy rewards appear only in the Grand Finale, not among checklist cards',()=>{
+ const checklistStart=html.indexOf('<div id="view-checklist"');
+ const gardenStatus=html.indexOf('<p id="garden-status"',checklistStart);
+ const checklistMarkup=html.slice(checklistStart,gardenStatus);
+ const finaleStart=html.indexOf('<div id="grand-finale-overlay"');
+ const scriptsStart=html.indexOf('<!-- Scripts Engine -->',finaleStart);
+ const finaleMarkup=html.slice(finaleStart,scriptsStart);
+ assert.doesNotMatch(checklistMarkup,/id="ecosystem-panel"|id="trophy-banner"/);
+ assert.match(finaleMarkup,/id="trophy-banner"/);
+ assert.match(finaleMarkup,/id="ecosystem-panel"/);
+ assert.ok(finaleMarkup.indexOf('id="trophy-banner"') < finaleMarkup.indexOf('id="ecosystem-panel"'));
+ assert.equal((html.match(/id="ecosystem-panel"/g)||[]).length,1);
+ assert.equal((html.match(/id="trophy-banner"/g)||[]).length,1);
+ assert.match(finaleMarkup,/All 6 Cards Completed!/);
+ assert.match(finaleMarkup,/\+100 Daily Confidence Points/);
+ assert.match(finaleMarkup,/Claim Victory/);
+ assert.match(appCss,/\.finale-ecosystem-card/);
+});
+test('The ecosystem canvas is measured after the Grand Finale opens and completion points remain idempotent',()=>{
+ const start=app.indexOf('function checkSectionCompletion()');
+ const end=app.indexOf('function closeGrandFinale()',start);
+ const completion=app.slice(start,end);
+ assert.match(completion,/grandFinale\.classList\.remove\('hidden'\)/);
+ assert.match(completion,/requestAnimationFrame\(\(\) => \{\s*resizeEcosystemCanvas\(\);\s*updateEcosystemTree\(\);\s*\}\)/);
+ assert.match(completion,/localStorage\.getItem\(scoreAwardedKey\)/);
+ assert.match(completion,/localStorage\.setItem\(scoreAwardedKey, 'true'\)/);
+ assert.match(completion,/grandFinale\.classList\.add\('hidden'\)/);
+ assert.match(app,/function updateEcosystemTree\(animate = \{\}\)/);
+});
