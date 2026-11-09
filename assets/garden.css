@@ -127,7 +127,7 @@ body.garden-overlay-open { overflow: hidden; }
     border-color:#9bb99a;
     background:rgba(239,247,233,.88);
 }
-.garden-planting-panel.is-complete .garden-planting-complete {
+.garden-planting-panel.is-complete .garden-setup-complete {
     display:block;
 }
 .garden-setup-complete {
