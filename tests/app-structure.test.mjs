@@ -355,29 +355,29 @@ test('Google Drive backup loads GIS and permits only the required Google endpoin
 
 test('Google Drive backup preserves the local security boundary and encrypted diary',()=>{
  const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
- assert.match(drive,/const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh\\.apps\\.googleusercontent\\.com'/);
- assert.match(drive,/https:\\/\\/www\\.googleapis\\.com\\/auth\\/drive\\.appdata/);
- assert.match(drive,/parents: \['appDataFolder'\]/);
- assert.match(drive,/spaces: 'appDataFolder'/);
- assert.match(drive,/WRITING_CONFIG_KEY/);
- assert.match(drive,/dmp_diary_cipher_v1_/);
- assert.match(drive,/dmp_notes_cipher_v1_/);
- assert.match(drive,/AES-256-GCM/);
- assert.match(drive,/legacyPrivateContent.length/);
- assert.match(drive,/PRIVATE_NOTE_IDS/);
+ assert.ok(drive.includes("const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh.apps.googleusercontent.com'"));
+ assert.ok(drive.includes("https://www.googleapis.com/auth/drive.appdata"));
+ assert.ok(drive.includes("parents: ['appDataFolder']"));
+ assert.ok(drive.includes("spaces: 'appDataFolder'"));
+ assert.ok(drive.includes('WRITING_CONFIG_KEY'));
+ assert.ok(drive.includes('dmp_diary_cipher_v1_'));
+ assert.ok(drive.includes('dmp_notes_cipher_v1_'));
+ assert.ok(drive.includes('AES-256-GCM'));
+ assert.ok(drive.includes('legacyPrivateContent.length'));
+ assert.ok(drive.includes('PRIVATE_NOTE_IDS'));
  assert.doesNotMatch(drive,/APP_PIN_CONFIG_KEY|LEGACY_APP_PIN_KEY|user_pin/);
- assert.doesNotMatch(drive,/localStorage\\.(?:setItem|getItem)\\([^\\n]*(?:accessToken|tokenExpiresAt|tokenClient)/);
- assert.match(drive,/window\\.confirm\\('Restore this backup/);
- assert.match(drive,/window\\.confirm\\('This will/);
- assert.match(drive,/validateBackup\\(downloaded\\)/);
- assert.match(drive,/const previous = new Map/);
+ assert.doesNotMatch(drive,/localStorage\.(?:setItem|getItem)\([^\n]*(?:accessToken|tokenExpiresAt|tokenClient)/);
+ assert.ok(drive.includes("window.confirm('Restore this backup"));
+ assert.ok(drive.includes("window.confirm('This will"));
+ assert.ok(drive.includes('validateBackup(downloaded)'));
+ assert.ok(drive.includes('const previous = new Map'));
 });
 
 test('Google Drive restore allowlist excludes app PIN and rejects plaintext reflection fields',()=>{
  const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
- assert.match(drive,/const allowed = key => key === GARDEN_STORAGE_KEY/);
- assert.match(drive,/PRIVATE_NOTE_IDS\\.some\\(id => Object\\.hasOwn\\(data, id\\)\\)/);
- assert.match(drive,/ENCRYPTED_RECORD_PATTERN/);
- assert.match(drive,/score_awarded_/);
- assert.match(readme,/The device's app PIN verifier is deliberately excluded/);
+ assert.ok(drive.includes('const allowed = key => key === GARDEN_STORAGE_KEY'));
+ assert.ok(drive.includes('PRIVATE_NOTE_IDS.some(id => Object.hasOwn(data, id))'));
+ assert.ok(drive.includes('ENCRYPTED_RECORD_PATTERN'));
+ assert.ok(drive.includes('score_awarded_'));
+ assert.ok(readme.includes("The device's app PIN verifier is deliberately excluded"));
 });
