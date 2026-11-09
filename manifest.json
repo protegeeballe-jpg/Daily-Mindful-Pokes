@@ -1,7 +1,7 @@
 {
-  "name": "Daily Mindful Pokes",
-  "short_name": "Mindful Pokes",
-  "description": "Your cozy, local-first daily wellness routine and emotional check tracker.",
+  "name": "Faith & Focus: Daily Armor",
+  "short_name": "Faith & Focus",
+  "description": "A faith-centered daily focus and wellness routine with a guided checklist, outdoor growth scene, and encrypted Personal Diary.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FBF9F5",
