@@ -193,8 +193,8 @@ test('breathing guide uses a single explicit modal action and completes five 4-2
 });
 test('water animation runs for five seconds before asking the user to take their turn',()=>{
  assert.match(app,/drinkGuideTimeout\s*=\s*setTimeout\([\s\S]*?\},\s*5000\)/);
- assert.match(app,/Now it is your turn—have water if appropriate for you/);
- assert.match(app,/I've had my water—show my checkbox/);
+ assert.match(app,/Now it is your turn. Have water if appropriate for you/);
+ assert.match(app,/I've had my water. Show my checkbox/);
  assert.match(app,/activeModalAction\s*=\s*'waiting-for-drink'/);
 });
 test('animal stickers are removed from checklist launchers while Show me animations remain',()=>{
