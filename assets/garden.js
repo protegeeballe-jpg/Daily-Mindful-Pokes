@@ -57,6 +57,7 @@ function initializeGarden(root) {
 
     function setScene(sceneName) {
         overlay.classList.toggle('garden-room-home', sceneName === 'room');
+        overlay.classList.toggle('garden-checklist-active', sceneName === 'checklist');
         root.querySelectorAll('[data-garden-scene]').forEach(scene => {
             scene.classList.toggle('hidden', scene.dataset.gardenScene !== sceneName);
         });
@@ -75,7 +76,8 @@ function initializeGarden(root) {
             };
             intro.textContent = descriptions[sceneName] || descriptions.room;
         }
-        if (!overlay.classList.contains('hidden')) heading?.focus({ preventScroll: true });
+        const focusTarget = sceneName === 'checklist' ? byId('checklist-page-title') : heading;
+        if (!overlay.classList.contains('hidden')) focusTarget?.focus({ preventScroll: true });
     }
 
     function renderRoom() {
