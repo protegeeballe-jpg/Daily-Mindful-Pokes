@@ -190,7 +190,8 @@ import {
             }
 
             if (pageId === 'checklist') {
-                requestAnimationFrame(fitChecklistToViewport);
+                const checklistMain = document.querySelector('#view-checklist main');
+                if (checklistMain) checklistMain.scrollTop = 0;
                 resizeEcosystemCanvas();
                 updateEcosystemTree();
                 replayEcosystemWelcome();
@@ -202,19 +203,6 @@ import {
                     loadPrivateWritingForDate(getCurrentWritingDate()).catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
                 }
             }
-        }
-
-        function fitChecklistToViewport() {
-            const view = document.getElementById('view-checklist');
-            const main = view?.querySelector('main');
-            const content = document.getElementById('checklist-fit-content');
-            if (!view || view.classList.contains('hidden') || !main || !content) return;
-            content.style.setProperty('--checklist-fit-scale', '1');
-            const naturalHeight = content.scrollHeight;
-            const availableHeight = main.clientHeight;
-            if (!naturalHeight || !availableHeight) return;
-            const scale = Math.min(1, Math.max(0.52, (availableHeight - 8) / naturalHeight));
-            content.style.setProperty('--checklist-fit-scale', String(scale));
         }
 
         function changeStep(direction) {
@@ -238,7 +226,8 @@ import {
 
                 document.getElementById('btn-next').innerText = (currentStep === 6) ? "Finish Checklist 🏆" : "Next Card ➔";
                 document.getElementById('finish-status')?.classList.add('hidden');
-                requestAnimationFrame(fitChecklistToViewport);
+                const checklistMain = document.querySelector('#view-checklist main');
+                if (checklistMain) checklistMain.scrollTop = 0;
             }
         }
 
@@ -271,7 +260,6 @@ import {
                     ? "Almost there! Release all three cloud types, then tick the completion checkbox."
                     : "Almost there! Please complete the remaining activity or activities on Card " + firstIncomplete + ".";
                 status.classList.remove('hidden');
-                requestAnimationFrame(fitChecklistToViewport);
                 return;
             }
 
@@ -1354,8 +1342,7 @@ import {
             });
         });
 
-        window.addEventListener('resize',() => { resizeEcosystemCanvas(); fitChecklistToViewport(); },{passive:true});
-        window.visualViewport?.addEventListener('resize',fitChecklistToViewport,{passive:true});
+        window.addEventListener('resize',resizeEcosystemCanvas,{passive:true});
         document.addEventListener('change',saveData);
         document.addEventListener('input',saveData);
         document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
