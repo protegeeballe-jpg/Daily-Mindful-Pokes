@@ -70,3 +70,11 @@ The app uses one locally hosted Lexend variable font (weights 100-900) across it
 5. Open the deployed app over HTTPS and use the Google Drive Backup panel in The Forge Room.
 
 Google's access tokens are short-lived. The app keeps them in memory and requests a fresh token through a user action when needed. Public release may require OAuth branding, domain, and policy checks depending on the final consent-screen configuration and scopes.
+
+## Public information and legal pages
+
+- Public application information: [home.html](./home.html)
+- Privacy Policy: [privacy.html](./privacy.html)
+- Terms of Service: [terms.html](./terms.html)
+- The PIN screen and app footer link to the Privacy Policy and Terms of Service.
+- Google Drive backup is currently paused in the user interface and does not request Google sign-in or send data to Drive. Google Drive API Terms prohibit backing up user or app content from a developer's app to Drive without Google's express prior written consent. Do not reactivate this feature unless that permission and the app's intended-audience requirements have been confirmed.
