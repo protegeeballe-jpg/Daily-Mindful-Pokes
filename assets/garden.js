@@ -80,15 +80,42 @@ function initializeGarden(root) {
 
     function renderRoom() {
         const setup = byId('garden-first-planting');
-        const planted = byId('garden-planted-summary');
-        if (setup) setup.classList.toggle('hidden', Boolean(garden));
-        if (planted) planted.classList.toggle('hidden', !garden);
+        const fields = byId('garden-planting-fields');
+        const heading = byId('garden-planting-heading');
+        const description = byId('garden-planting-description');
+        const plantButton = byId('garden-planting-button');
+        const completion = byId('garden-planting-complete');
+        const isComplete = Boolean(garden);
+
+        // Plant selection is a one-time setup milestone, restored from the saved garden.
+        if (setup) {
+            setup.dataset.setupState = isComplete ? 'complete' : 'pending';
+            setup.classList.toggle('is-complete', isComplete);
+        }
+        if (fields) fields.disabled = isComplete;
+        if (heading) heading.textContent = isComplete ? 'Initial planting setup completed' : 'Day 1 — Let’s plant two little seeds!';
+        if (description) {
+            description.textContent = isComplete
+                ? 'Your original seed choices are saved. This setup is complete and cannot be changed here.'
+                : 'Choose one fruit tree and one pretty flower. They will grow with the passing days, even when you are away.';
+        }
+        if (plantButton) {
+            plantButton.disabled = isComplete;
+            plantButton.textContent = isComplete ? 'Setup Completed ✓' : 'Plant my two seeds 🌱';
+        }
+        if (completion) completion.classList.toggle('hidden', !isComplete);
 
         if (garden) {
             const tree = TREE_TYPES[garden.treeType];
             const flower = FLOWER_TYPES[garden.flowerType];
-            byId('garden-room-seeds').textContent = tree.name + ' tree and ' + flower.name;
-            byId('garden-room-date').textContent = garden.plantedOn;
+            const treeChoice = byId('garden-tree-choice');
+            const flowerChoice = byId('garden-flower-choice');
+            if (treeChoice) treeChoice.value = garden.treeType;
+            if (flowerChoice) flowerChoice.value = garden.flowerType;
+            const seeds = byId('garden-room-seeds');
+            const date = byId('garden-room-date');
+            if (seeds) seeds.textContent = tree.name + ' tree and ' + flower.name;
+            if (date) date.textContent = garden.plantedOn;
         }
         const windowButton = byId('garden-window-button');
         const roomWindow = byId('garden-window');
@@ -205,11 +232,16 @@ function initializeGarden(root) {
                     const treeChoice = byId('garden-tree-choice')?.value;
                     const flowerChoice = byId('garden-flower-choice')?.value;
                     garden = createGardenState(treeChoice, flowerChoice, todayISO());
-                    saveGarden();
+                    if (!saveGarden()) {
+                        garden = null;
+                        renderRoom();
+                        setScene('room');
+                        return;
+                    }
                     renderRoom();
                     setScene('outdoors');
                     renderGarden();
-                    showStatus('Two little seeds are in the soil. Their growth will follow the calendar, one day at a time.', 'success');
+                    showStatus('Two little seeds are in the soil. Your initial setup is complete, and their growth will follow the calendar.', 'success');
                 } catch (error) {
                     showStatus(error?.message || 'Please choose one tree and one flower.', 'error');
                 }
