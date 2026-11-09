@@ -15,21 +15,21 @@ export const FLOWER_TYPES = Object.freeze({
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const TREE_STAGES = Object.freeze([
-    Object.freeze({ id: 'seed', label: 'A little seed', emoji: '🟤', startAt: 0, nextAt: 7 }),
-    Object.freeze({ id: 'sprout', label: 'First tiny sprout', emoji: '🌱', startAt: 7, nextAt: 30 }),
-    Object.freeze({ id: 'seedling', label: 'A leafy seedling', emoji: '🌿', startAt: 30, nextAt: 90 }),
-    Object.freeze({ id: 'young-tree', label: 'A young tree', emoji: '🪴', startAt: 90, nextAt: 180 }),
-    Object.freeze({ id: 'sapling', label: 'A growing sapling', emoji: '🌳', startAt: 180, nextAt: 365 }),
-    Object.freeze({ id: 'one-year-tree', label: 'One year of growing!', emoji: '🌳', startAt: 365, nextAt: null })
+    Object.freeze({ id: 'seed', label: 'A seed of Hope and Faith', emoji: '🟤', startAt: 0, nextAt: 7 }),
+    Object.freeze({ id: 'sprout', label: 'Hope and Faith taking root', emoji: '🌱', startAt: 7, nextAt: 30 }),
+    Object.freeze({ id: 'seedling', label: 'Growing steady roots', emoji: '🌿', startAt: 30, nextAt: 90 }),
+    Object.freeze({ id: 'young-tree', label: 'Growing stronger in faith and focus', emoji: '🪴', startAt: 90, nextAt: 180 }),
+    Object.freeze({ id: 'sapling', label: 'A tree growing in faith and patience', emoji: '🌳', startAt: 180, nextAt: 365 }),
+    Object.freeze({ id: 'one-year-tree', label: 'One year of steady growth', emoji: '🌳', startAt: 365, nextAt: null })
 ]);
 
 const FLOWER_STAGES = Object.freeze([
     Object.freeze({ id: 'seed', label: 'A little seed', emoji: '🟤', startAt: 0, nextAt: 4 }),
-    Object.freeze({ id: 'sprout', label: 'A fresh sprout', emoji: '🌱', startAt: 4, nextAt: 14 }),
+    Object.freeze({ id: 'sprout', label: 'A hopeful little sprout', emoji: '🌱', startAt: 4, nextAt: 14 }),
     Object.freeze({ id: 'seedling', label: 'A leafy seedling', emoji: '🌿', startAt: 14, nextAt: 30 }),
-    Object.freeze({ id: 'bud', label: 'A tiny flower bud', emoji: '🌷', startAt: 30, nextAt: 60 }),
-    Object.freeze({ id: 'first-bloom', label: 'The first bloom', emoji: '🌼', startAt: 60, nextAt: 90 }),
-    Object.freeze({ id: 'full-bloom', label: 'A beautiful full bloom', emoji: '🌸', startAt: 90, nextAt: null })
+    Object.freeze({ id: 'bud', label: 'A promise beginning to bloom', emoji: '🌷', startAt: 30, nextAt: 60 }),
+    Object.freeze({ id: 'first-bloom', label: 'The first bloom of hope', emoji: '🌼', startAt: 60, nextAt: 90 }),
+    Object.freeze({ id: 'full-bloom', label: 'A beautiful bloom of patience and faith', emoji: '🌸', startAt: 90, nextAt: null })
 ]);
 
 export function isISODate(value) {
