@@ -166,17 +166,6 @@ test('the fixed viewport uses full-width responsive checklist content without tr
  assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
  assert.doesNotMatch(gardenCss,/overflow-y:\s*hidden/);
 });
-test('Room, Garden and Diary preserve content inside the fixed viewport with scene-level scrolling',()=>{
- const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
- assert.match(gardenCss,/\.garden-room-card:not\(\.hidden\)\s*\{[^}]*overflow-y:auto/s);
- assert.match(gardenCss,/\.garden-outdoor-card:not\(\.hidden\)\s*\{[^}]*overflow-y:auto/s);
- assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*\{[^}]*overflow-y:auto/s);
- assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*> \.card-lavender\s*\{[^}]*overflow:visible/s);
- assert.match(gardenCss,/\.garden-choice select\s*\{[^}]*min-height:44px[^}]*font-size:16px/s);
- assert.match(gardenCss,/#view-diary input,#view-diary textarea\s*\{font-size:16px/);
- assert.match(gardenCss,/\.garden-room-actions \.garden-action-button\s*\{[^}]*min-height:48px/);
- assert.match(gardenCss,/\.garden-growth-grid\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-});
 test('guide and finale overlays keep their controls reachable on short screens',()=>{
  assert.match(appCss,/#anim-modal\s*\{[^}]*overflow-y:auto/s);
  assert.match(appCss,/#modal-content-box\s*\{[^}]*max-height:calc\(100dvh - 2rem\)[^}]*overflow-y:auto/s);
@@ -184,13 +173,12 @@ test('guide and finale overlays keep their controls reachable on short screens',
  assert.match(appCss,/#grand-finale-overlay\s*\{[^}]*overflow-y:auto/s);
  assert.doesNotMatch(appCss,/\.ecosystem-canvas,\.ecosystem-svg\s*\{display:none/);
 });
-test('fixed viewport CSS does not disable browser zoom and supports phone widths',()=>{
- const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+test('checklist layout preserves browser zoom and adapts at phone widths',()=>{
  assert.doesNotMatch(html,/user-scalable=no|maximum-scale\s*=\s*1/i);
  assert.match(appCss,/@media \(max-width:620px\)/);
  assert.match(appCss,/@media \(max-width:380px\)/);
- assert.match(gardenCss,/@media \(max-width:380px\)/);
- assert.match(gardenCss,/\.garden-room-actions \.garden-action-button\s*\{[^}]*font-size:\.875rem/);
+ assert.match(appCss,/\.garden-checklist-scene > header\s*\{[^}]*flex-flow:row wrap/s);
+ assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*overflow-y:auto/s);
 });
 test('breathing guide uses a single explicit modal action and completes five 4-2-6 cycles',()=>{
  assert.match(app,/function handleModalPrimaryAction\(\)/);
@@ -217,10 +205,9 @@ test('animal stickers are removed from checklist launchers while Show me animati
  assert.match(app,/function buildStretchingCartoon/);
 });
 
-test('viewport layout preserves hidden scene visibility states',()=>{
- const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
- assert.match(gardenCss,/\.garden-room-card:not\(\.hidden\)\s*\{display:flex/);
- assert.match(gardenCss,/\.garden-outdoor-card:not\(\.hidden\)\s*\{display:flex/);
- assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*\{display:flex/);
+test('the active checklist scene keeps hidden checklist cards hidden',()=>{
  assert.match(appCss,/\.garden-checklist-scene:not\(\.hidden\)\s*\{\s*display:flex/);
+ assert.match(html,/id=\"card-step-1\"[^>]*class=\"[^\"]*step-card/);
+ assert.match(html,/id=\"card-step-2\"[^>]*class=\"[^\"]*step-card[^\"]*hidden/);
+ assert.match(html,/id=\"card-step-6\"[^>]*class=\"[^\"]*step-card[^\"]*hidden/);
 });
