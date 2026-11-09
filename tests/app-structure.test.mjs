@@ -13,6 +13,8 @@ test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
  assert.match(html,/The Forge Room/);
+ assert.match(garden,/room: 'The Forge Room'/);
+ assert.match(garden,/outdoors: 'The Garden'/);
  assert.match(html,/6–12 digit app PIN/);
  assert.doesNotMatch(html,/4-digit app PIN/);
  assert.equal(manifest.name,'Faith & Focus: Daily Armor');
