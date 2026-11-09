@@ -339,3 +339,16 @@ test('Lexend is self-hosted and applied consistently across every app scene',()=
  assert.ok(license.includes('SIL OPEN FONT LICENSE Version 1.1'));
  assert.ok(existsSync(new URL('../assets/lexend.css',import.meta.url)));
 });
+
+
+test('Google Drive backup loads GIS and permits only the required Google endpoints',()=>{
+ assert.match(html,/id="google-identity-services" src="https:\/\/accounts\.google\.com\/gsi\/client" async/);
+ assert.match(html,/script-src 'self' https:\/\/accounts\.google\.com\/gsi\/client/);
+ assert.match(html,/connect-src 'self' https:\/\/accounts\.google\.com\/gsi\/ https:\/\/www\.googleapis\.com/);
+ assert.match(html,/frame-src https:\/\/accounts\.google\.com\/gsi\//);
+ assert.match(html,/type="module" src="\.\/assets\/drive-sync\.js"/);
+ assert.match(html,/id="drive-sync-panel"/);
+ assert.match(html,/id="drive-backup-button"/);
+ assert.match(html,/id="drive-restore-button"/);
+ assert.doesNotMatch(html,/drive-sync[\\s\\S]{0,500}on(?:click|change|input|submit)\\s*=/i);
+});
