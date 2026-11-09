@@ -190,5 +190,5 @@ test('viewport layout preserves hidden scene visibility states',()=>{
  assert.match(gardenCss,/\.garden-room-card:not\(\.hidden\)\s*\{display:flex/);
  assert.match(gardenCss,/\.garden-outdoor-card:not\(\.hidden\)\s*\{display:flex/);
  assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*\{display:flex/);
- assert.match(gardenCss,/\.garden-checklist-scene:not\(\.hidden\)\s*\{display:flex/);
+ assert.match(appCss,/\.garden-checklist-scene:not\(\.hidden\)\s*\{display:flex/);
 });
