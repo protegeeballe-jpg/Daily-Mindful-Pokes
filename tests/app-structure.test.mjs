@@ -332,6 +332,7 @@ test('Lexend is self-hosted and applied consistently across every app scene',()=
  assert.equal(payload.startsWith('d09GMg'),true);
  assert.ok(appCss.includes('--app-font-family: "Lexend"'));
  assert.ok(appCss.includes('html, body, body * {'));
+ assert.ok(appCss.includes('code, kbd, pre, samp { font-family: var(--app-font-family); }'));
  assert.ok(appCss.includes('.heading-font, .handwriting { font-family: var(--app-font-family); }'));
  assert.ok(gardenCss.includes('.garden-brand { font-family: var(--app-font-family);'));
  assert.equal(/font-family: (Georgia|cursive)/i.test(appCss+gardenCss),false);
