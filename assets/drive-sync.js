@@ -41,6 +41,35 @@ function setBusy(value) {
     if (connectButton) connectButton.disabled = value || !tokenClient;
 }
 
+function getAllowedChecklistFields() {
+    const checkboxIds = new Set([...document.querySelectorAll('.app-chk')]
+        .map(element => element.dataset.id)
+        .filter(id => typeof id === 'string' && /^[a-z0-9-]+$/.test(id)));
+    const cloudIds = new Set([...document.querySelectorAll('.cloud-item[data-cloud]')]
+        .map(element => element.dataset.cloud)
+        .filter(id => typeof id === 'string' && /^[a-z0-9-]+$/.test(id)));
+    return { checkboxIds, cloudIds };
+}
+
+function sanitizeChecklistData(data) {
+    const { checkboxIds, cloudIds } = getAllowedChecklistFields();
+    const clean = {};
+    for (const [key, value] of Object.entries(data)) {
+        if (key === 'cloud_flow_version' && value === 1) {
+            clean[key] = value;
+        } else if (checkboxIds.has(key) && typeof value === 'boolean') {
+            clean[key] = value;
+        } else if (checkboxIds.has(key.replace(/__guided$/, '')) &&
+            key.endsWith('__guided') && typeof value === 'boolean') {
+            clean[key] = value;
+        } else if (key.startsWith('cloud_') && cloudIds.has(key.slice(6)) &&
+            typeof value === 'boolean') {
+            clean[key] = value;
+        }
+    }
+    return clean;
+}
+
 function waitForGoogleIdentity(timeoutMs = 12000) {
     return new Promise((resolve, reject) => {
         const started = Date.now();
@@ -157,13 +186,12 @@ function getAppOwnedSnapshotEntries() {
             if (!data || typeof data !== 'object' || Array.isArray(data)) {
                 throw new Error('A saved checklist record has an unsupported format. Nothing was uploaded.');
             }
-            const cleanData = { ...data };
             for (const noteId of PRIVATE_NOTE_IDS) {
-                if (typeof cleanData[noteId] === 'string' && cleanData[noteId].length) {
+                if (typeof data[noteId] === 'string' && data[noteId].length) {
                     legacyPrivateContent.push(key + ' (' + noteId + ')');
                 }
-                delete cleanData[noteId];
             }
+            const cleanData = sanitizeChecklistData(data);
             entries.push([key, JSON.stringify(cleanData)]);
             continue;
         }
@@ -254,6 +282,10 @@ function validateBackup(payload) {
             if (!data || typeof data !== 'object' || Array.isArray(data) ||
                 PRIVATE_NOTE_IDS.some(id => Object.hasOwn(data, id))) {
                 throw new Error('A checklist record contains unsupported or unencrypted private fields.');
+            }
+            const cleanData = sanitizeChecklistData(data);
+            if (Object.keys(cleanData).length !== Object.keys(data).length) {
+                throw new Error('A checklist record contains unknown fields or invalid values. No local data was changed.');
             }
         } else if (key === GARDEN_STORAGE_KEY) {
             const garden = JSON.parse(value);
