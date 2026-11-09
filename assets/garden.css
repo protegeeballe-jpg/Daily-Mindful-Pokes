@@ -1,4 +1,4 @@
-/* Little Garden — an isolated, local-only game space. */
+/* Faith & Focus: Daily Armor — Forge Room and outdoor growth scenes. */
 body.garden-overlay-open { overflow: hidden; }
 .garden-overlay {
     position: fixed;
@@ -162,7 +162,7 @@ body.garden-overlay-open { overflow: hidden; }
     }
 }
 
-/* Shared garden hub presentation for the checklist and encrypted diary. */
+/* Shared Faith & Focus hub presentation for the checklist and encrypted diary. */
 .garden-topbar { position:sticky; top:0; z-index:45; }
 .garden-checklist-scene { padding-bottom:2rem; }
 .garden-checklist-scene > header { position:relative; top:auto; z-index:1; margin:0 auto 1rem; border:1px solid #d4e0cf; border-radius:1.2rem; }
