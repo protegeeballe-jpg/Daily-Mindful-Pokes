@@ -196,21 +196,19 @@
 
 <!-- 📝 Main Checklist Wizard View -->
     <div id="view-checklist" data-garden-scene="checklist" class="hidden garden-checklist-scene">
-        <header class="bg-white/80 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 px-6 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-sm">
-            <div class="flex items-center space-x-2.5 cursor-pointer" data-action="showPage" data-page="garden" role="button" tabindex="0">
-                <span class="text-2xl">💧</span>
-                <div>
-                    <h1 class="font-semibold text-amber-900 handwriting text-xl">Faith & Focus: Daily Armor</h1>
-                    <p class="text-xs text-amber-800/60">1 Corinthians 16:14 Let all that you do be done in love.</p>
-                </div>
+        <header id="checklist-header" class="bg-white/90 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 px-3 py-1.5 flex flex-wrap justify-between items-center gap-x-3 gap-y-1 shadow-sm">
+            <div class="checklist-header-left flex min-w-0 items-center gap-2">
+                <h1 class="checklist-header-title text-lg font-bold text-amber-900 handwriting">My Health Checklist</h1>
+                <button type="button" data-action="showPage" data-page="garden" class="checklist-header-button checklist-room-button text-xs text-amber-900 font-bold px-2.5 py-1 bg-amber-100 border border-amber-300 rounded-lg">Room</button>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
-                    <label for="currentDate" class="text-xs font-semibold text-amber-900">Date:</label>
-                    <input type="date" id="currentDate" class="bg-transparent text-xs font-medium focus:outline-none text-amber-900" data-change-action="handleDateChange">
+            <div class="checklist-header-right flex min-w-0 items-center justify-end gap-2">
+                <div class="checklist-header-date-time flex min-w-0 items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                    <label for="currentDate" class="text-xs font-semibold text-amber-900">Date</label>
+                    <input type="date" id="currentDate" aria-label="Checklist date" class="checklist-date-input bg-transparent text-sm font-medium focus:outline-none text-amber-900" data-change-action="handleDateChange">
+                    <span class="text-amber-700/50" aria-hidden="true">·</span>
+                    <time id="device-clock" class="checklist-device-clock text-xs font-semibold text-amber-900 tabular-nums whitespace-nowrap" aria-label="Current local time on this device">--:--</time>
                 </div>
-                <button data-action="showPage" data-page="launcher" class="text-xs text-amber-900 font-bold px-2.5 py-1 bg-amber-100 border border-amber-300 rounded-xl">Room</button>
-                <button data-action="resetDayData" class="text-xs text-rose-700 font-bold px-2.5 py-1 bg-rose-50 border border-rose-200 rounded-xl">Reset</button>
+                <button type="button" data-action="resetDayData" class="checklist-header-button checklist-reset-button text-xs text-rose-700 font-bold px-2.5 py-1 bg-rose-50 border border-rose-200 rounded-lg">Reset</button>
             </div>
         </header>
 

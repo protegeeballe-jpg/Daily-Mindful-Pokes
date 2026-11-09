@@ -163,9 +163,36 @@ test('the fixed viewport uses full-width responsive checklist content without tr
  assert.doesNotMatch(app,/scrollIntoView\s*\(/);
  assert.match(app,/if \(checklistMain\) checklistMain\.scrollTop = 0/);
  assert.match(appCss,/\.garden-checklist-scene main button\s*\{[^}]*min-height:44px/s);
- assert.match(appCss,/#currentDate\s*\{[^}]*font-size:16px/);
+ assert.match(appCss,/\.checklist-date-input\s*\{[^}]*font-size:16px/);
  assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
  assert.doesNotMatch(gardenCss,/overflow-y:\s*hidden/);
+});
+test('Health Checklist header is compact and preserves navigation, date selection, and reset actions',()=>{
+ const headerStart=html.indexOf('<header id="checklist-header"');
+ const headerEnd=html.indexOf('</header>',headerStart)+9;
+ const header=html.slice(headerStart,headerEnd);
+ assert.ok(header.includes('My Health Checklist'));
+ assert.ok(header.includes('data-page="garden"'));
+ assert.ok(header.includes('>Room</button>'));
+ assert.ok(header.includes('id="currentDate"'));
+ assert.ok(header.includes('data-change-action="handleDateChange"'));
+ assert.ok(header.includes('id="device-clock"'));
+ assert.ok(header.includes('data-action="resetDayData"'));
+ assert.ok(header.includes('>Reset</button>'));
+ assert.doesNotMatch(header,/1 Corinthians 16:14|Faith & Focus: Daily Armor/);
+ assert.ok(app.includes('function updateDeviceClock()'));
+ assert.ok(app.includes('new Intl.DateTimeFormat(undefined,'));
+ assert.ok(app.includes('window.setInterval(updateDeviceClock,15000)'));
+ assert.ok(app.includes("document.getElementById('currentDate').value=today"));
+ const clockFunction=app.slice(app.indexOf('function updateDeviceClock()'),app.indexOf('function showPage(',app.indexOf('function updateDeviceClock()')));
+ assert.ok(clockFunction.includes('new Date()'));
+ assert.ok(clockFunction.includes('clock.dateTime = now.toISOString()'));
+ assert.doesNotMatch(clockFunction,/timeZone:/);
+ assert.ok(appCss.includes('#view-checklist > header'));
+ assert.ok(appCss.includes('padding:.28rem .7rem'));
+ assert.ok(appCss.includes('.checklist-header-title'));
+ assert.ok(appCss.includes('.checklist-device-clock'));
+ assert.ok(appCss.includes('@media (max-width:620px)'));
 });
 test('guide and finale overlays keep their controls reachable on short screens',()=>{
  assert.match(appCss,/#anim-modal\s*\{[^}]*overflow-y:auto/s);
@@ -178,7 +205,7 @@ test('checklist layout preserves browser zoom and adapts at phone widths',()=>{
  assert.doesNotMatch(html,/user-scalable=no|maximum-scale\s*=\s*1/i);
  assert.match(appCss,/@media \(max-width:620px\)/);
  assert.match(appCss,/@media \(max-width:380px\)/);
- assert.match(appCss,/\.garden-checklist-scene > header\s*\{[^}]*flex-flow:row wrap/s);
+ assert.match(appCss,/#view-checklist > header\s*\{[^}]*flex-flow:row wrap/s);
  assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*overflow-y:auto/s);
 });
 test('breathing guide uses a single explicit modal action and completes five 4-2-6 cycles',()=>{
