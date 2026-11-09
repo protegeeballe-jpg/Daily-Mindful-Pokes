@@ -63,7 +63,6 @@ body.garden-overlay-open { overflow: hidden; }
     background:transparent;
     transition:filter .2s ease;
 }
-.garden-room-scene.is-open { filter:saturate(1.06) brightness(1.025); }
 .garden-room-scene.is-open::after {
     content:"🍃";
     position:absolute;
