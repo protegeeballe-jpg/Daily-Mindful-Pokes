@@ -257,6 +257,7 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/garden-model.js',
   '../assets/garden.css',
   '../assets/garden.js',
+  '../assets/fonts/OFL-Lexend.txt',
   '../assets/icon.svg',
   '../assets/tailwind.generated.css',
   '../assets/tailwind.input.css',
@@ -310,4 +311,24 @@ test('The ecosystem canvas is measured after the Grand Finale opens and completi
  assert.match(completion,/localStorage\.setItem\(scoreAwardedKey, 'true'\)/);
  assert.match(completion,/grandFinale\.classList\.add\('hidden'\)/);
  assert.match(app,/function updateEcosystemTree\(animate = \{\}\)/);
+});
+
+test('Lexend is self-hosted and applied consistently across every app scene',()=>{
+ const fontCss=readFileSync(new URL('../assets/lexend.css',import.meta.url),'utf8');
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ const license=readFileSync(new URL('../assets/fonts/OFL-Lexend.txt',import.meta.url),'utf8');
+ assert.match(html,/href="\\.\\/assets\\/lexend\\.css"/);
+ assert.match(html,/font-src 'self' data:/);
+ assert.doesNotMatch(html,/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com/);
+ assert.match(fontCss,/font-family: "Lexend"/);
+ assert.match(fontCss,/font-weight: 100 900/);
+ assert.match(fontCss,/font-display: swap/);
+ assert.match(fontCss,/data:font\\/woff2;base64,[A-Za-z0-9+/=]+/);
+ assert.match(appCss,/:root\\s*\\{[^}]*--app-font-family: "Lexend"/s);
+ assert.match(appCss,/html, body, body \\* \\{[^}]*font-family: var\\(--app-font-family\\)/s);
+ assert.match(appCss,/\\.heading-font, \\.handwriting \\{[^}]*font-family: var\\(--app-font-family\\)/s);
+ assert.match(gardenCss,/\\.garden-brand \\{[^}]*font-family: var\\(--app-font-family\\)/s);
+ assert.doesNotMatch(appCss+gardenCss,/font-family:\\s*(?:Georgia|cursive)/i);
+ assert.match(license,/SIL OPEN FONT LICENSE Version 1\\.1/);
+ assert.ok(existsSync(new URL('../assets/lexend.css',import.meta.url)));
 });
