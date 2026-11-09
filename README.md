@@ -50,3 +50,23 @@ The app PIN verifier is stored under `dmp_app_gate_v1`. Deleting only that key a
 ## Typography
 
 The app uses one locally hosted Lexend variable font (weights 100-900) across its screens, headings, labels, and form controls. The font is embedded in a same-origin stylesheet so it remains compatible with the app's Content Security Policy and does not depend on an external font service. Lexend is distributed under the SIL Open Font License 1.1; see [assets/fonts/OFL-Lexend.txt](assets/fonts/OFL-Lexend.txt).
+
+## Google Drive backup and restore
+
+- Google Drive support uses Google Identity Services' browser token model and the narrow `https://www.googleapis.com/auth/drive.appdata` scope. It stores one app-owned JSON backup in Drive's hidden `appDataFolder`, not in the user's visible My Drive files.
+- The user must choose **Back Up This Device** or **Restore From Drive**. Sign-in alone never restores or replaces local information. Back Up replaces the app's current cloud backup; Restore replaces only the app-managed local progress and garden records plus the encrypted private-writing records.
+- The backup includes date-based checklist state, confidence points and award markers, validated garden state, and the Personal Diary / reflection ciphertext plus the encryption verifier configuration. Private writing remains AES-256-GCM encrypted; the private-writing passphrase is never included. The same passphrase is needed to unlock the diary after restore.
+- The device's app PIN verifier is deliberately excluded and remains local to each device. OAuth access tokens are kept in memory only and are not written to local storage.
+- Legacy plaintext diary or reflection content is never uploaded. Back Up and Restore are paused when non-empty legacy plaintext is detected so it can first be migrated by setting up or unlocking the private-writing passphrase.
+- Backups are manual snapshots, not continuous or conflict-free two-way sync. A later backup replaces the single cloud snapshot. Restore explicitly replaces synced data on the current device after confirmation; the app PIN and unrelated browser storage are preserved.
+- The backup lives in Drive's hidden app-data area, which users cannot browse like an ordinary Drive folder. Google documents that app-data is removed if the app is uninstalled from the user's Drive or its app-data folder is deleted.
+
+### Google Cloud setup
+
+1. In Google Cloud Console, enable the **Google Drive API** for the project that owns the OAuth client ID.
+2. Configure the OAuth consent screen. During development, set the publishing status to Testing and add the Google account you will use as a test user.
+3. Confirm that the OAuth client is a **Web application** client and add this exact authorized JavaScript origin: `https://protegeeballe-jpg.github.io` (origins do not include the repository path).
+4. Keep the OAuth request limited to `https://www.googleapis.com/auth/drive.appdata`. A browser client ID is public; never add a client secret to this static app.
+5. Open the deployed app over HTTPS and use the Google Drive Backup panel in The Forge Room.
+
+Google's access tokens are short-lived. The app keeps them in memory and requests a fresh token through a user action when needed. Public release may require OAuth branding, domain, and policy checks depending on the final consent-screen configuration and scopes.
