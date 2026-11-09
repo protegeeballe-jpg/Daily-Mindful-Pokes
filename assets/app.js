@@ -278,6 +278,10 @@ import {
             checkSectionCompletion();
             document.getElementById('trophy-banner').classList.remove('hidden');
             document.getElementById('grand-finale-overlay').classList.remove('hidden');
+            requestAnimationFrame(() => {
+                resizeEcosystemCanvas();
+                updateEcosystemTree();
+            });
         }
 
 
