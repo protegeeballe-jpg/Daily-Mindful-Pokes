@@ -212,3 +212,34 @@ test('the active checklist scene keeps hidden checklist cards hidden',()=>{
  assert.match(html,/id=\"card-step-2\"[^>]*class=\"[^\"]*step-card[^\"]*hidden/);
  assert.match(html,/id=\"card-step-6\"[^>]*class=\"[^\"]*step-card[^\"]*hidden/);
 });
+
+
+test('repository text files avoid em dash punctuation',()=>{
+ const textFiles=[
+  '../.github/workflows/build-tailwind.yml',
+  '../.github/workflows/tests.yml',
+  '../LICENSE.txt',
+  '../README.md',
+  '../index.html',
+  '../manifest.json',
+  '../package.json',
+  '../tailwind.config.cjs',
+  '../assets/app-gate.js',
+  '../assets/app.css',
+  '../assets/app.js',
+  '../assets/garden-model.js',
+  '../assets/garden.css',
+  '../assets/garden.js',
+  '../assets/icon.svg',
+  '../assets/tailwind.generated.css',
+  '../assets/tailwind.input.css',
+  '../assets/writing-security.js',
+  './app-gate.test.mjs',
+  './app-structure.test.mjs',
+  './garden-model.test.mjs'
+ ];
+ for(const path of textFiles){
+  const source=readFileSync(new URL(path,import.meta.url),'utf8');
+  assert.doesNotMatch(source, /\\u2014/, path);
+ }
+});
