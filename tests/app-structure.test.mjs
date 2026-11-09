@@ -381,3 +381,29 @@ test('Google Drive restore allowlist excludes app PIN and rejects plaintext refl
  assert.ok(drive.includes('score_awarded_'));
  assert.ok(readme.includes("The device's app PIN verifier is deliberately excluded"));
 });
+
+test('public legal pages are available and linked from the app',()=>{
+ const home=readFileSync(new URL('../home.html',import.meta.url),'utf8');
+ const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
+ const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
+ assert.match(home,/Application Privacy Policy/);
+ assert.match(home,/Terms of Service/);
+ assert.match(home,/href="\.\/privacy\.html"/);
+ assert.match(home,/href="\.\/terms\.html"/);
+ assert.match(privacy,/Google Drive backup is currently paused/);
+ assert.match(privacy,/AES-256-GCM/);
+ assert.match(privacy,/not encrypted/);
+ assert.match(terms,/not medical advice/);
+ assert.match(html,/href="\.\/privacy\.html"/);
+ assert.match(html,/href="\.\/terms\.html"/);
+ assert.match(readme,/Google Drive backup is currently paused/);
+});
+
+test('Google Drive OAuth is paused pending prior written API permission',()=>{
+ const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ assert.match(drive,/const DRIVE_BACKUP_ENABLED = false/);
+ assert.match(drive,/if \(!DRIVE_BACKUP_ENABLED\)/);
+ assert.match(drive,/No Google sign-in or Drive requests are made/);
+ assert.doesNotMatch(html,/accounts\.google\.com\/gsi\/client/);
+ assert.doesNotMatch(html,/connect-src[^"]*googleapis\.com/);
+});
