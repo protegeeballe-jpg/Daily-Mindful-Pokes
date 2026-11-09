@@ -190,6 +190,7 @@ import {
             }
 
             if (pageId === 'checklist') {
+                requestAnimationFrame(fitChecklistToViewport);
                 resizeEcosystemCanvas();
                 updateEcosystemTree();
                 replayEcosystemWelcome();
@@ -201,6 +202,19 @@ import {
                     loadPrivateWritingForDate(getCurrentWritingDate()).catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
                 }
             }
+        }
+
+        function fitChecklistToViewport() {
+            const view = document.getElementById('view-checklist');
+            const main = view?.querySelector('main');
+            const content = document.getElementById('checklist-fit-content');
+            if (!view || view.classList.contains('hidden') || !main || !content) return;
+            content.style.setProperty('--checklist-fit-scale', '1');
+            const naturalHeight = content.scrollHeight;
+            const availableHeight = main.clientHeight;
+            if (!naturalHeight || !availableHeight) return;
+            const scale = Math.min(1, Math.max(0.52, (availableHeight - 8) / naturalHeight));
+            content.style.setProperty('--checklist-fit-scale', String(scale));
         }
 
         function changeStep(direction) {
@@ -224,6 +238,7 @@ import {
 
                 document.getElementById('btn-next').innerText = (currentStep === 6) ? "Finish Checklist 🏆" : "Next Card ➔";
                 document.getElementById('finish-status')?.classList.add('hidden');
+                requestAnimationFrame(fitChecklistToViewport);
             }
         }
 
@@ -256,7 +271,7 @@ import {
                     ? "Almost there! Release all three cloud types, then tick the completion checkbox."
                     : "Almost there! Please complete the remaining activity or activities on Card " + firstIncomplete + ".";
                 status.classList.remove('hidden');
-                document.getElementById('card-step-' + firstIncomplete)?.scrollIntoView({behavior:'smooth',block:'start'});
+                requestAnimationFrame(fitChecklistToViewport);
                 return;
             }
 
@@ -268,7 +283,8 @@ import {
 
 
         let breathingTimer = null;
-        let breathingTimeout = null;
+        let drinkGuideTimeout = null;
+        let activeModalAction = "complete";
         let breathingCycle = 0;
         let breathingPhaseIndex = 0;
         let breathingSecondsLeft = 0;
@@ -283,30 +299,30 @@ import {
             "loc-office":{title:"Check in at work",line:"Take one calm look around. Are you at work right now? Choose your location when you're ready.",person:"🧑‍💻",prop:"💼",action:"Notice where you are."},
             "loc-house":{title:"A guest today",line:"Are you visiting someone else's home? Look around and choose the place that fits.",person:"👧",prop:"🏠",action:"Notice your surroundings."},
             "loc-out":{title:"Out and about",line:"You're out somewhere. Take a breath, notice your surroundings, and choose this option if it fits.",person:"🧍",prop:"🌳",action:"Pause and orient yourself."},
-            "start-1":{title:"Three grateful things",line:"Let's find three small things to appreciate. They can be as simple as a safe moment, a kind word, or a warm drink.",person:"🐻",prop:"🌼",action:"Think of three things. You can jot them down mentally or in your own words."},
-            "start-2":{title:"Prayer and intention",line:"Let's pause together. Set a kind intention for yourself and the people you care about. Take the moment in your own way.",person:"🐰",prop:"🙏",action:"Take a quiet moment for prayer or a positive intention."},
-            "start-3":{title:"Gentle movement",line:"Let's loosen up. Roll your shoulders gently, stretch your arms, and move only within a comfortable range.",person:"🐱",prop:"🙆",action:"Try a few gentle stretches. Stop if anything hurts."},
+            "start-1":{title:"Three grateful things",line:"Let's find three small things to appreciate. They can be as simple as a safe moment, a kind word, or a warm drink.",person:"🧑",prop:"🌼",action:"Think of three things. You can jot them down mentally or in your own words."},
+            "start-2":{title:"Prayer and intention",line:"Let's pause together. Set a kind intention for yourself and the people you care about. Take the moment in your own way.",person:"🧑",prop:"🙏",action:"Take a quiet moment for prayer or a positive intention."},
+            "start-3":{title:"Gentle movement",line:"Let's loosen up. Roll your shoulders gently, stretch your arms, and move only within a comfortable range.",person:"🧑",prop:"🙆",action:"Try a few gentle stretches. Stop if anything hurts."},
             "start-4":{title:"A little hydration",line:"I brought my glass! Watch me take a refreshing sip. Now it's your turn—enjoy some water at a comfortable pace.",person:"👧",prop:"🥛",action:"Drink your water. No need to rush.",drink:true},
-            "mid-1":{title:"Posture and stretch",line:"Let's reset our posture. Unclench your jaw, relax your shoulders, sit or stand comfortably, then stretch gently.",person:"🐼",prop:"🧘",action:"Take a comfortable posture and stretch gently."},
-            "mid-2":{title:"Breathe with me",line:"We'll do five gentle 4–2–6 cycles: breathe in for 4, pause softly for 2, and breathe out for 6. Keep it comfortable—never force or hold if uncomfortable.",person:"🐨",prop:"🌬️",action:"Start the five guided breathing cycles.",breathing:true},
+            "mid-1":{title:"Posture and stretch",line:"Let's reset our posture. Unclench your jaw, relax your shoulders, sit or stand comfortably, then stretch gently.",person:"🧑",prop:"🧘",action:"Take a comfortable posture and stretch gently."},
+            "mid-2":{title:"Breathe with me",line:"We'll do five gentle 4–2–6 cycles: breathe in for 4, pause softly for 2, and breathe out for 6. Keep it comfortable—never force or hold if uncomfortable.",person:"🧑",prop:"🌬️",action:"Start the five guided breathing cycles.",breathing:true},
             "mid-3":{title:"Midday water break",line:"A tiny water break can help you pause. Watch me take a sip, then have some water if it's available.",person:"👧",prop:"💧",action:"Drink some water at your own pace.",drink:true},
-            "mid-4":{title:"Check how you feel",line:"Let's gently check in. What emotion is here right now? What thought is asking for your attention? You don't have to judge or fix it.",person:"🦊",prop:"💗",action:"Name what you're feeling, even if the answer is 'not sure'."},
-            "mid-5":{title:"Let a thought drift by",line:"Imagine a thought floating past like a cloud. You can notice it without holding on. Let it drift away in its own time.",person:"🐣",prop:"☁️",action:"Notice one thought and practice letting it pass."},
-            "end-1":{title:"Three wins today",line:"Let's celebrate three things you managed today. Tiny wins count: showing up, trying again, or taking a pause.",person:"🐻",prop:"🏆",action:"Write or think of three things you feel good about."},
-            "end-2":{title:"Tomorrow's priorities",line:"Let's make tomorrow feel lighter. Choose up to three priorities that matter most. They don't need to be perfect.",person:"🐱",prop:"📝",action:"Write three realistic priorities for tomorrow."},
+            "mid-4":{title:"Check how you feel",line:"Let's gently check in. What emotion is here right now? What thought is asking for your attention? You don't have to judge or fix it.",person:"🧑",prop:"💗",action:"Name what you're feeling, even if the answer is 'not sure'."},
+            "mid-5":{title:"Let a thought drift by",line:"Imagine a thought floating past like a cloud. You can notice it without holding on. Let it drift away in its own time.",person:"🧑",prop:"☁️",action:"Notice one thought and practice letting it pass."},
+            "end-1":{title:"Three wins today",line:"Let's celebrate three things you managed today. Tiny wins count: showing up, trying again, or taking a pause.",person:"🧑",prop:"🏆",action:"Write or think of three things you feel good about."},
+            "end-2":{title:"Tomorrow's priorities",line:"Let's make tomorrow feel lighter. Choose up to three priorities that matter most. They don't need to be perfect.",person:"🧑",prop:"📝",action:"Write three realistic priorities for tomorrow."},
             "end-3":{title:"Evening hydration",line:"One more gentle reminder from me: have some water if you'd like and if it suits your needs. Sip comfortably.",person:"👧",prop:"🥛",action:"Drink some water at a comfortable pace.",drink:true},
-            "end-4":{title:"Give yourself a GOOD JOB poke",line:"You made it through another day. Give yourself a gentle little nose boop and say, 'Good job. I kept going.'",person:"🐰",prop:"👃✨",action:"Give yourself a gentle nose poke and a kind word."},
-            "sleep-1":{title:"Gratitude for others",line:"Think of three things someone did that you appreciated today. They can be very small moments.",person:"🐼",prop:"💛",action:"Write or remember three gratitude points about others."},
-            "sleep-2":{title:"Gratitude for blessings",line:"Take a quiet moment to remember three blessings or things you're thankful for today, in your own words.",person:"🐰",prop:"✨",action:"Write or remember three gratitude points."},
-            "sleep-3":{title:"Screen sunset",line:"Let's give your eyes and mind a gentle break. Put your device aside for the last 30 minutes before sleep when you can.",person:"🦉",prop:"🌙📵",action:"Begin your screen-free wind-down."},
-            "sleep-4":{title:"A peaceful intention",line:"Before sleep, pause for a prayer or a gentle intention. Let the day settle; you can pick things up tomorrow.",person:"🐻",prop:"🙏",action:"Take a quiet moment for prayer or intention."},
+            "end-4":{title:"Give yourself a GOOD JOB poke",line:"You made it through another day. Give yourself a gentle little nose boop and say, 'Good job. I kept going.'",person:"🧑",prop:"👃✨",action:"Give yourself a gentle nose poke and a kind word."},
+            "sleep-1":{title:"Gratitude for others",line:"Think of three things someone did that you appreciated today. They can be very small moments.",person:"🧑",prop:"💛",action:"Write or remember three gratitude points about others."},
+            "sleep-2":{title:"Gratitude for blessings",line:"Take a quiet moment to remember three blessings or things you're thankful for today, in your own words.",person:"🧑",prop:"✨",action:"Write or remember three gratitude points."},
+            "sleep-3":{title:"Screen sunset",line:"Let's give your eyes and mind a gentle break. Put your device aside for the last 30 minutes before sleep when you can.",person:"🧑",prop:"🌙📵",action:"Begin your screen-free wind-down."},
+            "sleep-4":{title:"A peaceful intention",line:"Before sleep, pause for a prayer or a gentle intention. Let the day settle; you can pick things up tomorrow.",person:"🧑",prop:"🙏",action:"Take a quiet moment for prayer or intention."},
             "sleep-5":{title:"Bedtime water reminder",line:"If you're thirsty, have a comfortable sip of water. No need to drink more than feels right before bed.",person:"👧",prop:"💧",action:"Have water if you need it, at a comfortable pace.",drink:true},
-            "cloud-checked":{title:"Cloud check",line:"Choose a thought or feeling you want to release. Tap one of the clouds on your card and watch it drift away. You can leave any thought alone if you're not ready.",person:"🐥",prop:"☁️💨",action:"Release a cloud thought when you're ready."}
+            "cloud-checked":{title:"Cloud check",line:"Choose a thought or feeling you want to release. Tap one of the clouds on your card and watch it drift away. You can leave any thought alone if you're not ready.",person:"🧑",prop:"☁️💨",action:"Release a cloud thought when you're ready."}
         };
 
         function stopBreathingTimer() {
             if (breathingTimer) { clearInterval(breathingTimer); breathingTimer = null; }
-            if (breathingTimeout) { clearTimeout(breathingTimeout); breathingTimeout = null; }
+            if (drinkGuideTimeout) { clearTimeout(drinkGuideTimeout); drinkGuideTimeout = null; }
         }
 
 
@@ -374,8 +390,9 @@ import {
             stopBreathingTimer();
             activeModalType = type;
             activeTargetCheckboxId = checkboxId;
+            activeModalAction = "complete";
             const guide = guideContent[checkboxId] || {
-                title:"Let's do this together",line:"Take a gentle moment for this activity. Go at your own pace.",person:"🐻",prop:"✨",action:"When you're ready, tell me you've completed the activity."
+                title:"Let's do this together",line:"Take a gentle moment for this activity. Go at your own pace.",person:"🧑",prop:"✨",action:"When you're ready, tell me you've completed the activity."
             };
             const target = document.getElementById('modal-animation-target');
             const instructions = document.getElementById('modal-instructions');
@@ -393,6 +410,7 @@ import {
             document.getElementById('modal-content-box').insertBefore(heading,target);
 
             if (type === 'clouds') {
+                activeModalAction = "close";
                 target.innerHTML = '<div class="cloud-intro-gallery">' +
                     '<div class="cloud-intro-item cloud-cumulus"><span class="cloud-art" aria-hidden="true">☁️</span><span>Cumulus</span></div>' +
                     '<div class="cloud-intro-item cloud-stratus"><span class="cloud-art" aria-hidden="true">🌫️</span><span>Stratus</span></div>' +
@@ -400,12 +418,11 @@ import {
                     '</div><div class="guide-speech cloud-intro-copy">Meet the three clouds. Tap each one on your card and watch it drift away. After all three have been released, your completion checkbox will appear.</div>';
                 instructions.textContent = 'Notice each feeling gently. You can release a cloud when you feel ready.';
                 button.textContent = 'Let’s release the clouds';
-                button.onclick = closeModal;
             } else if (guide.breathing) {
+                activeModalAction = 'start-breathing';
                 target.innerHTML = '<div class="flex flex-col items-center gap-3 w-full"><div id="breathing-orb" class="guide-breath-orb"></div><div id="breathing-phase" class="text-xl font-bold text-blue-800">Ready?</div><div id="breathing-tip" class="text-sm text-slate-600">We will take five gentle cycles together.</div><div id="breathing-count" class="guide-timer">5 cycles</div><div id="breathing-clock" class="text-xs text-blue-700 font-semibold">12 seconds per cycle</div></div>';
                 instructions.textContent = guide.line;
                 button.textContent = 'Start 5 breathing cycles';
-                button.onclick = startBreathingExercise;
             } else {
                 let motionClass = '';
                 if (guide.drink) motionClass = 'drinking';
@@ -421,17 +438,26 @@ import {
                 document.getElementById('guide-speech').textContent = guide.line;
                 document.getElementById('guide-action').textContent = guide.action;
                 instructions.textContent = guide.drink ? "My turn... sip! Your turn next. Take your time." : "Let's do it at your own pace.";
-                button.textContent = guide.drink ? "I'm done drinking—show my checkbox" : "I've done it—show my checkbox";
-                button.onclick = completeAnimation;
                 if (guide.drink) {
+                    activeModalAction = 'waiting-for-drink';
                     button.disabled = true;
                     button.classList.add('opacity-50','cursor-not-allowed');
-                    breathingTimeout = setTimeout(() => {
+                    button.textContent = 'Please watch the 5-second water guide…';
+                    instructions.textContent = 'Watch the short demonstration. When it finishes, it will be your turn.';
+                    drinkGuideTimeout = setTimeout(() => {
+                        const modal = document.getElementById('anim-modal');
+                        if (!modal || modal.classList.contains('hidden') || activeModalType !== type || activeTargetCheckboxId !== checkboxId) return;
+                        activeModalAction = 'complete';
                         button.disabled = false;
                         button.classList.remove('opacity-50','cursor-not-allowed');
-                        instructions.textContent = "Your turn! Are you done with your water?";
-                        document.getElementById('guide-speech').textContent = "Your turn! Are you done drinking your water?";
-                    }, 2200);
+                        instructions.textContent = 'The demonstration is done. Now it is your turn—have water if appropriate for you, at your own pace. When you are finished, tap below.';
+                        const speech = document.getElementById('guide-speech');
+                        if (speech) speech.textContent = 'My sip is done! Your turn now. Take your time and enjoy your water.';
+                        button.textContent = "I've had my water—show my checkbox";
+                    }, 5000);
+                } else {
+                    activeModalAction = 'complete';
+                    button.textContent = "I've done it—show my checkbox";
                 }
             }
             document.getElementById('anim-modal').classList.remove('hidden');
@@ -443,6 +469,7 @@ import {
             breathingPhaseIndex = 0;
             breathingSecondsLeft = breathingPhases[0].seconds;
             const button = document.getElementById('modal-complete-btn');
+            activeModalAction = 'breathing-running';
             button.disabled = true;
             button.classList.add('opacity-50','cursor-not-allowed');
             button.textContent = 'Breathing with you...';
@@ -463,10 +490,10 @@ import {
                         document.getElementById('breathing-clock').textContent = 'You did it!';
                         document.getElementById('breathing-orb').style.animation = 'none';
                         const doneButton = document.getElementById('modal-complete-btn');
+                        activeModalAction = 'complete';
                         doneButton.disabled = false;
                         doneButton.classList.remove('opacity-50','cursor-not-allowed');
                         doneButton.textContent = 'Good job! Show my checkbox';
-                        doneButton.onclick = completeAnimation;
                         document.getElementById('modal-instructions').textContent = 'Good job! You are doing amazing!';
                         playPopSound();
                         return;
@@ -494,6 +521,18 @@ import {
             } else {
                 orb.style.animation = 'guide-breath-out 6s ease-in-out 1 forwards';
             }
+        }
+
+        function handleModalPrimaryAction() {
+            if (activeModalAction === 'close') {
+                closeModal();
+                return;
+            }
+            if (activeModalAction === 'start-breathing') {
+                startBreathingExercise();
+                return;
+            }
+            if (activeModalAction === 'complete') completeAnimation();
         }
 
         function closeModal() {
@@ -634,8 +673,7 @@ import {
                 const guideButton = document.createElement('button');
                 guideButton.type = 'button';
                 guideButton.className = 'guide-launch';
-                const buddy = guideContent[id];
-                guideButton.innerHTML = (['start-3','mid-1'].includes(id) ? buildStretchingCartoon(true) : '<span class="guide-buddy '+(buddy?.drink?'drink':'')+'" aria-hidden="true">'+(buddy?.person || '🐻')+'</span>') + '<span>Show me</span>';
+                guideButton.innerHTML = '<span class="guide-play-icon" aria-hidden="true">▶</span><span>Show me</span>';
                 guideButton.setAttribute('aria-label','Show animated guide for '+id);
                 guideButton.addEventListener('click',() => openModal('guided',id));
                 row.insertBefore(guideButton,label);
@@ -1283,7 +1321,7 @@ import {
             releaseCloud:el=>releaseCloud(el),
             closeGrandFinale:()=>closeGrandFinale(),
             closeModal:()=>closeModal(),
-            completeAnimation:()=>completeAnimation(),
+            completeAnimation:()=>handleModalPrimaryAction(),
             handleDiaryKeyAction:()=>handleDiaryKeyAction(),
             handleNextStep:()=>handleNextStep(),
             lockPrivateWriting:()=>lockPrivateWriting(),
@@ -1316,7 +1354,8 @@ import {
             });
         });
 
-        window.addEventListener('resize',resizeEcosystemCanvas,{passive:true});
+        window.addEventListener('resize',() => { resizeEcosystemCanvas(); fitChecklistToViewport(); },{passive:true});
+        window.visualViewport?.addEventListener('resize',fitChecklistToViewport,{passive:true});
         document.addEventListener('change',saveData);
         document.addEventListener('input',saveData);
         document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
