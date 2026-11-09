@@ -238,8 +238,9 @@ test('repository text files avoid em dash punctuation',()=>{
   './app-structure.test.mjs',
   './garden-model.test.mjs'
  ];
+ const emDash=String.fromCodePoint(0x2014);
  for(const path of textFiles){
   const source=readFileSync(new URL(path,import.meta.url),'utf8');
-  assert.doesNotMatch(source, /\\u2014/, path);
+  assert.equal(source.includes(emDash),false,path);
  }
 });
