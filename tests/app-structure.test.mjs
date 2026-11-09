@@ -167,6 +167,23 @@ test('the fixed viewport uses full-width responsive checklist content without tr
  assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
  assert.doesNotMatch(gardenCss,/overflow-y:\s*hidden/);
 });
+test('Health Checklist header is compact and preserves navigation, date selection, and reset actions',()=>{
+ const header=html.slice(html.indexOf('<header id="checklist-header"'),html.indexOf('</header>',html.indexOf('<header id="checklist-header"'))+9);
+ assert.match(header,/<h1[^>]*>My Health Checklist<\\/h1>/);
+ assert.match(header,/data-action="showPage" data-page="garden"[^>]*>Room<\\/button>/);
+ assert.match(header,/id="currentDate"[^>]*data-change-action="handleDateChange"/);
+ assert.match(header,/id="device-clock"/);
+ assert.match(header,/data-action="resetDayData"[^>]*>Reset<\\/button>/);
+ assert.doesNotMatch(header,/1 Corinthians 16:14|Faith & Focus: Daily Armor/);
+ assert.match(app,/function updateDeviceClock\\(\\)/);
+ assert.match(app,/new Intl\\.DateTimeFormat\\(undefined/);
+ assert.match(app,/window\\.setInterval\\(updateDeviceClock,15000\\)/);
+ assert.match(app,/document\\.getElementById\\('currentDate'\\)\\.value=today/);
+ assert.match(appCss,/#view-checklist > header\\s*\\{[^}]*padding:\\.28rem \\.7rem/s);
+ assert.match(appCss,/\\.checklist-header-title/);
+ assert.match(appCss,/\\.checklist-device-clock/);
+ assert.match(appCss,/@media \\(max-width:620px\\)/);
+});
 test('guide and finale overlays keep their controls reachable on short screens',()=>{
  assert.match(appCss,/#anim-modal\s*\{[^}]*overflow-y:auto/s);
  assert.match(appCss,/#modal-content-box\s*\{[^}]*max-height:calc\(100dvh - 2rem\)[^}]*overflow-y:auto/s);
