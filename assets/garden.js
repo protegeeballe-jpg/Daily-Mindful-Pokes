@@ -93,7 +93,7 @@ function initializeGarden(root) {
             setup.classList.toggle('is-complete', isComplete);
         }
         if (fields) fields.disabled = isComplete;
-        if (heading) heading.textContent = isComplete ? 'Initial planting setup completed' : 'Day 1 — Let’s plant two little seeds!';
+        if (heading) heading.textContent = isComplete ? 'Initial planting setup completed' : 'Day 1: Let’s plant two little seeds!';
         if (description) {
             description.textContent = isComplete
                 ? 'Your original seed choices are saved. This setup is complete and cannot be changed here.'
