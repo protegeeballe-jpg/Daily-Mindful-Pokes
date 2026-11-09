@@ -62,15 +62,15 @@ function initializeGarden(root) {
         });
         const heading = byId('garden-scene-heading');
         if (heading) {
-            const labels = { room: 'The little room', outdoors: 'The garden', checklist: 'My Health Checklist', diary: 'Personal Diary' };
+            const labels = { room: 'The Forge Room', outdoors: 'The Garden', checklist: 'My Health Checklist', diary: 'Personal Diary' };
             heading.textContent = labels[sceneName] || 'The little room';
         }
         const intro = byId('garden-scene-intro');
         if (intro) {
             const descriptions = {
-                room: 'A quiet little place to grow two seeds, enjoy fresh air, and watch time do its lovely work.',
-                outdoors: 'Your plants grow gently with the passing days. Watering is a kind moment, never a race.',
-                checklist: 'Small steps, friendly guides, and daily wins. Move through the cards at your own pace.',
+                room: 'Build and strengthen your armor, one day at a time.',
+                outdoors: 'Your seeds of Hope and Faith grow with the passing days. Watering is a kind moment, never a race.',
+                checklist: 'Small steps strengthen your focus. Move through each card at your own pace.',
                 diary: 'A private place for your thoughts. Your writing is encrypted with your separate passphrase.'
             };
             intro.textContent = descriptions[sceneName] || descriptions.room;
@@ -127,7 +127,7 @@ function initializeGarden(root) {
     function renderGarden() {
         if (!garden) {
             setScene('room');
-            showStatus('Your little room is ready. Choose one fruit tree seed and one flower seed to begin.', 'info');
+            showStatus('The Forge Room is ready. Choose a fruit tree seed and a flower seed to begin growing.', 'info');
             return;
         }
 
@@ -172,7 +172,7 @@ function initializeGarden(root) {
     }
 
     function closeOverlay() {
-        // Escape and the room control return to the room; the garden remains the app home.
+        // Escape and the Room control return to the Forge Room, the app home.
         renderRoom();
         setScene('room');
         byId('garden-close')?.focus();
@@ -301,5 +301,5 @@ function initializeGarden(root) {
 
     // Loading and rendering never touch checklist progress or private diary storage.
     renderRoom();
-    if (!garden) showStatus('A cozy room, a sunny window, and a little garden are waiting for you.', 'info');
+    if (!garden) showStatus('The Forge Room is ready. Your growing journey can begin whenever you are ready.', 'info');
 }
