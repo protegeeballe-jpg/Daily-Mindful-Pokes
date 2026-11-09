@@ -98,6 +98,26 @@ test('the health checklist and encrypted diary are scenes inside the Forge Room 
  assert.match(app,/showPage\('garden'\)/);
 });
 
+test('seed selection is a one-time setup and becomes visibly completed after saving',()=>{
+ assert.match(html,/id="garden-first-planting"[^>]*data-setup-state="pending"/);
+ assert.match(html,/id="garden-planting-fields" class="garden-choice-grid"/);
+ assert.match(html,/id="garden-planting-complete" class="garden-setup-complete hidden" role="status"/);
+ assert.doesNotMatch(html,/id="garden-planted-summary"/);
+ assert.match(garden,/fields\.disabled = isComplete/);
+ assert.match(garden,/plantButton\.disabled = isComplete/);
+ assert.match(garden,/plantButton\.textContent = isComplete \? 'Setup Completed ✓'/);
+ assert.match(garden,/setup\.dataset\.setupState = isComplete \? 'complete' : 'pending'/);
+ assert.match(garden,/treeChoice\.value = garden\.treeType/);
+ assert.match(garden,/flowerChoice\.value = garden\.flowerType/);
+ assert.match(garden,/if \(!saveGarden\(\)\) \{/);
+ assert.match(garden,/garden = null;/);
+ assert.match(garden,/setup\.classList\.toggle\('is-complete', isComplete\)/);
+ const resetStart=app.indexOf('async function resetDayData()');
+ const resetEnd=app.indexOf('async function toggleVoiceRecording()',resetStart);
+ const dailyReset=app.slice(resetStart,resetEnd);
+ assert.match(dailyReset,/Reset today's checklist/);
+ assert.doesNotMatch(dailyReset,/GARDEN_STORAGE_KEY|daily_mindful_pokes_garden_v1/);
+});
 test('the supplied artwork fills the Room home background and the Diary remains single',()=>{
  const gardenStart=html.indexOf('<section id="little-garden"');
  const gardenEnd=html.indexOf('<!-- 🌟 ANIMATION MODAL POPUP -->',gardenStart);
