@@ -352,3 +352,32 @@ test('Google Drive backup loads GIS and permits only the required Google endpoin
  assert.match(html,/id="drive-restore-button"/);
  assert.doesNotMatch(html,/drive-sync[\\s\\S]{0,500}on(?:click|change|input|submit)\\s*=/i);
 });
+
+test('Google Drive backup preserves the local security boundary and encrypted diary',()=>{
+ const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ assert.match(drive,/const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh\\.apps\\.googleusercontent\\.com'/);
+ assert.match(drive,/https:\\/\\/www\\.googleapis\\.com\\/auth\\/drive\\.appdata/);
+ assert.match(drive,/parents: \['appDataFolder'\]/);
+ assert.match(drive,/spaces: 'appDataFolder'/);
+ assert.match(drive,/WRITING_CONFIG_KEY/);
+ assert.match(drive,/dmp_diary_cipher_v1_/);
+ assert.match(drive,/dmp_notes_cipher_v1_/);
+ assert.match(drive,/AES-256-GCM/);
+ assert.match(drive,/legacyPrivateContent.length/);
+ assert.match(drive,/PRIVATE_NOTE_IDS/);
+ assert.doesNotMatch(drive,/APP_PIN_CONFIG_KEY|LEGACY_APP_PIN_KEY|user_pin/);
+ assert.doesNotMatch(drive,/localStorage\\.(?:setItem|getItem)\\([^\\n]*(?:accessToken|tokenExpiresAt|tokenClient)/);
+ assert.match(drive,/window\\.confirm\\('Restore this backup/);
+ assert.match(drive,/window\\.confirm\\('This will/);
+ assert.match(drive,/validateBackup\\(downloaded\\)/);
+ assert.match(drive,/const previous = new Map/);
+});
+
+test('Google Drive restore allowlist excludes app PIN and rejects plaintext reflection fields',()=>{
+ const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ assert.match(drive,/const allowed = key => key === GARDEN_STORAGE_KEY/);
+ assert.match(drive,/PRIVATE_NOTE_IDS\\.some\\(id => Object\\.hasOwn\\(data, id\\)\\)/);
+ assert.match(drive,/ENCRYPTED_RECORD_PATTERN/);
+ assert.match(drive,/score_awarded_/);
+ assert.match(readme,/The device's app PIN verifier is deliberately excluded/);
+});
