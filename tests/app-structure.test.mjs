@@ -345,8 +345,8 @@ test('Google Drive sign-in remains paused while policy permission is pending',()
  const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
  assert.match(html,/script-src 'self'/);
  assert.match(html,/connect-src 'self'/);
- assert.doesNotMatch(html,/accounts\\.google\\.com\\/gsi\\/client|googleapis\\.com/);
- assert.match(html,/type="module" src="\\.\\/assets\\/drive-sync\\.js"/);
+ assert.equal(html.includes('accounts.google.com/gsi/client') || html.includes('googleapis.com'),false);
+ assert.ok(html.includes('type="module" src="./assets/drive-sync.js"'));
  assert.match(html,/id="drive-sync-panel"/);
  assert.match(html,/id="drive-connect-button"[^>]*disabled/);
  assert.match(html,/Google Drive Backup Paused/);
