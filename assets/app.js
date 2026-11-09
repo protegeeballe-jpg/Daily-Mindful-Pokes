@@ -168,6 +168,17 @@ import {
             showPage('garden');
         }
 
+        function updateDeviceClock() {
+            const clock = document.getElementById('device-clock');
+            if (!clock) return;
+            const now = new Date();
+            clock.textContent = new Intl.DateTimeFormat(undefined, {
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(now);
+            clock.dateTime = now.toISOString();
+        }
+
         function showPage(pageId) {
             // The Forge Room is the app's home. Checklist and diary remain
             // separate feature views presented inside the shared environment.
@@ -1295,6 +1306,8 @@ import {
             const now=new Date();
             const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
             document.getElementById('currentDate').value=today;
+            updateDeviceClock();
+            window.setInterval(updateDeviceClock,15000);
             attachChecklistCartoons();
             loadData();
             updatePrivateWritingAccess();
