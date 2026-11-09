@@ -105,6 +105,45 @@ body.garden-overlay-open { overflow: hidden; }
 }
 .garden-planting-panel h3 { margin:0 0 .35rem; color:#355b43; font:800 1.3rem Georgia,serif; }
 .garden-planting-panel p { color:#647665; font-size:.88rem; }
+.garden-planting-panel fieldset {
+    min-width:0;
+    margin:1rem 0;
+    padding:0;
+    border:0;
+}
+.garden-planting-panel fieldset:disabled {
+    opacity:.55;
+    filter:grayscale(.55);
+}
+.garden-choice select:disabled {
+    cursor:not-allowed;
+    border-color:#c8d0c2;
+    background:#edf0e9;
+    color:#687568;
+    opacity:1;
+}
+.garden-planting-panel.is-complete {
+    border-style:solid;
+    border-color:#9bb99a;
+    background:rgba(239,247,233,.88);
+}
+.garden-planting-panel.is-complete .garden-planting-complete {
+    display:block;
+}
+.garden-setup-complete {
+    margin:.9rem 0 0;
+    padding:.75rem .9rem;
+    border:1px solid #a8c6a0;
+    border-radius:.9rem;
+    background:rgba(222,239,215,.92);
+    color:#315b3b !important;
+    line-height:1.55;
+}
+.garden-setup-complete strong:first-child {
+    display:block;
+    margin-bottom:.2rem;
+    color:#285338;
+}
 .garden-choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; margin:1rem 0; }
 .garden-choice label { display:block; margin-bottom:.3rem; color:#46634a; font-size:.8rem; font-weight:800; }
 .garden-choice select {
