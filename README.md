@@ -53,7 +53,7 @@ The app uses one locally hosted Lexend variable font (weights 100-900) across it
 
 ## Google Drive backup and restore
 
-- Google Drive backup and restore are currently paused and unavailable in the deployed app. The current version does not load Google Identity Services, request Google sign-in, obtain a Google access token, or make Google Drive API requests.
+- Google Drive backup is currently paused and unavailable in the deployed app. Restore is also unavailable. The current version does not load Google Identity Services, request Google sign-in, obtain a Google access token, or make Google Drive API requests.
 - The intended design is optional and user-initiated only: no automatic or background backup is performed. If the integration is approved and activated in a future release, users would explicitly connect their Google account and choose **Back Up This Device** or **Restore From Drive**.
 - The Drive integration must remain disabled unless all applicable Google API requirements and any required prior written permission are satisfied. Do not describe the feature as active or promise cloud backup availability.
 
