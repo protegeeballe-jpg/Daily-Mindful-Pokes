@@ -161,7 +161,7 @@ test('the fixed viewport uses full-width responsive checklist content without tr
  assert.doesNotMatch(app,/fitChecklistToViewport|--checklist-fit-scale/);
  assert.doesNotMatch(app,/scrollIntoView\s*\(/);
  assert.match(app,/if \(checklistMain\) checklistMain\.scrollTop = 0/);
- assert.match(appCss,/\.garden-checklist-scene main button\s*\{min-height:44px\}/);
+ assert.match(appCss,/\.garden-checklist-scene main button\s*\{[^}]*min-height:44px/s);
  assert.match(appCss,/#currentDate\s*\{[^}]*font-size:16px/);
  assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
  assert.doesNotMatch(gardenCss,/overflow-y:\s*hidden/);
@@ -185,6 +185,7 @@ test('guide and finale overlays keep their controls reachable on short screens',
  assert.doesNotMatch(appCss,/\.ecosystem-canvas,\.ecosystem-svg\s*\{display:none/);
 });
 test('fixed viewport CSS does not disable browser zoom and supports phone widths',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  assert.doesNotMatch(html,/user-scalable=no|maximum-scale\s*=\s*1/i);
  assert.match(appCss,/@media \(max-width:620px\)/);
  assert.match(appCss,/@media \(max-width:380px\)/);
@@ -221,5 +222,5 @@ test('viewport layout preserves hidden scene visibility states',()=>{
  assert.match(gardenCss,/\.garden-room-card:not\(\.hidden\)\s*\{display:flex/);
  assert.match(gardenCss,/\.garden-outdoor-card:not\(\.hidden\)\s*\{display:flex/);
  assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*\{display:flex/);
- assert.match(appCss,/\.garden-checklist-scene:not\(\.hidden\)\s*\{display:flex/);
+ assert.match(appCss,/\.garden-checklist-scene:not\(\.hidden\)\s*\{\s*display:flex/);
 });
