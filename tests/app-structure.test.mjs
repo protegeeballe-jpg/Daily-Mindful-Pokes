@@ -148,18 +148,48 @@ test('the supplied artwork fills the Room home background and the Diary remains 
  assert.ok(existsSync(new URL('../assets/garden-room-background.jpg',import.meta.url)));
 });
 
-test('the app is fixed to the device viewport without vertical page scrolling',()=>{
- const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+test('the fixed viewport uses full-width responsive checklist content without transform scaling',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
- assert.match(html,/id="checklist-fit-content" class="checklist-fit-content"/);
+ assert.match(html,/name="viewport" content="width=device-width, initial-scale=1\.0"/);
  assert.match(appCss,/html,body\s*\{[^}]*overflow:hidden/s);
  assert.match(appCss,/body\s*\{[^}]*position:fixed/s);
- assert.match(appCss,/\.checklist-fit-content\s*\{[^}]*transform:scale\(var\(--checklist-fit-scale\)\)/s);
- assert.match(app,/function fitChecklistToViewport\(\)/);
- assert.match(app,/requestAnimationFrame\(fitChecklistToViewport\)/);
+ assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*overflow-y:auto/s);
+ assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*width:100%/s);
+ assert.match(appCss,/\.checklist-fit-content\s*\{[^}]*width:100%[^}]*transform:none/s);
+ assert.doesNotMatch(appCss,/transform-origin:top center/);
+ assert.doesNotMatch(appCss,/width:calc\(100%\s*\/\s*var\(--checklist-fit-scale\)\)/);
+ assert.doesNotMatch(app,/fitChecklistToViewport|--checklist-fit-scale/);
  assert.doesNotMatch(app,/scrollIntoView\s*\(/);
+ assert.match(app,/if \(checklistMain\) checklistMain\.scrollTop = 0/);
+ assert.match(appCss,/\.garden-checklist-scene main button\s*\{min-height:44px\}/);
+ assert.match(appCss,/#currentDate\s*\{[^}]*font-size:16px/);
  assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
- assert.doesNotMatch(gardenCss,/overflow-y:\s*(auto|scroll)/);
+ assert.doesNotMatch(gardenCss,/overflow-y:\s*hidden/);
+});
+test('Room, Garden and Diary preserve content inside the fixed viewport with scene-level scrolling',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ assert.match(gardenCss,/\.garden-room-card:not\(\.hidden\)\s*\{[^}]*overflow-y:auto/s);
+ assert.match(gardenCss,/\.garden-outdoor-card:not\(\.hidden\)\s*\{[^}]*overflow-y:auto/s);
+ assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*\{[^}]*overflow-y:auto/s);
+ assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*> \.card-lavender\s*\{[^}]*overflow:visible/s);
+ assert.match(gardenCss,/\.garden-choice select\s*\{[^}]*min-height:44px[^}]*font-size:16px/s);
+ assert.match(gardenCss,/#view-diary input,#view-diary textarea\s*\{font-size:16px/);
+ assert.match(gardenCss,/\.garden-room-actions \.garden-action-button\s*\{[^}]*min-height:48px/);
+ assert.match(gardenCss,/\.garden-growth-grid\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+test('guide and finale overlays keep their controls reachable on short screens',()=>{
+ assert.match(appCss,/#anim-modal\s*\{[^}]*overflow-y:auto/s);
+ assert.match(appCss,/#modal-content-box\s*\{[^}]*max-height:calc\(100dvh - 2rem\)[^}]*overflow-y:auto/s);
+ assert.match(appCss,/#modal-complete-btn\s*\{min-height:48px/);
+ assert.match(appCss,/#grand-finale-overlay\s*\{[^}]*overflow-y:auto/s);
+ assert.doesNotMatch(appCss,/\.ecosystem-canvas,\.ecosystem-svg\s*\{display:none/);
+});
+test('fixed viewport CSS does not disable browser zoom and supports phone widths',()=>{
+ assert.doesNotMatch(html,/user-scalable=no|maximum-scale\s*=\s*1/i);
+ assert.match(appCss,/@media \(max-width:620px\)/);
+ assert.match(appCss,/@media \(max-width:380px\)/);
+ assert.match(gardenCss,/@media \(max-width:380px\)/);
+ assert.match(gardenCss,/\.garden-room-actions \.garden-action-button\s*\{[^}]*font-size:\.875rem/);
 });
 test('breathing guide uses a single explicit modal action and completes five 4-2-6 cycles',()=>{
  assert.match(app,/function handleModalPrimaryAction\(\)/);
