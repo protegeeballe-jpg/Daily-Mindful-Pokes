@@ -320,7 +320,8 @@ test('Lexend is self-hosted and applied consistently across every app scene',()=
  const license=readFileSync(new URL('../assets/fonts/OFL-Lexend.txt',import.meta.url),'utf8');
  assert.ok(html.includes('href="./assets/lexend.css"'));
  assert.ok(html.includes("font-src 'self' data:"));
- assert.doesNotMatch(html,/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com/);
+ assert.equal(html.includes('fonts.googleapis.com')||html.includes('fonts.gstatic.com'),false);
+ assert.ok(html.indexOf('href="./assets/lexend.css"')<html.indexOf('tailwind.generated.css'));
  assert.ok(fontCss.includes('font-family: "Lexend"'));
  assert.ok(fontCss.includes('font-weight: 100 900'));
  assert.ok(fontCss.includes('font-display: swap'));
