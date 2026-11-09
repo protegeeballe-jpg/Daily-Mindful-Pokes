@@ -16,6 +16,14 @@ test('the first garden contains one supported fruit tree seed and one flower see
     assert.equal(Object.keys(FLOWER_TYPES).length, 3);
 });
 
+test('an absent or cleared garden record allows initial planting setup again',()=>{
+    assert.equal(validateGardenState(null), null);
+    assert.equal(validateGardenState(undefined), null);
+    const planted = createGardenState('rambutan', 'cosmos', '2026-11-09');
+    assert.notEqual(validateGardenState(planted), null);
+    assert.equal(validateGardenState(planted).treeType, 'rambutan');
+    assert.equal(validateGardenState(planted).flowerType, 'cosmos');
+});
 test('Faith & Focus growth descriptions and legacy garden storage remain aligned',()=>{
     assert.equal(GARDEN_STORAGE_KEY, 'daily_mindful_pokes_garden_v1');
     assert.equal(getTreeStage(0).label, 'A seed of Hope and Faith');
