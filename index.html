@@ -81,10 +81,11 @@
             <section data-garden-scene="room" class="garden-room-card" aria-label="The Forge Room">
                 <div id="garden-window" class="garden-room-scene" role="img" aria-label="A warm, sunlit room with a writing desk, leafy plants, and a garden beyond the window"></div>
 
-                <div id="garden-first-planting" class="garden-planting-panel">
-                    <h3>Day 1 — Let’s plant two little seeds!</h3>
-                    <p>Choose one fruit tree and one pretty flower. They will grow with the passing days, even when you are away.</p>
-                    <div class="garden-choice-grid">
+                <div id="garden-first-planting" class="garden-planting-panel" data-setup-state="pending">
+                    <h3 id="garden-planting-heading">Day 1 — Let’s plant two little seeds!</h3>
+                    <p id="garden-planting-description">Choose one fruit tree and one pretty flower. They will grow with the passing days, even when you are away.</p>
+                    <fieldset id="garden-planting-fields" class="garden-choice-grid">
+                        <legend class="sr-only">Choose the fruit tree and flower for your initial setup</legend>
                         <div class="garden-choice">
                             <label for="garden-tree-choice">Your fruit tree seed</label>
                             <select id="garden-tree-choice">
@@ -101,15 +102,13 @@
                                 <option value="zinnia">🌺 Zinnia</option>
                             </select>
                         </div>
-                    </div>
-                    <button type="button" class="garden-action-button primary" data-garden-action="begin-planting">Plant my two seeds 🌱</button>
-                </div>
-
-                <div id="garden-planted-summary" class="hidden garden-planting-panel">
-                    <h3>Your seeds have a home!</h3>
-                    <p id="garden-room-seeds"></p>
-                    <p>Planted on <strong id="garden-room-date"></strong>. They are growing at their own pace.</p>
-                    <button type="button" class="garden-action-button primary" data-garden-action="visit-garden">Visit my garden 🌿</button>
+                    </fieldset>
+                    <button id="garden-planting-button" type="button" class="garden-action-button primary" data-garden-action="begin-planting">Plant my two seeds 🌱</button>
+                    <p id="garden-planting-complete" class="garden-setup-complete hidden" role="status" aria-live="polite">
+                        <strong>✓ Initial setup completed!</strong>
+                        Your <span id="garden-room-seeds"></span> were planted on <strong id="garden-room-date"></strong>.
+                        These choices are now locked. Your plants will keep growing with the passing days.
+                    </p>
                 </div>
 
                 <div class="garden-room-actions">
