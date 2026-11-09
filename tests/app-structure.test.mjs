@@ -163,7 +163,7 @@ test('the fixed viewport uses full-width responsive checklist content without tr
  assert.doesNotMatch(app,/scrollIntoView\s*\(/);
  assert.match(app,/if \(checklistMain\) checklistMain\.scrollTop = 0/);
  assert.match(appCss,/\.garden-checklist-scene main button\s*\{[^}]*min-height:44px/s);
- assert.match(appCss,/#currentDate\s*\{[^}]*font-size:16px/);
+ assert.match(appCss,/\.checklist-date-input\s*\{[^}]*font-size:16px/);
  assert.match(gardenCss,/\.garden-overlay\s*\{[^}]*overflow:hidden/s);
  assert.doesNotMatch(gardenCss,/overflow-y:\s*hidden/);
 });
@@ -205,7 +205,7 @@ test('checklist layout preserves browser zoom and adapts at phone widths',()=>{
  assert.doesNotMatch(html,/user-scalable=no|maximum-scale\s*=\s*1/i);
  assert.match(appCss,/@media \(max-width:620px\)/);
  assert.match(appCss,/@media \(max-width:380px\)/);
- assert.match(appCss,/\.garden-checklist-scene > header\s*\{[^}]*flex-flow:row wrap/s);
+ assert.match(appCss,/#view-checklist > header\s*\{[^}]*flex-flow:row wrap/s);
  assert.match(appCss,/\.garden-checklist-scene main\s*\{[^}]*overflow-y:auto/s);
 });
 test('breathing guide uses a single explicit modal action and completes five 4-2-6 cycles',()=>{
