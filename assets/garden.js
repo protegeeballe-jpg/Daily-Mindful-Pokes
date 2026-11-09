@@ -63,7 +63,7 @@ function initializeGarden(root) {
         const heading = byId('garden-scene-heading');
         if (heading) {
             const labels = { room: 'The Forge Room', outdoors: 'The Garden', checklist: 'My Health Checklist', diary: 'Personal Diary' };
-            heading.textContent = labels[sceneName] || 'The little room';
+            heading.textContent = labels[sceneName] || 'The Forge Room';
         }
         const intro = byId('garden-scene-intro');
         if (intro) {

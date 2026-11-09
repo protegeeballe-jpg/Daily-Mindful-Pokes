@@ -24,9 +24,9 @@ const TREE_STAGES = Object.freeze([
 ]);
 
 const FLOWER_STAGES = Object.freeze([
-    Object.freeze({ id: 'seed', label: 'A little seed', emoji: '🟤', startAt: 0, nextAt: 4 }),
+    Object.freeze({ id: 'seed', label: 'A seed of Hope and Faith', emoji: '🟤', startAt: 0, nextAt: 4 }),
     Object.freeze({ id: 'sprout', label: 'A hopeful little sprout', emoji: '🌱', startAt: 4, nextAt: 14 }),
-    Object.freeze({ id: 'seedling', label: 'A leafy seedling', emoji: '🌿', startAt: 14, nextAt: 30 }),
+    Object.freeze({ id: 'seedling', label: 'Growing toward the light', emoji: '🌿', startAt: 14, nextAt: 30 }),
     Object.freeze({ id: 'bud', label: 'A promise beginning to bloom', emoji: '🌷', startAt: 30, nextAt: 60 }),
     Object.freeze({ id: 'first-bloom', label: 'The first bloom of hope', emoji: '🌼', startAt: 60, nextAt: 90 }),
     Object.freeze({ id: 'full-bloom', label: 'A beautiful bloom of patience and faith', emoji: '🌸', startAt: 90, nextAt: null })

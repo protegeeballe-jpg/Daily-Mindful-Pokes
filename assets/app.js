@@ -169,8 +169,8 @@ import {
         }
 
         function showPage(pageId) {
-            // The garden room is now the app's home. Checklist and diary remain
-            // separate feature views, presented inside that shared environment.
+            // The Forge Room is the app's home. Checklist and diary remain
+            // separate feature views presented inside the shared environment.
             if (pageId === 'launcher') pageId = 'garden';
 
             ['view-launcher', 'view-diary', 'view-checklist'].forEach(id => {

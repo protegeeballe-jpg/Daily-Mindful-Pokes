@@ -6,6 +6,25 @@ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
 const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
 const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
+const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
+const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
+const appIcon=readFileSync(new URL('../assets/icon.svg',import.meta.url),'utf8');
+test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
+ assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
+ assert.match(html,/Faith & Focus: Daily Armor/);
+ assert.match(html,/The Forge Room/);
+ assert.match(garden,/room: 'The Forge Room'/);
+ assert.match(garden,/outdoors: 'The Garden'/);
+ assert.match(html,/6–12 digit app PIN/);
+ assert.doesNotMatch(html,/4-digit app PIN/);
+ assert.equal(manifest.name,'Faith & Focus: Daily Armor');
+ assert.equal(manifest.short_name,'Faith & Focus');
+ assert.equal(packageMetadata.name,'faith-focus-daily-armor');
+ assert.match(readme,/^# Faith & Focus: Daily Armor/m);
+ assert.doesNotMatch(readme,/Daily Mindful Pokes/i);
+ assert.match(appIcon,/<title id="icon-title">Faith &amp; Focus: Daily Armor<\/title>/);
+ assert.match(appIcon,/shield-fill/);
+});
 test('HTML uses a local app module and no inline handlers or scripts',()=>{
  assert.match(html,/type="module" src="\.\/assets\/app\.js"/);
  assert.doesNotMatch(html,/\son(?:click|change|input|submit)\s*=/i);
@@ -41,7 +60,7 @@ test('all existing checklist, cloud and ecosystem features remain',()=>{
  for(const feature of ['finishChecklist','guide-launch','ecosystem-canvas'])assert.ok(html.includes(feature)||app.includes(feature),feature);
 });
 
-test('Garden hub is a separate local module and does not replace existing features',()=>{
+test('Forge Room is a separate local module and does not replace existing features',()=>{
  assert.match(html,/id="little-garden"/);
  assert.match(html,/data-garden-action="open-garden"/);
  assert.match(html,/assets\/garden\.css/);
@@ -64,7 +83,7 @@ test('the product interface does not expose the private inspiration name',()=>{
  assert.doesNotMatch(html,/Onnea/i);
  assert.doesNotMatch(readme,/Onnea/i);
 });
-test('the health checklist and encrypted diary are scenes inside the garden hub',()=>{
+test('the health checklist and encrypted diary are scenes inside the Forge Room hub',()=>{
  assert.match(html,/id="view-checklist" data-garden-scene="checklist"/);
  assert.match(html,/id="view-diary" data-garden-scene="diary"/);
  assert.match(html,/data-page="checklist"/);
