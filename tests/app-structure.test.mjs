@@ -184,3 +184,11 @@ test('animal stickers are removed from checklist launchers while Show me animati
  assert.match(app,/guide-person /);
  assert.match(app,/function buildStretchingCartoon/);
 });
+
+test('viewport layout preserves hidden scene visibility states',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ assert.match(gardenCss,/\.garden-room-card:not\(\.hidden\)\s*\{display:flex/);
+ assert.match(gardenCss,/\.garden-outdoor-card:not\(\.hidden\)\s*\{display:flex/);
+ assert.match(gardenCss,/#view-diary:not\(\.hidden\)\s*\{display:flex/);
+ assert.match(gardenCss,/\.garden-checklist-scene:not\(\.hidden\)\s*\{display:flex/);
+});
