@@ -21,6 +21,7 @@ jobs:
         run: |
           node --check assets/app.js
           node --check assets/app-gate.js
+          node --check assets/account-security.js
           node --check assets/writing-security.js
           node --check assets/garden.js
           node --check assets/garden-model.js
