@@ -30,7 +30,7 @@
                 <li><strong>Checklist and progress:</strong> selected dates, checklist completion states, guided-step states, released-cloud states, completion markers, and confidence points.</li>
                 <li><strong>Location check-ins:</strong> when you tick one of the four place checkboxes on the first checklist card, the browser requests a one-time current location. Each successful capture is appended to a date-specific, read-only location history shown in the unlocked Diary. The coordinates, reported accuracy, selected place, and capture time are stored in separate browser storage on this device. They are not sent to the App maintainer, are excluded from Google Drive backups, and are not removed by the Health Checklist Reset. Your browser or operating system location provider handles the location request under its own privacy practices.</li>
                 <li><strong>Garden information:</strong> your selected tree and flower, planting date, and watering dates.</li>
-                <li><strong>Private writing:</strong> diary entries and the four checklist reflection fields. These are encrypted in the browser with AES-256-GCM. A separate passphrase is processed with PBKDF2-HMAC-SHA-256 to derive the encryption key. The key is held in memory while the writing is unlocked; the passphrase is not saved by the App.</li>
+                <li><strong>Private writing and voice notes:</strong> diary entries, the four checklist reflection fields, and voice recordings. Text is encrypted in browser storage with AES-256-GCM. Voice recordings are encrypted with the same private-writing key before they are stored in this device's IndexedDB database. A separate passphrase is processed with PBKDF2-HMAC-SHA-256 to derive the encryption key. The key is held in memory while the writing is unlocked; the passphrase is not saved by the App.</li>
                 <li><strong>Compressed local cache:</strong> to support low-memory mobile devices, local app data is compressed using the native browser `CompressionStream` (gzip) API when you explicitly request a backup.</li>
             </ul>
 
@@ -43,7 +43,7 @@
             <div class="legal-notice">
                 <p><strong>Optional Google Drive Backup &amp; Restore:</strong> The App provides optional, user-initiated cloud backup and restore functionality powered by Google Identity Services (OAuth 2.0).</p>
             </div>
-            <p>When you choose to connect your Google account, the App requests permission to access the restricted <code>appDataFolder</code> scope (<code>https://www.googleapis.com/auth/drive.appdata</code>). This scope allows the App to save and retrieve a single compressed backup file (<code>faith-focus-armor-backup.gz</code>) within a private, hidden app folder on your personal Google Drive.</p>
+            <p>When you choose to connect your Google account, the App requests permission to access the restricted <code>appDataFolder</code> scope (<code>https://www.googleapis.com/auth/drive.appdata</code>). This scope allows the App to save and retrieve a single compressed backup file (<code>faith-focus-armor-backup.gz</code>) within a private, hidden app folder on your personal Google Drive. User-initiated backups include encrypted Diary text and encrypted voice-note records. Location history remains excluded.</p>
             <p><strong>Privacy Guarantees for Google Data:</strong></p>
             <ul>
                 <li><strong>Strictly Manual Sync:</strong> Cloud backup and restore actions are 100% user-initiated (clicking "Back Up This Device" or "Restore From Drive"). The App does <em>not</em> perform automatic background uploads or background syncing.</li>
@@ -54,7 +54,7 @@
             <p>The App remains fully usable locally without connecting a Google account.</p>
 
             <h2>4. Microphone and voice notes</h2>
-            <p>If you choose the voice-recording control, the browser asks for microphone permission. Audio is used to create a temporary in-page preview for that session. The App does not upload that recording to an operator server or save it as a permanent App record.</p>
+            <p>If you choose the voice-recording control, the browser asks for microphone permission. When you stop recording, the App encrypts the audio with the same AES-256-GCM key used for your private Diary and saves the encrypted recording in this device's IndexedDB storage. Saved recordings appear in the unlocked Diary and remain there after the Health Checklist Reset. They are included as encrypted records only when you manually choose Back Up This Device. The App does not send recordings to an operator server or upload them automatically.</p>
 
             <h2>5. Where information is processed</h2>
             <p>Routine, garden, PIN-verifier, and encrypted-writing records are processed in your browser and stored on your device. The App does not operate a user account database or an operator-managed application server for this information.</p>
