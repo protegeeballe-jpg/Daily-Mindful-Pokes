@@ -116,8 +116,17 @@ test('seed selection is a one-time setup and becomes visibly completed after sav
  const resetStart=app.indexOf('async function resetDayData()');
  const resetEnd=app.indexOf('async function toggleVoiceRecording()',resetStart);
  const dailyReset=app.slice(resetStart,resetEnd);
- assert.match(dailyReset,/Reset today's checklist/);
- assert.doesNotMatch(dailyReset,/GARDEN_STORAGE_KEY|daily_mindful_pokes_garden_v1/);
+ assert.match(dailyReset,/Start the Health Checklist over/);
+ assert.match(dailyReset,/localStorage\.removeItem\(getStorageKey\(dateStr\)\)/);
+ assert.match(dailyReset,/localStorage\.removeItem\(getSecureWritingStorageKey\('notes',dateStr\)\)/);
+ assert.match(dailyReset,/localStorage\.removeItem\(GARDEN_STORAGE_KEY\)/);
+ assert.match(dailyReset,/garden:reset-for-checklist/);
+ assert.doesNotMatch(dailyReset,/getLocationCheckinStorageKey|LOCATION_CHECKIN_OPTIONS|WRITING_DIARY_PREFIX|removeLocationCheckin/);
+ assert.match(dailyReset,/Personal Diary entries and all location logs will be kept/);
+ assert.match(app,/function resetChecklistWizard\(\)/);
+ assert.match(app,/currentStep = 1/);
+ assert.match(garden,/garden:reset-for-checklist/);
+
 });
 test('the supplied artwork fills the Room home background and the Diary remains single',()=>{
  const gardenStart=html.indexOf('<section id="little-garden"');
@@ -473,8 +482,18 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  const locationChangeHandler=app.slice(locationChangeStart,locationChangeEnd);
  assert.match(locationChangeHandler,/if \(checkbox.checked\) requestLocationCheckin\(checkbox\);/);
  assert.doesNotMatch(locationChangeHandler,/removeLocationCheckin|locationCaptureVersions|else/);
- assert.doesNotMatch(app,/removeLocationCheckin/);
- assert.match(app,/localStorage\.removeItem\(getLocationCheckinStorageKey\(dateStr\)\)/);
+ assert.doesNotMatch(app,/removeLocationCheckin|locationCaptureVersions/);
+ assert.match(app,/loadLocationCheckinEntries/);
+ assert.match(locationModule,/entries\.push\(entry\)/);
+ assert.match(locationModule,/function normalizeEntries\(parsed\)/);
+ assert.match(garden,/garden = null;[\s\S]*setScene\('room'\)/);
+ assert.doesNotMatch(app,/localStorage\.removeItem\(getLocationCheckinStorageKey/);
+ assert.match(app,/function renderDiaryLocationLogs\(/);
+ assert.match(app,/loadLocationCheckinEntries\(localStorage, dateString\)/);
+ assert.match(html,/id="diary-location-history"/);
+ assert.match(html,/id="diary-location-log"/);
+ assert.match(html,/cannot be edited or removed through the App/);
+ assert.match(app,/function formatLocationCheckinEntry\(/);
  const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
  const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
  assert.match(privacy,/Location check-ins/);
