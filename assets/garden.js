@@ -297,6 +297,14 @@ function initializeGarden(root) {
         setScene(sceneName);
     });
 
+    document.addEventListener('garden:reset-for-checklist', () => {
+        garden = null;
+        windowIsOpen = false;
+        renderRoom();
+        setScene('room');
+        showStatus('Your Garden setup is ready again. Plant your two seeds to begin a new checklist journey.', 'success');
+    });
+
     document.addEventListener('keydown', event => {
         if ((event.key !== 'Enter' && event.key !== ' ') || !event.target.matches('[data-garden-action][role="button"]')) return;
         event.preventDefault();
