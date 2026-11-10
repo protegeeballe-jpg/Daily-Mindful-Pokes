@@ -350,8 +350,8 @@ test('Google Drive remains optional and manually user-controlled',()=>{
  assert.match(drive,/https:\/\/accounts\.google\.com\/gsi\/client/);
  assert.match(drive,/requestAccessToken/);
  assert.match(drive,/https:\/\/www\.googleapis\.com\/auth\/drive\.appdata/);
- assert.match(drive,/Back Up This Device/);
- assert.match(drive,/Restore From Drive/);
+ assert.match(html,/Back Up This Device/);
+ assert.match(html,/Restore From Drive/);
  assert.doesNotMatch(drive,/DRIVE_BACKUP_ENABLED\s*=\s*false/);
 });
 
