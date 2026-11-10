@@ -59,18 +59,6 @@ export function loadLocationCheckins(storage, dateString) {
     }
 }
 
-export function removeLocationCheckin(storage, dateString, locationId) {
-    if (!Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId)) {
-        throw new TypeError('Unsupported checklist location option.');
-    }
-    const records = loadLocationCheckins(storage, dateString);
-    delete records[locationId];
-    const key = getLocationCheckinStorageKey(dateString);
-    if (Object.keys(records).length) storage.setItem(key, JSON.stringify(records));
-    else storage.removeItem(key);
-    return records;
-}
-
 export function saveLocationCheckin(storage, dateString, locationId, position) {
     if (!Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId)) {
         throw new TypeError('Unsupported checklist location option.');
