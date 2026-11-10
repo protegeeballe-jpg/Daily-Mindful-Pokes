@@ -301,7 +301,7 @@ import {
                             await renderDiaryVoiceNotes(dateString);
                         })
                         .catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
-                } else if (writingCryptoKey) {
+                } else if (writingCryptoKey && !diaryViewingHistoricalDate) {
                     renderDiaryLocationLogs(dateString);
                     renderDiaryVoiceNotes(dateString).catch(error =>
                         setWritingSecurityStatus('Could not load saved voice notes. ' + (error?.message || ''), 'error')
