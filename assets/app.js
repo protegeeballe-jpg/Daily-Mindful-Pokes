@@ -50,7 +50,9 @@ import {
     writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
     handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,
-    loadPrivateWritingForDate,schedulePrivateWritingSave,flushPrivateWritingQueue,flushAndSaveCurrentPrivateWriting
+    loadPrivateWritingForDate,schedulePrivateWritingSave,flushPrivateWritingQueue,flushAndSaveCurrentPrivateWriting,
+    registerVoiceNoteStopHandler,stopRegisteredVoiceNoteRecording,
+    savePrivateVoiceNoteForDate,loadPrivateVoiceNotesForDate
 } from './writing-security.js';
 
 
@@ -59,6 +61,12 @@ import {
         let activeModalType = null;
         let activeTargetCheckboxId = null;
         let mediaRecorder, audioChunks = [];
+        let activeVoiceNoteDate = null;
+        let voiceRecorderStarting = null;
+        let voiceNoteStopPromise = null;
+        let voiceNoteStopResolve = null;
+        let voiceNoteObjectUrls = [];
+        let voiceNotesRenderVersion = 0;
 
         // Inactivity auto-lock timer (5 minutes = 300,000 ms)
         const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
@@ -226,6 +234,11 @@ import {
             // The Forge Room is the app's home. Checklist and diary remain
             // separate feature views presented inside the shared environment.
             if (pageId === 'launcher') pageId = 'garden';
+            if (pageId !== 'diary') {
+                stopRegisteredVoiceNoteRecording().catch(error =>
+                    setWritingSecurityStatus('Voice note recording could not be stopped cleanly. ' + (error?.message || ''), 'error')
+                );
+            }
 
             ['view-launcher', 'view-diary', 'view-checklist'].forEach(id => {
                 document.getElementById(id)?.classList.add('hidden');
@@ -256,10 +269,16 @@ import {
                 const dateString = getCurrentWritingDate();
                 if (writingCryptoKey && writingLoadedDate !== dateString) {
                     loadPrivateWritingForDate(dateString)
-                        .then(() => renderDiaryLocationLogs(dateString))
+                        .then(async () => {
+                            renderDiaryLocationLogs(dateString);
+                            await renderDiaryVoiceNotes(dateString);
+                        })
                         .catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
                 } else if (writingCryptoKey) {
                     renderDiaryLocationLogs(dateString);
+                    renderDiaryVoiceNotes(dateString).catch(error =>
+                        setWritingSecurityStatus('Could not load saved voice notes. ' + (error?.message || ''), 'error')
+                    );
                 }
             }
         }
@@ -829,6 +848,87 @@ import {
                 container.append(item);
             });
         }
+
+        function revokeDiaryVoiceNoteUrls() {
+            document.querySelectorAll('#diary-voice-note-list audio').forEach(audio => {
+                audio.pause();
+                audio.removeAttribute('src');
+                audio.load();
+            });
+            voiceNoteObjectUrls.forEach(url => URL.revokeObjectURL(url));
+            voiceNoteObjectUrls = [];
+        }
+
+        function clearDiaryVoiceNotePlayback() {
+            voiceNotesRenderVersion += 1;
+            revokeDiaryVoiceNoteUrls();
+            const list = document.getElementById('diary-voice-note-list');
+            if (!list) return;
+            list.replaceChildren();
+            const item = document.createElement('li');
+            item.className = 'rounded-xl bg-white/70 px-3 py-3 text-xs text-purple-800';
+            item.textContent = 'Unlock your Diary to listen to saved voice notes.';
+            list.append(item);
+        }
+
+        async function renderDiaryVoiceNotes(dateString = getCurrentWritingDate()) {
+            const list = document.getElementById('diary-voice-note-list');
+            if (!list || !writingCryptoKey) return;
+            const renderVersion = ++voiceNotesRenderVersion;
+            revokeDiaryVoiceNoteUrls();
+            list.replaceChildren();
+
+            const loading = document.createElement('li');
+            loading.className = 'rounded-xl bg-white/70 px-3 py-3 text-xs text-purple-800';
+            loading.textContent = 'Loading encrypted voice notes…';
+            list.append(loading);
+
+            try {
+                const notes = await loadPrivateVoiceNotesForDate(dateString);
+                if (renderVersion !== voiceNotesRenderVersion) return;
+                list.replaceChildren();
+
+                if (!notes.length) {
+                    const empty = document.createElement('li');
+                    empty.className = 'rounded-xl bg-white/70 px-3 py-3 text-xs text-purple-800';
+                    empty.textContent = 'No saved voice notes for this date yet.';
+                    list.append(empty);
+                    return;
+                }
+
+                notes.forEach((note, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'rounded-xl bg-white/80 border border-purple-100 px-3 py-3';
+                    const label = document.createElement('p');
+                    label.className = 'mb-2 font-bold text-xs text-purple-950';
+                    label.textContent = 'Voice Note ' + (index + 1) + ' · ' + new Intl.DateTimeFormat(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    }).format(new Date(note.capturedAt));
+                    const player = document.createElement('audio');
+                    player.controls = true;
+                    player.preload = 'none';
+                    player.className = 'w-full';
+                    player.setAttribute('aria-label', 'Play saved voice note ' + (index + 1));
+                    const url = URL.createObjectURL(note.blob);
+                    voiceNoteObjectUrls.push(url);
+                    player.src = url;
+                    item.append(label, player);
+                    list.append(item);
+                });
+            } catch (error) {
+                if (renderVersion !== voiceNotesRenderVersion) return;
+                list.replaceChildren();
+                const failed = document.createElement('li');
+                failed.className = 'rounded-xl bg-rose-50 px-3 py-3 text-xs text-rose-800';
+                failed.textContent = 'A saved voice note could not be decrypted or loaded. ' + (error?.message || '');
+                list.append(failed);
+                throw error;
+            }
+        }
+
+        document.addEventListener('private-writing:locked', clearDiaryVoiceNotePlayback);
+        registerVoiceNoteStopHandler(stopActiveVoiceRecording);
 
         function requestLocationCheckin(checkbox) {
             const locationId = checkbox?.dataset?.id;
@@ -1424,6 +1524,7 @@ import {
                 try {
                     await loadPrivateWritingForDate(dateString);
                     renderDiaryLocationLogs(dateString);
+                    await renderDiaryVoiceNotes(dateString);
                 } catch(error) {
                     setWritingSecurityStatus('Could not decrypt this date’s private writing. Nothing was overwritten. '+(error?.message||''),'error');
                 }
@@ -1489,36 +1590,121 @@ import {
 
         async function handleDiaryKeyActionWithLocationLogs() {
             await handleDiaryKeyAction();
-            if (writingCryptoKey) renderDiaryLocationLogs(getCurrentWritingDate());
+            if (writingCryptoKey) {
+                renderDiaryLocationLogs(getCurrentWritingDate());
+                await renderDiaryVoiceNotes(getCurrentWritingDate());
+            }
+        }
+
+        async function startVoiceNoteRecording() {
+            if (!writingCryptoKey) throw new Error('Unlock your Diary before recording a voice note.');
+            if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+                throw new Error('This browser does not support voice recording.');
+            }
+
+            let stream = null;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (!writingCryptoKey) throw new Error('The Diary locked before recording could begin.');
+
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                activeVoiceNoteDate = getCurrentWritingDate();
+                voiceNoteStopPromise = new Promise(resolve => {
+                    voiceNoteStopResolve = resolve;
+                });
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data?.size) audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = async () => {
+                    const mimeType = mediaRecorder?.mimeType
+                        || audioChunks.find(chunk => chunk.type)?.type
+                        || 'application/octet-stream';
+                    const blob = new Blob(audioChunks, { type: mimeType });
+                    stream?.getTracks().forEach(track => track.stop());
+                    const dateString = activeVoiceNoteDate;
+
+                    try {
+                        if (!blob.size) throw new Error('The microphone did not produce any audio data.');
+                        const saveStatus = document.getElementById('writing-save-status');
+                        if (saveStatus) saveStatus.textContent = 'Encrypting and saving your voice note…';
+                        await savePrivateVoiceNoteForDate(dateString, blob);
+                        if (writingCryptoKey && writingLoadedDate === dateString) {
+                            await renderDiaryVoiceNotes(dateString);
+                        }
+                        if (saveStatus) saveStatus.textContent = 'Voice note saved securely in your Diary.';
+                    } catch (error) {
+                        setWritingSecurityStatus('The voice note could not be saved. ' + (error?.message || ''), 'error');
+                    } finally {
+                        audioChunks = [];
+                        activeVoiceNoteDate = null;
+                        mediaRecorder = null;
+                        const recordBtn = document.getElementById('record-btn');
+                        const recordText = document.getElementById('record-text');
+                        if (recordText) recordText.textContent = 'Record Voice Note';
+                        if (recordBtn) {
+                            recordBtn.disabled = false;
+                            recordBtn.classList.replace('bg-red-600', 'bg-rose-400');
+                        }
+                        voiceNoteStopResolve?.();
+                        voiceNoteStopResolve = null;
+                        voiceNoteStopPromise = null;
+                    }
+                };
+
+                mediaRecorder.start();
+                const recordBtn = document.getElementById('record-btn');
+                const recordText = document.getElementById('record-text');
+                if (recordText) recordText.textContent = 'Stop Recording';
+                if (recordBtn) {
+                    recordBtn.disabled = false;
+                    recordBtn.classList.replace('bg-rose-400', 'bg-red-600');
+                }
+                const saveStatus = document.getElementById('writing-save-status');
+                if (saveStatus) saveStatus.textContent = 'Recording voice note…';
+            } catch (error) {
+                stream?.getTracks().forEach(track => track.stop());
+                mediaRecorder = null;
+                activeVoiceNoteDate = null;
+                voiceNoteStopResolve?.();
+                voiceNoteStopResolve = null;
+                voiceNoteStopPromise = null;
+                throw error;
+            }
+        }
+
+        async function stopActiveVoiceRecording() {
+            if (voiceRecorderStarting) await voiceRecorderStarting;
+            if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+            if (voiceNoteStopPromise) await voiceNoteStopPromise;
         }
 
         async function toggleVoiceRecording() {
             const recordBtn = document.getElementById('record-btn');
             const recordText = document.getElementById('record-text');
 
-            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        const blob = new Blob(audioChunks, { type: 'audio/mp3' });
-                        const audioUrl = URL.createObjectURL(blob);
-                        const audioEl = document.getElementById('diary-audio');
-                        audioEl.src = audioUrl;
-                        document.getElementById('audio-container').classList.remove('hidden');
-                    };
-                    mediaRecorder.start();
-                    recordText.innerText = "Stop Recording";
-                    recordBtn.classList.replace('bg-rose-400', 'bg-red-600');
-                } catch (err) {
-                    alert("Microphone access denied or unavailable.");
-                }
-            } else {
+            if (mediaRecorder?.state === 'recording') {
+                if (recordBtn) recordBtn.disabled = true;
+                if (recordText) recordText.textContent = 'Saving…';
                 mediaRecorder.stop();
-                recordText.innerText = "Record Voice Note";
-                recordBtn.classList.replace('bg-red-600', 'bg-rose-400');
+                return;
+            }
+
+            if (voiceRecorderStarting) return;
+            voiceRecorderStarting = startVoiceNoteRecording();
+            try {
+                await voiceRecorderStarting;
+            } catch (error) {
+                setWritingSecurityStatus(error?.message || 'Microphone access was denied or unavailable.', 'error');
+                const recordBtn = document.getElementById('record-btn');
+                const recordText = document.getElementById('record-text');
+                if (recordBtn) {
+                    recordBtn.disabled = false;
+                    recordBtn.classList.replace('bg-red-600', 'bg-rose-400');
+                }
+                if (recordText) recordText.textContent = 'Record Voice Note';
+            } finally {
+                voiceRecorderStarting = null;
             }
         }
 
