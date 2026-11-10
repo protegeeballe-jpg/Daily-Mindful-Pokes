@@ -1619,7 +1619,7 @@ import {
                 mediaRecorder.onstop = async () => {
                     const mimeType = mediaRecorder?.mimeType
                         || audioChunks.find(chunk => chunk.type)?.type
-                        || 'application/octet-stream';
+                        || 'audio/webm';
                     const blob = new Blob(audioChunks, { type: mimeType });
                     stream?.getTracks().forEach(track => track.stop());
                     const dateString = activeVoiceNoteDate;
