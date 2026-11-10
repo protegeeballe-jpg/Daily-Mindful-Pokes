@@ -8,7 +8,7 @@ Private Writing Protection: Your Personal Diary, checklist reflections, and save
 
 Local Data Handling: Checklist checkboxes, task unlock flags, cloud-release flags, daily progress, confidence scores, and app settings remain stored locally in your browser storage. These ordinary progress records are not encrypted by the app.
 
-Location Check-ins: Each checked location option on the first checklist card requests a one-time current browser location. Every successful capture is appended to a date-specific, read-only history shown in the unlocked Personal Diary. Location records remain in separate browser storage on this device, are not sent to the App maintainer, are not editable or removable through the App, and are excluded from Google Drive backups. The browser or operating system location provider handles the location request.
+Location Check-ins: Each checked location option on the first checklist card requests a one-time current browser location. Every successful capture is appended to a date-specific, read-only history shown in the unlocked Personal Diary. Location records remain in separate browser storage on this device, are not sent to the App maintainer, are not editable or removable through the App, and are excluded from Google Drive backups. Coordinates can be copied or opened in Google Maps from the Diary and checklist details. The browser or operating system location provider handles the location request.
 
 Zero-Knowledge Architecture: Your private diary passphrase is known only to you and is never sent to any server. Because encryption is handled entirely on your device, forgotten passphrases cannot be recovered by the app.
 
