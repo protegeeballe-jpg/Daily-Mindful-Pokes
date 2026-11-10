@@ -1,3 +1,9 @@
+import {
+    saveEncryptedVoiceNote, loadEncryptedVoiceNotes,
+    exportEncryptedVoiceNotes, restoreEncryptedVoiceNotes,
+    validateEncryptedVoiceNoteBackup
+} from './voice-note-store.js';
+
         const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
         const WRITING_DIARY_PREFIX='dmp_diary_cipher_v1_';
         const WRITING_NOTES_PREFIX='dmp_notes_cipher_v1_';
@@ -5,6 +11,8 @@
         const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
         const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
         let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
+        let voiceNoteSavePromise=Promise.resolve();
+        let voiceNoteStopHandler=async()=>{};
 
         function hasWritingCrypto(){return !!(window.isSecureContext&&window.crypto&&window.crypto.subtle&&window.crypto.getRandomValues);}
         function bytesToBase64(bytes){let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
@@ -61,7 +69,8 @@
             const lockButton=document.querySelector('#diary-editor-panel [data-action="lockPrivateWriting"]');
             if(lockButton)lockButton.classList.toggle('hidden',!unlocked);
             renderDiarySecurityUI();
-            if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing is encrypted before it is saved on this device.';}
+            if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing and voice notes are encrypted on this device.';}
+            else document.dispatchEvent(new CustomEvent('private-writing:locked'));
         }
         async function migrateLegacyPrivateWriting(key){
             const dates=new Set();
@@ -173,16 +182,52 @@
             if(!writingCryptoKey)return;
             if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
             try{
+                await stopRegisteredVoiceNoteRecording();
+                await flushPrivateVoiceNoteQueue();
                 await savePrivateWritingForDate(writingLoadedDate);
                 await writingSavePromise;
                 writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
-                setWritingSecurityStatus('Locked. Your saved private writing remains encrypted on this device.','info');
+                setWritingSecurityStatus('Locked. Your saved private writing and voice notes remain encrypted on this device.','info');
             }catch(error){setWritingSecurityStatus('Could not finish encrypted saving, so the writing remains unlocked. '+(error?.message||''),'error');}
         }
 
 
 
+export function registerVoiceNoteStopHandler(handler){
+    voiceNoteStopHandler=typeof handler==='function'?handler:async()=>{};
+}
+export async function stopRegisteredVoiceNoteRecording(){
+    await voiceNoteStopHandler();
+}
+export function savePrivateVoiceNoteForDate(dateStr,blob){
+    if(!writingCryptoKey) return Promise.reject(new Error('Unlock your Diary before saving a voice note.'));
+    const key=writingCryptoKey;
+    const task=()=>saveEncryptedVoiceNote(dateStr,blob,key);
+    voiceNoteSavePromise=voiceNoteSavePromise.then(task,task);
+    return voiceNoteSavePromise;
+}
+export async function loadPrivateVoiceNotesForDate(dateStr){
+    await voiceNoteSavePromise;
+    if(!writingCryptoKey)throw new Error('Unlock your Diary to play saved voice notes.');
+    return loadEncryptedVoiceNotes(dateStr,writingCryptoKey);
+}
+export async function flushPrivateVoiceNoteQueue(){
+    await voiceNoteSavePromise;
+}
+export async function exportPrivateVoiceNotes(){
+    return exportEncryptedVoiceNotes();
+}
+export async function restorePrivateVoiceNotes(records){
+    if(!validateEncryptedVoiceNoteBackup(records))throw new Error('The backup contains invalid encrypted voice-note records.');
+    await restoreEncryptedVoiceNotes(records);
+}
+export function validatePrivateVoiceNoteBackup(records){
+    return validateEncryptedVoiceNoteBackup(records);
+}
+
 export async function flushPrivateWritingQueue(){
+    await stopRegisteredVoiceNoteRecording();
+    await flushPrivateVoiceNoteQueue();
     if(writingSaveTimer){
         clearTimeout(writingSaveTimer);
         writingSaveTimer=null;
