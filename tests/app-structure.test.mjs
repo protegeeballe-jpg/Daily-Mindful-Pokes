@@ -536,8 +536,8 @@ test('app-wide buttons share one Lexend label size while icon-only controls rema
  const legalCss=readFileSync(new URL('../assets/legal.css',import.meta.url),'utf8');
  assert.match(gardenCss,/:root\s*\{[^}]*--ui-button-font-size:\s*\.78rem/s);
  assert.match(gardenCss,/body \*::after/);
- assert.match(gardenCss,/font-size:var\\(--ui-button-font-size\\) !important/);
- assert.match(appCss,/font-size:var\\(--ui-button-font-size\\) !important/);
+ assert.ok(gardenCss.includes('font-size:var(--ui-button-font-size) !important;'));
+ assert.ok(appCss.includes('font-size:var(--ui-button-font-size) !important;'));
  assert.match(legalCss,/font-family: "Lexend".*!important/);
  assert.match(legalCss,/font-size: \\.78rem !important/);
  assert.match(gardenCss,/max-width: min\(100%, 24rem\)/);
