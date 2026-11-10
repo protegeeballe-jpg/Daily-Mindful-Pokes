@@ -406,3 +406,38 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
  .finale-ecosystem-card .ecosystem-canvas,
  .finale-ecosystem-card .ecosystem-svg-fallback {max-width:205px;}
 }
+
+
+/* Compact checklist controls: reduce visual weight while keeping them usable. */
+#view-checklist #btn-prev,
+#view-checklist #btn-next {
+ min-height:32px !important;
+ padding:.24rem .42rem !important;
+ font-size:.7rem !important;
+ line-height:1.1;
+ border-radius:.65rem;
+ box-shadow:none;
+}
+#view-checklist .checklist-header-right {gap:.28rem !important;}
+#view-checklist .checklist-header-date-time {
+ gap:.22rem !important;
+ padding:.1rem .28rem !important;
+}
+#view-checklist .checklist-date-input {
+ width:5.7rem !important;
+ min-height:29px;
+ padding:0 !important;
+ font-size:16px !important;
+}
+#view-checklist .checklist-device-clock {
+ min-width:3.1rem;
+ font-size:.68rem;
+}
+#view-checklist .checklist-header-right label {font-size:.62rem !important;}
+#view-checklist .checklist-reset-button {
+ min-width:36px;
+ min-height:32px;
+ padding:.22rem .38rem !important;
+ font-size:.68rem !important;
+ border-radius:.55rem;
+}
