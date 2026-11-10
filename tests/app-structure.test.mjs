@@ -395,3 +395,19 @@ test('public legal pages accurately describe optional manual Google Drive backup
  assert.match(html,/href="\.\/terms\.html"/);
  assert.match(readme,/Optional Google Drive Backup & Restore/);
 });
+
+
+test('compact checklist and Drive controls reduce visual clutter without removing controls',()=>{
+ assert.match(appCss,/#view-checklist #btn-prev/);
+ assert.match(appCss,/#view-checklist #btn-next/);
+ assert.match(appCss,/min-height:32px/);
+ assert.match(appCss,/width:5\.7rem/);
+ assert.match(appCss,/min-width:3\.1rem/);
+ assert.match(appCss,/checklist-reset-button/);
+ assert.match(gardenCss,/\.drive-sync-panel \.garden-action-button/);
+ assert.match(gardenCss,/padding:\.22rem \.32rem/);
+ assert.match(gardenCss,/font-size:\.65rem/);
+ assert.match(html,/id="drive-connect-button"/);
+ assert.match(html,/id="btn-prev"/);
+ assert.match(html,/id="btn-next"/);
+});
