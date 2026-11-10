@@ -345,7 +345,7 @@ body.garden-overlay-open { overflow: hidden; }
 /* Smaller Google Drive actions reduce visual clutter in the Room panel. */
 .drive-sync-panel .garden-action-button {
  padding:.22rem .32rem !important;
- font-size:.65rem !important;
+ font-size:var(--ui-button-font-size) !important;
  line-height:1.15;
  min-height:26px;
  border-radius:.55rem;
@@ -378,7 +378,7 @@ body.garden-overlay-open { overflow: hidden; }
   max-width:100%;
   min-height:22px;
   padding:.1rem .18rem !important;
-  font-size:.55rem !important;
+  font-size:var(--ui-button-font-size) !important;
   line-height:1.05;
   border-radius:.42rem;
   box-shadow:none;
