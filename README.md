@@ -8,7 +8,7 @@ Private Writing Protection: Your Personal Diary and checklist reflections are se
 
 Local Data Handling: Checklist checkboxes, task unlock flags, cloud-release flags, daily progress, confidence scores, and app settings remain stored locally in your browser storage. These ordinary progress records are not encrypted by the app.
 
-Location Check-ins: Each checked location option on the first checklist card requests a one-time current browser location. Coordinates, accuracy, and capture time are stored separately on this device, are not sent to the App maintainer, and are excluded from Google Drive backups. The browser or operating system location provider handles the location request.
+Location Check-ins: Each checked location option on the first checklist card requests a one-time current browser location. Every successful capture is appended to a date-specific, read-only history shown in the unlocked Personal Diary. Location records remain in separate browser storage on this device, are not sent to the App maintainer, are not editable or removable through the App, and are excluded from Google Drive backups. The browser or operating system location provider handles the location request.
 
 Zero-Knowledge Architecture: Your private diary passphrase is known only to you and is never sent to any server. Because encryption is handled entirely on your device, forgotten passphrases cannot be recovered by the app.
 
@@ -31,7 +31,7 @@ Faith & Focus: Daily Armor
 The app opens into The Forge Room, the shared home for the Health Checklist, the single encrypted Personal Diary, and the outdoor Garden scene.
 Bundled artwork at assets/garden-room-background.jpg ensures full offline functionality without external image dependencies.
 assets/garden.js and assets/garden-model.js drive the Forge Room and calendar-based growth experience.
-The checklist Reset button resets daily entries and reflections without affecting garden progress or planted seeds.
+The Health Checklist Reset clears checklist progress and reflection fields for the selected date, restarts the Garden planting setup, and returns to the seed-planting scene. It preserves the main Personal Diary entries and all location history.
 
 Storage Optimization & Auto-Compression
 Device Optimization: Utilizes native browser CompressionStream (Gzip) via assets/compressor.js to minimize local storage usage on mobile devices.
