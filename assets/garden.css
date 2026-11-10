@@ -546,3 +546,45 @@ input[type="reset"] {
         padding: .18rem .3rem !important;
     }
 }
+
+
+/* Keep the complete Diary editor reachable inside the fixed-height app scene.
+   The recording control remains below the Diary records and is reached by scrolling
+   the editor panel, rather than being clipped by the outer viewport. */
+#view-diary:not(.hidden) > .card-lavender {
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    box-sizing:border-box;
+}
+#diary-lock-panel:not(.hidden) {
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+}
+#diary-editor-panel:not(.hidden) {
+    display:flex;
+    flex:1 1 auto;
+    flex-direction:column;
+    min-height:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding-right:.12rem;
+}
+#diary-editor-panel > .diary-current-toolbar,
+#diary-editor-panel > #private-diary-entry,
+#diary-editor-panel > #diary-location-history,
+#diary-editor-panel > #diary-voice-notes,
+#diary-editor-panel > #record-btn,
+#diary-editor-panel > .flex,
+#diary-editor-panel > p {
+    flex:0 0 auto;
+}
+#diary-editor-panel #record-btn {
+    align-self:flex-start;
+    min-height:2.5rem;
+}
