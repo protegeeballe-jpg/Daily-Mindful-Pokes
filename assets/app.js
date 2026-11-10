@@ -43,16 +43,17 @@ import {
     APP_PIN_CONFIG_KEY,createAppPinRecord,isValidAppPin,migrateLegacyAppPin,verifyAppPin
 } from './app-gate.js';
 import {
-    LOCATION_CHECKIN_OPTIONS, loadLocationCheckinEntries, saveLocationCheckin
+    LOCATION_CHECKIN_OPTIONS, LOCATION_CHECKIN_STORAGE_PREFIX,
+    loadLocationCheckinEntries, saveLocationCheckin
 } from './location-checkin.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
 import {
-    writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
+    WRITING_DIARY_PREFIX, writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
     handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,
-    loadPrivateWritingForDate,schedulePrivateWritingSave,flushPrivateWritingQueue,flushAndSaveCurrentPrivateWriting,
+    loadPrivateWritingForDate,readPrivateDiaryEntryForDate,schedulePrivateWritingSave,flushPrivateWritingQueue,flushAndSaveCurrentPrivateWriting,
     registerVoiceNoteStopHandler,stopRegisteredVoiceNoteRecording,
-    savePrivateVoiceNoteForDate,loadPrivateVoiceNotesForDate
+    savePrivateVoiceNoteForDate,loadPrivateVoiceNotesForDate,exportPrivateVoiceNotes
 } from './writing-security.js';
 
 
@@ -67,6 +68,8 @@ import {
         let voiceNoteStopResolve = null;
         let voiceNoteObjectUrls = [];
         let voiceNotesRenderVersion = 0;
+        let diaryArchiveVoiceUrls = [];
+        let diaryArchiveDateSummaries = [];
 
         // Inactivity auto-lock timer (5 minutes = 300,000 ms)
         const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
@@ -267,6 +270,7 @@ import {
             if (pageId === 'diary') {
                 renderDiarySecurityUI();
                 const dateString = getCurrentWritingDate();
+                updateDiaryDateLabel(dateString);
                 if (writingCryptoKey && writingLoadedDate !== dateString) {
                     loadPrivateWritingForDate(dateString)
                         .then(async () => {
@@ -927,6 +931,257 @@ import {
             });
         }
 
+        function formatDiaryArchiveDate(dateString) {
+            return new Intl.DateTimeFormat(undefined, {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(new Date(dateString + 'T00:00:00'));
+        }
+
+        async function collectDiaryArchiveDates() {
+            const summaries = new Map();
+            const ensureDate = dateString => {
+                if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return null;
+                if (!summaries.has(dateString)) {
+                    summaries.set(dateString, {
+                        dateString,
+                        hasWrittenEntry: false,
+                        locationCount: 0,
+                        voiceNoteCount: 0
+                    });
+                }
+                return summaries.get(dateString);
+            };
+
+            const currentDate = getCurrentWritingDate();
+            ensureDate(currentDate);
+
+            for (let index = 0; index < localStorage.length; index += 1) {
+                const key = localStorage.key(index);
+                if (!key) continue;
+
+                if (key.startsWith(WRITING_DIARY_PREFIX)) {
+                    const summary = ensureDate(key.slice(WRITING_DIARY_PREFIX.length));
+                    if (summary) summary.hasWrittenEntry = true;
+                } else if (key.startsWith(LOCATION_CHECKIN_STORAGE_PREFIX)) {
+                    const summary = ensureDate(key.slice(LOCATION_CHECKIN_STORAGE_PREFIX.length));
+                    if (summary) {
+                        summary.locationCount = loadLocationCheckinEntries(localStorage, summary.dateString).length;
+                    }
+                }
+            }
+
+            const voiceNotes = await exportPrivateVoiceNotes();
+            voiceNotes.forEach(note => {
+                const summary = ensureDate(note.dateString);
+                if (summary) summary.voiceNoteCount += 1;
+            });
+
+            return [...summaries.values()].sort((left, right) =>
+                right.dateString.localeCompare(left.dateString)
+            );
+        }
+
+        function closeDiaryArchive() {
+            const panel = document.getElementById('diary-archive-panel');
+            if (panel) panel.classList.add('hidden');
+            diaryArchiveVoiceUrls.forEach(url => URL.revokeObjectURL(url));
+            diaryArchiveVoiceUrls = [];
+            document.getElementById('diary-archive-entry-voice-notes')?.replaceChildren();
+            document.getElementById('diary-archive-button')?.focus({ preventScroll: true });
+        }
+
+        function showDiaryArchiveList() {
+            document.getElementById('diary-archive-list-view')?.classList.remove('hidden');
+            document.getElementById('diary-archive-entry-view')?.classList.add('hidden');
+            diaryArchiveVoiceUrls.forEach(url => URL.revokeObjectURL(url));
+            diaryArchiveVoiceUrls = [];
+            document.getElementById('diary-archive-entry-voice-notes')?.replaceChildren();
+        }
+
+        async function openDiaryArchive() {
+            if (!writingCryptoKey) {
+                setWritingSecurityStatus('Unlock your Diary before opening your notebook.', 'info');
+                return;
+            }
+
+            const panel = document.getElementById('diary-archive-panel');
+            const list = document.getElementById('diary-archive-date-list');
+            if (!panel || !list) return;
+
+            panel.classList.remove('hidden');
+            list.replaceChildren();
+            const loading = document.createElement('li');
+            loading.className = 'diary-archive-empty';
+            loading.textContent = 'Collecting your saved Diary dates…';
+            list.append(loading);
+
+            try {
+                diaryArchiveDateSummaries = await collectDiaryArchiveDates();
+                list.replaceChildren();
+
+                if (!diaryArchiveDateSummaries.length) {
+                    const empty = document.createElement('li');
+                    empty.className = 'diary-archive-empty';
+                    empty.textContent = 'Your notebook is ready. Your saved entries will appear here by date.';
+                    list.append(empty);
+                    return;
+                }
+
+                diaryArchiveDateSummaries.forEach(summary => {
+                    const item = document.createElement('li');
+                    item.className = 'diary-archive-date-item';
+
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.dataset.action = 'openDiaryArchiveDate';
+                    button.dataset.date = summary.dateString;
+                    button.className = 'diary-archive-date-button';
+
+                    const date = document.createElement('strong');
+                    date.className = 'diary-archive-date-title';
+                    date.textContent = formatDiaryArchiveDate(summary.dateString);
+
+                    const meta = document.createElement('span');
+                    meta.className = 'diary-archive-date-meta';
+                    const descriptors = [];
+                    if (summary.hasWrittenEntry) descriptors.push('written entry');
+                    if (summary.locationCount) descriptors.push(summary.locationCount + ' location' + (summary.locationCount === 1 ? '' : 's'));
+                    if (summary.voiceNoteCount) descriptors.push(summary.voiceNoteCount + ' voice note' + (summary.voiceNoteCount === 1 ? '' : 's'));
+                    meta.textContent = descriptors.join(' · ') || 'Clean daily page';
+
+                    const arrow = document.createElement('span');
+                    arrow.className = 'diary-archive-date-arrow';
+                    arrow.textContent = '›';
+                    button.append(date, meta, arrow);
+                    item.append(button);
+                    list.append(item);
+                });
+            } catch (error) {
+                list.replaceChildren();
+                const failed = document.createElement('li');
+                failed.className = 'diary-archive-empty is-error';
+                failed.textContent = 'The notebook dates could not be loaded. ' + (error?.message || '');
+                list.append(failed);
+            }
+        }
+
+        async function openDiaryArchiveDate(dateString) {
+            if (!writingCryptoKey || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return;
+
+            const detail = document.getElementById('diary-archive-entry-view');
+            const listView = document.getElementById('diary-archive-list-view');
+            const title = document.getElementById('diary-archive-entry-date');
+            const written = document.getElementById('diary-archive-entry-written');
+            const locations = document.getElementById('diary-archive-entry-locations');
+            const voiceNotesList = document.getElementById('diary-archive-entry-voice-notes');
+            if (!detail || !listView || !title || !written || !locations || !voiceNotesList) return;
+
+            diaryArchiveVoiceUrls.forEach(url => URL.revokeObjectURL(url));
+            diaryArchiveVoiceUrls = [];
+            listView.classList.add('hidden');
+            detail.classList.remove('hidden');
+            title.textContent = formatDiaryArchiveDate(dateString);
+            written.replaceChildren();
+            locations.replaceChildren();
+            voiceNotesList.replaceChildren();
+
+            const writtenHeading = document.createElement('h4');
+            writtenHeading.className = 'diary-archive-section-title';
+            writtenHeading.textContent = 'Written entry';
+            written.append(writtenHeading);
+
+            const writtenBody = document.createElement('p');
+            writtenBody.className = 'diary-archive-written-body';
+            const locationHeading = document.createElement('h4');
+            locationHeading.className = 'diary-archive-section-title';
+            locationHeading.textContent = 'Places checked in';
+            locations.append(locationHeading);
+            const voiceHeading = document.createElement('h4');
+            voiceHeading.className = 'diary-archive-section-title';
+            voiceHeading.textContent = 'Voice notes';
+            voiceNotesList.append(voiceHeading);
+
+            try {
+                const [entryText, voiceNotes] = await Promise.all([
+                    readPrivateDiaryEntryForDate(dateString),
+                    loadPrivateVoiceNotesForDate(dateString)
+                ]);
+                writtenBody.textContent = entryText.trim() || 'No written entry was saved for this date.';
+                written.append(writtenBody);
+
+                const locationEntries = loadLocationCheckinEntries(localStorage, dateString);
+                if (!locationEntries.length) {
+                    const empty = document.createElement('li');
+                    empty.className = 'diary-archive-empty';
+                    empty.textContent = 'No location check-ins were saved for this date.';
+                    locations.append(empty);
+                } else {
+                    locationEntries.forEach((record, index) => {
+                        const item = document.createElement('li');
+                        item.className = 'diary-archive-record';
+
+                        const label = document.createElement('strong');
+                        label.className = 'diary-archive-record-title';
+                        label.textContent = (index + 1) + '. ' + LOCATION_CHECKIN_OPTIONS[record.locationId];
+
+                        const row = document.createElement('div');
+                        row.className = 'diary-archive-record-details';
+                        row.append(createLocationCoordinateControls(record));
+
+                        const metadata = document.createElement('p');
+                        metadata.className = 'diary-archive-record-meta';
+                        metadata.textContent = 'Accuracy ±' + Math.round(record.accuracyMeters) + ' m · '
+                            + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                                .format(new Date(record.capturedAt));
+
+                        item.append(label, row, metadata);
+                        locations.append(item);
+                    });
+                }
+
+                if (!voiceNotes.length) {
+                    const empty = document.createElement('li');
+                    empty.className = 'diary-archive-empty';
+                    empty.textContent = 'No voice notes were saved for this date.';
+                    voiceNotesList.append(empty);
+                } else {
+                    voiceNotes.forEach((note, index) => {
+                        const item = document.createElement('li');
+                        item.className = 'diary-archive-record';
+
+                        const label = document.createElement('strong');
+                        label.className = 'diary-archive-record-title';
+                        label.textContent = 'Voice Note ' + (index + 1) + ' · '
+                            + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                                .format(new Date(note.capturedAt));
+
+                        const player = document.createElement('audio');
+                        player.controls = true;
+                        player.preload = 'none';
+                        player.className = 'diary-archive-audio';
+                        player.setAttribute('aria-label', 'Play archived voice note ' + (index + 1));
+                        const url = URL.createObjectURL(note.blob);
+                        diaryArchiveVoiceUrls.push(url);
+                        player.src = url;
+
+                        item.append(label, player);
+                        voiceNotesList.append(item);
+                    });
+                }
+            } catch (error) {
+                writtenBody.textContent = 'This date could not be opened. ' + (error?.message || '');
+                written.append(writtenBody);
+            }
+        }
+
+        function updateDiaryDateLabel(dateString = getCurrentWritingDate()) {
+            const label = document.getElementById('diary-current-date-label');
+            if (label) label.textContent = formatDiaryArchiveDate(dateString);
+        }
+
         function revokeDiaryVoiceNoteUrls() {
             document.querySelectorAll('#diary-voice-note-list audio').forEach(audio => {
                 audio.pause();
@@ -1005,7 +1260,10 @@ import {
             }
         }
 
-        document.addEventListener('private-writing:locked', clearDiaryVoiceNotePlayback);
+        document.addEventListener('private-writing:locked', () => {
+            clearDiaryVoiceNotePlayback();
+            closeDiaryArchive();
+        });
         registerVoiceNoteStopHandler(stopActiveVoiceRecording);
 
         function requestLocationCheckin(checkbox) {
@@ -1603,6 +1861,7 @@ import {
                     await loadPrivateWritingForDate(dateString);
                     renderDiaryLocationLogs(dateString);
                     await renderDiaryVoiceNotes(dateString);
+                    updateDiaryDateLabel(dateString);
                 } catch(error) {
                     setWritingSecurityStatus('Could not decrypt this date’s private writing. Nothing was overwritten. '+(error?.message||''),'error');
                 }
@@ -1806,6 +2065,10 @@ import {
         const delegatedClickActions={
             showPage:el=>showPage(el.dataset.page),
             openModal:el=>openModal(el.dataset.modal,el.dataset.target),
+            openDiaryArchive:()=>openDiaryArchive(),
+            closeDiaryArchive:()=>closeDiaryArchive(),
+            backDiaryArchiveList:()=>showDiaryArchiveList(),
+            openDiaryArchiveDate:el=>openDiaryArchiveDate(el.dataset.date),
             changeStep:el=>changeStep(Number(el.dataset.direction)),
             releaseCloud:el=>releaseCloud(el),
             closeGrandFinale:()=>closeGrandFinale(),
@@ -1825,6 +2088,10 @@ import {
             if(action){event.preventDefault();action(trigger);}
         });
         document.addEventListener('keydown',event=>{
+            if (event.key === 'Escape' && !document.getElementById('diary-archive-panel')?.classList.contains('hidden')) {
+                closeDiaryArchive();
+                return;
+            }
             if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-action][role="button"]')){
                 event.preventDefault();
                 event.target.click();
