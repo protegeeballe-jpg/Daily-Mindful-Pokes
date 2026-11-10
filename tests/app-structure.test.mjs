@@ -285,8 +285,9 @@ test('Health Checklist hides the shared shell headers and keeps one compact tool
 });
 test('Interactive Ecosystem and trophy rewards appear only in the Grand Finale, not among checklist cards',()=>{
  const checklistStart=html.indexOf('<div id="view-checklist"');
- const gardenStatus=html.indexOf('<p id="garden-status"',checklistStart);
- const checklistMarkup=html.slice(checklistStart,gardenStatus);
+ const checklistEnd=html.indexOf('<!-- 🌟 ANIMATION MODAL POPUP -->',checklistStart);
+ assert.ok(checklistStart>=0 && checklistEnd>checklistStart,'Checklist must end before its animation modal');
+ const checklistMarkup=html.slice(checklistStart,checklistEnd);
  const finaleStart=html.indexOf('<div id="grand-finale-overlay"');
  const scriptsStart=html.indexOf('<!-- Scripts Engine -->',finaleStart);
  const finaleMarkup=html.slice(finaleStart,scriptsStart);
@@ -444,4 +445,14 @@ test('phone checklist date, clock, and Reset text use matching compact sizes',()
  assert.match(dateRules,/checklist-date-input\s*\{[^}]*font-size:\.58rem !important/s);
  assert.match(dateRules,/checklist-reset-button\s*\{[^}]*font-size:\.58rem !important/s);
  assert.match(appCss,/checklist-device-clock\s*\{[^}]*font-size:\.58rem !important/s);
+});
+
+test('Drive panel closes cleanly before the outdoor scene so garden scenes remain siblings',()=>{
+ const roomStart=html.indexOf('<section data-garden-scene="room"');
+ const driveStart=html.indexOf('<section id="drive-sync-panel"',roomStart);
+ const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',driveStart);
+ assert.ok(roomStart>=0 && driveStart>roomStart && outdoorStart>driveStart);
+ const driveRegion=html.slice(driveStart,outdoorStart);
+ assert.match(driveRegion,/<div class="drive-sync-controls">[\\s\\S]*<\\/div>\\s*<p id="drive-sync-status"[^>]*><\\/p>\\s*<\\/section>\\s*<\\/section>\\s*$/);
+ assert.match(html,/id="drive-sync-panel"[^>]*aria-label="Google Drive backup and restore"/);
 });
