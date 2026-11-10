@@ -529,6 +529,14 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  assert.match(html,/id="diary-location-log"/);
  assert.match(html,/cannot be edited or removed through the App/);
  assert.match(app,/function formatLocationCheckinEntry\(/);
+ assert.match(app,/function createLocationCoordinateControls\(record\)/);
+ assert.match(app,/google\.com\/maps\/search/);
+ assert.match(app,/copyButton\.dataset\.action = 'copyLocationCoordinates'/);
+ assert.match(app,/navigator\.clipboard\?\.writeText\(coordinates\)/);
+ assert.match(app,/document\.execCommand\('copy'\)/);
+ assert.match(app,/copyLocationCoordinates:button=>copyLocationCoordinates\(button\)/);
+ assert.match(app,/createLocationCoordinateControls\(record\)/);
+ assert.match(app,/Coordinates copied/);
  const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
  const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
  assert.match(privacy,/Location check-ins/);
