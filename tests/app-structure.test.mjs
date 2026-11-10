@@ -436,3 +436,12 @@ test('Google Drive panel and buttons use compact phone-only dimensions',()=>{
  assert.match(mobileRules,/font-size:\.55rem/);
  assert.match(html,/id="drive-connect-button"/);
 });
+
+
+test('phone checklist date, clock, and Reset text use matching compact sizes',()=>{
+ const dateRules=appCss.slice(appCss.lastIndexOf('/* Match the phone date text'));
+ assert.match(dateRules,/@media \(max-width:620px\)/);
+ assert.match(dateRules,/checklist-date-input\s*\{[^}]*font-size:\.58rem !important/s);
+ assert.match(dateRules,/checklist-reset-button\s*\{[^}]*font-size:\.58rem !important/s);
+ assert.match(appCss,/checklist-device-clock\s*\{[^}]*font-size:\.58rem !important/s);
+});
