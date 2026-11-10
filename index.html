@@ -194,6 +194,13 @@
                 <p class="text-[11px] text-purple-900/75 mt-2">Forgotten passphrases cannot be reset by this app. Keep yours somewhere safe. Clearing this browser's site data can also delete encrypted entries. Encryption protects stored text while locked, not an unlocked or compromised device.</p>
             </section>
             <div id="diary-editor-panel" class="hidden">
+            <div class="diary-current-toolbar">
+                <span class="diary-current-date-label"><span class="diary-current-date-caption">Daily entry</span><strong id="diary-current-date-label"></strong></span>
+                <button id="diary-archive-button" type="button" class="diary-notebook-button" data-action="openDiaryArchive" aria-label="Open your Diary notebook" aria-haspopup="dialog" aria-controls="diary-archive-panel" title="Open Diary notebook">
+                    <span aria-hidden="true">📓</span>
+                    <span class="diary-notebook-button-label">Notebook</span>
+                </button>
+            </div>
             <textarea id="private-diary-entry" class="w-full h-64 bg-white/80 border-2 border-purple-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Your private thoughts are encrypted before they are saved on this device."></textarea>
             <section id="diary-location-history" class="mt-5 rounded-2xl border border-purple-200 bg-purple-50/70 p-4" aria-labelledby="diary-location-history-heading">
                 <div class="flex flex-wrap items-center justify-between gap-2">
@@ -220,6 +227,34 @@
             </div>
             <p class="text-[11px] text-purple-800/75 mt-3">Saved voice notes are encrypted before storage and are included in manual Google Drive backups when you choose to back up this device.</p>
             </div>
+            <section id="diary-archive-panel" class="diary-archive-panel hidden" role="dialog" aria-modal="true" aria-labelledby="diary-archive-heading">
+                <div class="diary-archive-dialog">
+                    <header class="diary-archive-header">
+                        <div>
+                            <p class="diary-archive-eyebrow">PERSONAL COLLECTION</p>
+                            <h3 id="diary-archive-heading" class="diary-archive-heading">📓 My Diary Notebook</h3>
+                        </div>
+                        <button type="button" class="diary-archive-close" data-action="closeDiaryArchive" aria-label="Close notebook">×</button>
+                    </header>
+                    <div id="diary-archive-list-view">
+                        <p class="diary-archive-intro">Your written entries, voice notes, and location check-ins, organized by your device's calendar dates.</p>
+                        <ol id="diary-archive-date-list" class="diary-archive-date-list" aria-live="polite">
+                            <li class="diary-archive-empty">Unlock your Diary to view saved dates.</li>
+                        </ol>
+                    </div>
+                    <section id="diary-archive-entry-view" class="hidden" aria-labelledby="diary-archive-entry-date">
+                        <button type="button" class="diary-archive-back" data-action="backDiaryArchiveList">← All dates</button>
+                        <h4 id="diary-archive-entry-date" class="diary-archive-entry-date"></h4>
+                        <div id="diary-archive-entry-written" class="diary-archive-section"></div>
+                        <div class="diary-archive-section">
+                            <ol id="diary-archive-entry-locations" class="diary-archive-record-list"></ol>
+                        </div>
+                        <div class="diary-archive-section">
+                            <ol id="diary-archive-entry-voice-notes" class="diary-archive-record-list"></ol>
+                        </div>
+                    </section>
+                </div>
+            </section>
         </div>
     </div>
 
