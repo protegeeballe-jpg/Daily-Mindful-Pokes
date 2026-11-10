@@ -9,9 +9,9 @@ const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const DRIVE_FILE_NAME = 'faith-focus-armor-backup.gz';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
-const ENCRYPTED_RECORD_PATTERN = /^dmp_(?:diary|notes)_cipher_v1_\\d{4}-\\d{2}-\\d{2}$/;
-const DAILY_RECORD_PATTERN = /^mindful_pokes_data_\\d{4}-\\d{2}-\\d{2}$/;
-const SCORE_RECORD_PATTERN = /^score_awarded_\\d{4}-\\d{2}-\\d{2}$/;
+const ENCRYPTED_RECORD_PATTERN = /^dmp_(?:diary|notes)_cipher_v1_\d{4}-\d{2}-\d{2}$/;
+const DAILY_RECORD_PATTERN = /^mindful_pokes_data_\d{4}-\d{2}-\d{2}$/;
+const SCORE_RECORD_PATTERN = /^score_awarded_\d{4}-\d{2}-\d{2}$/;
 
 let tokenClient = null;
 let accessToken = null;
@@ -155,7 +155,7 @@ export function validateBackup(payload) {
     } else if (key === WRITING_CONFIG_KEY) {
       if (!validateWritingConfig(raw)) throw new Error('The backup contains an invalid private-writing key configuration.');
     } else if (key === 'user_confidence_score') {
-      if (!/^\\d+$/.test(raw)) throw new Error('The backup contains an invalid confidence score.');
+      if (!/^\d+$/.test(raw)) throw new Error('The backup contains an invalid confidence score.');
     } else if (SCORE_RECORD_PATTERN.test(key) && raw !== 'true' && raw !== 'false') {
       throw new Error('The backup contains an invalid completion marker.');
     }
@@ -318,8 +318,8 @@ async function restoreFromDrive() {
 
     const downloadResponse = await driveRequest(DRIVE_API + '/files/' + encodeURIComponent(file.id) + '?alt=media');
     const compressedText = await downloadResponse.text();
-    const parsed = JSON.parse(await decompressData(compressedText));
-    const records = validateBackup(parsed);
+    const downloaded = JSON.parse(await decompressData(compressedText));
+    const records = validateBackup(downloaded);
 
     if (!window.confirm('This will restore the validated backup records on this device. Your app PIN will remain unchanged. Continue?')) return;
 
