@@ -1,7 +1,8 @@
 import { compressData, decompressData } from './compressor.js';
 import { GARDEN_STORAGE_KEY, validateGardenState } from './garden-model.js';
 import {
-  WRITING_CONFIG_KEY, WRITING_DIARY_PREFIX, WRITING_NOTES_PREFIX, PRIVATE_NOTE_IDS
+  WRITING_CONFIG_KEY, WRITING_DIARY_PREFIX, WRITING_NOTES_PREFIX, PRIVATE_NOTE_IDS,
+  exportPrivateVoiceNotes, restorePrivateVoiceNotes, validatePrivateVoiceNoteBackup
 } from './writing-security.js';
 
 const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh.apps.googleusercontent.com';
@@ -166,6 +167,14 @@ export function validateBackup(payload) {
   if (hasEncryptedWriting && !Object.hasOwn(payload.records, WRITING_CONFIG_KEY)) {
     throw new Error('The backup is missing the private-writing encryption configuration.');
   }
+  if (Object.hasOwn(payload, 'voiceNotes')) {
+    if (!validatePrivateVoiceNoteBackup(payload.voiceNotes)) {
+      throw new Error('The backup contains invalid encrypted voice-note records.');
+    }
+    if (payload.voiceNotes.length && !Object.hasOwn(payload.records, WRITING_CONFIG_KEY)) {
+      throw new Error('The backup contains voice notes but is missing the private-writing encryption configuration.');
+    }
+  }
   return payload.records;
 }
 
@@ -250,11 +259,13 @@ async function backupToDrive() {
   status('Preparing your encrypted and local app records…');
   try {
     const records = collectBackupRecords();
+    const voiceNotes = await exportPrivateVoiceNotes();
     const payload = {
       format: 'faith-focus-daily-armor-backup',
       version: 1,
       createdAt: new Date().toISOString(),
-      records
+      records,
+      voiceNotes
     };
     const compressed = await compressData(JSON.stringify(payload));
     const fileBlob = new Blob([compressed], { type: 'application/gzip' });
@@ -326,13 +337,17 @@ async function restoreFromDrive() {
 
     const previous = new Map();
     for (const key of Object.keys(records)) previous.set(key, localStorage.getItem(key));
+    const includesVoiceNotes = Object.hasOwn(downloaded, 'voiceNotes');
+    const previousVoiceNotes = includesVoiceNotes ? await exportPrivateVoiceNotes() : null;
     try {
       for (const [key, value] of Object.entries(records)) localStorage.setItem(key, value);
+      if (includesVoiceNotes) await restorePrivateVoiceNotes(downloaded.voiceNotes);
     } catch (writeError) {
       for (const [key, value] of previous) {
         if (value === null) localStorage.removeItem(key);
         else localStorage.setItem(key, value);
       }
+      if (previousVoiceNotes) await restorePrivateVoiceNotes(previousVoiceNotes);
       throw writeError;
     }
     status('Restore completed. Reloading the app to show the restored records…');
