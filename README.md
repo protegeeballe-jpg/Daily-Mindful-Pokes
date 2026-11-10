@@ -4,7 +4,7 @@ Local App PIN: Designed for quick screen privacy on your device. New PINs must c
 Inactivity Auto-Lock Timer (5 minutes)
 App Visibility API Lock
 
-Private Writing Protection: Your Personal Diary and checklist reflections are secured with browser-native AES-256-GCM encryption derived from your separate private-writing passphrase (600,000 iterations). Encryption keys exist only in volatile memory during your active unlocked session.
+Private Writing Protection: Your Personal Diary, checklist reflections, and saved voice notes are secured with browser-native AES-256-GCM encryption derived from your separate private-writing passphrase (600,000 iterations). Voice notes are encrypted before being saved in local IndexedDB storage. Encrypted voice-note records are included only in manual Google Drive backups. Encryption keys exist only in volatile memory during your active unlocked session.
 
 Local Data Handling: Checklist checkboxes, task unlock flags, cloud-release flags, daily progress, confidence scores, and app settings remain stored locally in your browser storage. These ordinary progress records are not encrypted by the app.
 
@@ -20,7 +20,8 @@ Development
 index.html: Main application shell
 assets/app.js: Application logic and delegated UI actions
 assets/app-gate.js: App PIN hashing and verification
-assets/writing-security.js: Private-writing encryption engine
+assets/writing-security.js: Private-writing encryption engine and voice-note security integration
+assets/voice-note-store.js: Encrypted IndexedDB voice-note storage
 assets/compressor.js: Native CompressionStream (Gzip) data optimization engine for budget mobile devices
 assets/drive-sync.js: Google Identity Services (OAuth 2.0) and manual Google Drive appDataFolder backup/restore module
 assets/app.css: App styling
