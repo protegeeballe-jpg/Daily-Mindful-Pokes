@@ -453,6 +453,6 @@ test('Drive panel closes cleanly before the outdoor scene so garden scenes remai
  const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',driveStart);
  assert.ok(roomStart>=0 && driveStart>roomStart && outdoorStart>driveStart);
  const driveRegion=html.slice(driveStart,outdoorStart);
- assert.match(driveRegion,/<div class="drive-sync-controls">[\\s\\S]*<\\/div>\\s*<p id="drive-sync-status"[^>]*><\\/p>\\s*<\\/section>\\s*<\\/section>\\s*$/);
+ assert.match(driveRegion,/<div class="drive-sync-controls">[\s\S]*<\/div>\s*<p id="drive-sync-status"[^>]*><\/p>\s*<\/section>\s*<\/section>\s*$/);
  assert.match(html,/id="drive-sync-panel"[^>]*aria-label="Google Drive backup and restore"/);
 });
