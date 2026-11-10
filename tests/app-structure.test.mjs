@@ -426,6 +426,37 @@ test('Diary voice notes are saved persistently, encrypted, and preserved by chec
   assert.match(drive,/voiceNotes/);
 });
 
+test('Personal Diary notebook organizes written entries, locations, and voice notes by local date',()=>{
+  assert.match(html,/id="diary-archive-button"/);
+  assert.match(html,/data-action="openDiaryArchive"/);
+  assert.match(html,/aria-label="Open your Diary notebook"/);
+  assert.match(html,/id="diary-archive-panel"/);
+  assert.match(html,/role="dialog" aria-modal="true" aria-labelledby="diary-archive-heading"/);
+  assert.match(html,/id="diary-archive-date-list"/);
+  assert.match(html,/id="diary-archive-entry-written"/);
+  assert.match(html,/id="diary-archive-entry-locations"/);
+  assert.match(html,/id="diary-archive-entry-voice-notes"/);
+  assert.match(html,/data-action="closeDiaryArchive"/);
+  assert.match(html,/data-action="backDiaryArchiveList"/);
+  assert.match(app,/async function collectDiaryArchiveDates\(\)/);
+  assert.match(app,/WRITING_DIARY_PREFIX/);
+  assert.match(app,/LOCATION_CHECKIN_STORAGE_PREFIX/);
+  assert.match(app,/exportPrivateVoiceNotes\(\)/);
+  assert.match(app,/right\.dateString\.localeCompare\(left\.dateString\)/);
+  assert.match(app,/async function openDiaryArchiveDate\(dateString\)/);
+  assert.match(app,/readPrivateDiaryEntryForDate\(dateString\)/);
+  assert.match(app,/loadLocationCheckinEntries\(localStorage, dateString\)/);
+  assert.match(app,/loadPrivateVoiceNotesForDate\(dateString\)/);
+  assert.match(app,/function formatDiaryArchiveDate\(dateString\)/);
+  assert.match(app,/openDiaryArchiveDate:el=>openDiaryArchiveDate\(el\.dataset\.date\)/);
+  assert.match(writing,/export async function readPrivateDiaryEntryForDate\(dateStr\)/);
+  assert.match(writing,/decryptPrivatePayload\('diary',dateStr,record,writingCryptoKey\)/);
+  assert.match(app,/function getDeviceLocalDateString\(/);
+  assert.match(app,/dateInput\?\.value === lastObservedDeviceDate/);
+  assert.match(appCss,/\.diary-archive-panel\s*\{/);
+  assert.match(appCss,/\.diary-notebook-button\s*\{/);
+});
+
 test('public legal pages accurately describe optional manual Google Drive backup',()=>{
  const home=readFileSync(new URL('../home.html',import.meta.url),'utf8');
  const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
