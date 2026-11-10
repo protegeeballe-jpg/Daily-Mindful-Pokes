@@ -128,3 +128,40 @@
 @media (prefers-reduced-motion: reduce) {
     .legal-page * { scroll-behavior: auto !important; }
 }
+
+
+/* Keep all public pages on the same locally hosted Lexend typeface. */
+.legal-page,
+.legal-page *,
+.legal-page *::before,
+.legal-page *::after {
+    font-family: "Lexend", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Compact public-page content panels and matching action text. */
+.legal-card {
+    margin-top: .75rem;
+    padding: clamp(.95rem, 2.5vw, 1.55rem);
+    border-radius: 1.1rem;
+}
+.legal-feature-grid {
+    gap: .55rem;
+    margin: .9rem 0;
+}
+.legal-feature {
+    padding: .7rem;
+}
+.legal-notice {
+    padding: .75rem .85rem;
+}
+.legal-button {
+    min-height: 2.5rem;
+    padding: .58rem .85rem;
+    font-size: .78rem !important;
+    line-height: 1.2;
+}
+@media (max-width: 480px) {
+    .legal-card {
+        padding: .9rem;
+    }
+}
