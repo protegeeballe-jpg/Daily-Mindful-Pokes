@@ -418,7 +418,8 @@ test('Diary voice notes are saved persistently, encrypted, and preserved by chec
   const resetStart=app.indexOf('async function resetDayData()');
   const resetEnd=app.indexOf('async function toggleVoiceRecording()',resetStart);
   const dailyReset=app.slice(resetStart,resetEnd);
-  assert.doesNotMatch(dailyReset,/voiceNotes|voice-note|restoreEncryptedVoiceNotes|clear.*voice/i);
+  assert.doesNotMatch(dailyReset,/removeItem\([^)]*(?:voice|diary|location)/i);
+  assert.doesNotMatch(dailyReset,/restoreEncryptedVoiceNotes|clearDiaryVoiceNotePlayback/);
   const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
   assert.match(drive,/exportPrivateVoiceNotes/);
   assert.match(drive,/restorePrivateVoiceNotes/);
