@@ -826,9 +826,16 @@ import {
             if (!coordinates) return;
 
             try {
+                let copied = false;
                 if (navigator.clipboard?.writeText) {
-                    await navigator.clipboard.writeText(coordinates);
-                } else {
+                    try {
+                        await navigator.clipboard.writeText(coordinates);
+                        copied = true;
+                    } catch (clipboardError) {
+                        copied = false;
+                    }
+                }
+                if (!copied) {
                     const temporaryInput = document.createElement('textarea');
                     temporaryInput.value = coordinates;
                     temporaryInput.setAttribute('readonly', '');
@@ -836,8 +843,11 @@ import {
                     temporaryInput.style.opacity = '0';
                     document.body.append(temporaryInput);
                     temporaryInput.select();
-                    const copied = document.execCommand('copy');
-                    temporaryInput.remove();
+                    try {
+                        copied = document.execCommand('copy');
+                    } finally {
+                        temporaryInput.remove();
+                    }
                     if (!copied) throw new Error('Clipboard access is unavailable in this browser.');
                 }
 
