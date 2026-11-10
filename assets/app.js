@@ -796,6 +796,65 @@ import {
                 + ' (accuracy ±' + Math.round(record.accuracyMeters) + ' m) · ' + formattedTime;
         }
 
+        function createLocationCoordinateControls(record) {
+            const coordinates = record.latitude.toFixed(6) + ', ' + record.longitude.toFixed(6);
+            const controls = document.createElement('span');
+            controls.className = 'inline-flex flex-wrap items-center gap-2';
+
+            const mapLink = document.createElement('a');
+            mapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(coordinates);
+            mapLink.target = '_blank';
+            mapLink.rel = 'noopener noreferrer';
+            mapLink.className = 'font-semibold text-purple-800 underline decoration-purple-300 underline-offset-2 hover:text-purple-950';
+            mapLink.textContent = coordinates;
+            mapLink.setAttribute('aria-label', 'Open coordinates in Google Maps');
+
+            const copyButton = document.createElement('button');
+            copyButton.type = 'button';
+            copyButton.dataset.action = 'copyLocationCoordinates';
+            copyButton.dataset.coordinates = coordinates;
+            copyButton.className = 'rounded-md border border-purple-200 bg-white px-2 py-1 text-[10px] font-bold text-purple-800 hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-purple-400';
+            copyButton.textContent = 'Copy';
+            copyButton.setAttribute('aria-label', 'Copy coordinates');
+
+            controls.append(mapLink, copyButton);
+            return controls;
+        }
+
+        async function copyLocationCoordinates(button) {
+            const coordinates = button?.dataset?.coordinates;
+            if (!coordinates) return;
+
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(coordinates);
+                } else {
+                    const temporaryInput = document.createElement('textarea');
+                    temporaryInput.value = coordinates;
+                    temporaryInput.setAttribute('readonly', '');
+                    temporaryInput.style.position = 'fixed';
+                    temporaryInput.style.opacity = '0';
+                    document.body.append(temporaryInput);
+                    temporaryInput.select();
+                    const copied = document.execCommand('copy');
+                    temporaryInput.remove();
+                    if (!copied) throw new Error('Clipboard access is unavailable in this browser.');
+                }
+
+                const originalLabel = button.textContent;
+                button.textContent = 'Copied';
+                button.setAttribute('aria-label', 'Coordinates copied');
+                window.setTimeout(() => {
+                    if (!button.isConnected) return;
+                    button.textContent = originalLabel;
+                    button.setAttribute('aria-label', 'Copy coordinates');
+                }, 1600);
+            } catch (error) {
+                button.textContent = 'Copy failed';
+                button.title = 'Select the coordinate link text to copy it manually.';
+            }
+        }
+
         function renderLocationCheckinDetails(dateString) {
             const container = document.getElementById('location-checkin-details');
             if (!container) return;
@@ -804,8 +863,15 @@ import {
             const entries = loadLocationCheckinEntries(localStorage, dateString);
             for (const record of entries) {
                 const line = document.createElement('p');
-                line.className = 'location-checkin-entry';
-                line.textContent = formatLocationCheckinEntry(record);
+                line.className = 'location-checkin-entry flex flex-wrap items-center gap-x-2 gap-y-1';
+                const label = document.createElement('strong');
+                label.textContent = LOCATION_CHECKIN_OPTIONS[record.locationId] + ':';
+                const metadata = document.createTextNode(
+                    ' · accuracy ±' + Math.round(record.accuracyMeters) + ' m · '
+                    + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                        .format(new Date(record.capturedAt))
+                );
+                line.append(label, createLocationCoordinateControls(record), metadata);
                 container.append(line);
             }
 
@@ -838,12 +904,14 @@ import {
                 const title = document.createElement('p');
                 title.className = 'font-bold text-xs text-purple-950';
                 title.textContent = (index + 1) + '. ' + LOCATION_CHECKIN_OPTIONS[record.locationId];
-                const details = document.createElement('p');
-                details.className = 'mt-1 text-xs text-purple-800 break-words';
-                details.textContent = record.latitude.toFixed(6) + ', ' + record.longitude.toFixed(6)
-                    + ' (accuracy ±' + Math.round(record.accuracyMeters) + ' m) · '
+                const details = document.createElement('div');
+                details.className = 'mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-purple-800 break-words';
+                const metadata = document.createTextNode(
+                    '(accuracy ±' + Math.round(record.accuracyMeters) + ' m) · '
                     + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-                        .format(new Date(record.capturedAt));
+                        .format(new Date(record.capturedAt))
+                );
+                details.append(createLocationCoordinateControls(record), metadata);
                 item.append(title, details);
                 container.append(item);
             });
@@ -1737,7 +1805,8 @@ import {
             handleNextStep:()=>handleNextStep(),
             lockPrivateWriting:()=>lockPrivateWriting(),
             resetDayData:()=>resetDayData(),
-            toggleVoiceRecording:()=>toggleVoiceRecording()
+            toggleVoiceRecording:()=>toggleVoiceRecording(),
+            copyLocationCoordinates:button=>copyLocationCoordinates(button)
         };
         document.addEventListener('click',event=>{
             const trigger=event.target.closest('[data-action]');
