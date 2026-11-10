@@ -534,7 +534,7 @@ test('Google Drive panel and buttons use compact phone-only dimensions',()=>{
 test('app-wide buttons share one Lexend label size while icon-only controls remain distinct',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  const legalCss=readFileSync(new URL('../assets/legal.css',import.meta.url),'utf8');
- assert.match(gardenCss,/:root\\s*\\{[^}]*--ui-button-font-size:\\s*\\.78rem/s);
+ assert.match(appCss,/:root\\s*\\{[^}]*--ui-button-font-size:\\s*\\.78rem/s);
  assert.match(gardenCss,/body \\*::after/);
  assert.match(gardenCss,/font-size:var\\(--ui-button-font-size\\) !important/);
  assert.match(appCss,/font-size:var\\(--ui-button-font-size\\) !important/);
