@@ -532,7 +532,8 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  assert.match(app,/function createLocationCoordinateControls\(record\)/);
  assert.match(app,/google\.com\/maps\/search/);
  assert.match(app,/copyButton\.dataset\.action = 'copyLocationCoordinates'/);
- assert.match(app,/navigator\.clipboard\?\.writeText\(coordinates\)/);
+ assert.match(app,/navigator\.clipboard\?\.writeText/);
+ assert.match(app,/navigator\.clipboard\.writeText\(coordinates\)/);
  assert.match(app,/document\.execCommand\('copy'\)/);
  assert.match(app,/copyLocationCoordinates:button=>copyLocationCoordinates\(button\)/);
  assert.match(app,/createLocationCoordinateControls\(record\)/);
