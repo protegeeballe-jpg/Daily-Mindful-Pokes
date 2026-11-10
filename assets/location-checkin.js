@@ -36,27 +36,51 @@ function isValidRecord(record) {
         && Number.isFinite(Date.parse(record.capturedAt));
 }
 
-export function loadLocationCheckins(storage, dateString) {
+function normalizeEntries(parsed) {
+    if (Array.isArray(parsed)) {
+        return parsed.filter(entry =>
+            entry
+            && Object.hasOwn(LOCATION_CHECKIN_OPTIONS, entry.locationId)
+            && isValidRecord(entry)
+        );
+    }
+    if (!parsed || typeof parsed !== 'object') return [];
+    return Object.entries(parsed)
+        .filter(([locationId, record]) =>
+            Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId) && isValidRecord(record)
+        )
+        .map(([locationId, record]) => ({ locationId, ...record }));
+}
+
+export function loadLocationCheckinEntries(storage, dateString) {
     const key = getLocationCheckinStorageKey(dateString);
     let raw;
     try {
         raw = storage.getItem(key);
     } catch (error) {
-        return {};
+        return [];
     }
-    if (!raw) return {};
+    if (!raw) return [];
 
     try {
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-        return Object.fromEntries(
-            Object.entries(parsed).filter(([id, record]) =>
-                Object.hasOwn(LOCATION_CHECKIN_OPTIONS, id) && isValidRecord(record)
-            )
-        );
+        return normalizeEntries(JSON.parse(raw));
     } catch (error) {
-        return {};
+        return [];
     }
+}
+
+// Compatibility view for callers that need the latest check-in per checkbox.
+export function loadLocationCheckins(storage, dateString) {
+    const latestByLocation = {};
+    for (const entry of loadLocationCheckinEntries(storage, dateString)) {
+        latestByLocation[entry.locationId] = {
+            latitude: entry.latitude,
+            longitude: entry.longitude,
+            accuracyMeters: entry.accuracyMeters,
+            capturedAt: entry.capturedAt
+        };
+    }
+    return latestByLocation;
 }
 
 export function saveLocationCheckin(storage, dateString, locationId, position) {
@@ -77,9 +101,10 @@ export function saveLocationCheckin(storage, dateString, locationId, position) {
 
     const timestamp = Number(position?.timestamp);
     const capturedAt = new Date(Number.isFinite(timestamp) && timestamp > 0 ? timestamp : Date.now()).toISOString();
-    const records = loadLocationCheckins(storage, dateString);
-    records[locationId] = { latitude, longitude, accuracyMeters, capturedAt };
+    const entry = { locationId, latitude, longitude, accuracyMeters, capturedAt };
+    const entries = loadLocationCheckinEntries(storage, dateString);
+    entries.push(entry);
 
-    storage.setItem(getLocationCheckinStorageKey(dateString), JSON.stringify(records));
-    return records[locationId];
+    storage.setItem(getLocationCheckinStorageKey(dateString), JSON.stringify(entries));
+    return entry;
 }
