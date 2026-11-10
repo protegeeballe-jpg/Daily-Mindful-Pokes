@@ -43,9 +43,9 @@ import {
     APP_PIN_CONFIG_KEY,createAppPinRecord,isValidAppPin,migrateLegacyAppPin,verifyAppPin
 } from './app-gate.js';
 import {
-    LOCATION_CHECKIN_OPTIONS, getLocationCheckinStorageKey,
-    loadLocationCheckins, saveLocationCheckin
+    LOCATION_CHECKIN_OPTIONS, loadLocationCheckinEntries, saveLocationCheckin
 } from './location-checkin.js';
+import { GARDEN_STORAGE_KEY } from './garden-model.js';
 import {
     writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
@@ -253,8 +253,13 @@ import {
             if (pageId === 'garden') updateScoreDisplay();
             if (pageId === 'diary') {
                 renderDiarySecurityUI();
-                if (writingCryptoKey && writingLoadedDate !== getCurrentWritingDate()) {
-                    loadPrivateWritingForDate(getCurrentWritingDate()).catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
+                const dateString = getCurrentWritingDate();
+                if (writingCryptoKey && writingLoadedDate !== dateString) {
+                    loadPrivateWritingForDate(dateString)
+                        .then(() => renderDiaryLocationLogs(dateString))
+                        .catch(error => setWritingSecurityStatus('Could not decrypt this date’s private writing. ' + (error?.message || ''),'error'));
+                } else if (writingCryptoKey) {
+                    renderDiaryLocationLogs(dateString);
                 }
             }
         }
@@ -754,8 +759,6 @@ import {
 
         function getStorageKey(dateStr) { return 'mindful_pokes_data_' + dateStr; }
 
-        const locationCaptureVersions = new Map();
-
         function setLocationCheckinMessage(message, state = 'info') {
             const element = document.getElementById('location-checkin-message');
             if (!element) return;
@@ -764,27 +767,67 @@ import {
             element.classList.toggle('hidden', !message);
         }
 
+        function formatLocationCheckinEntry(record) {
+            const formattedTime = new Intl.DateTimeFormat(undefined, {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            }).format(new Date(record.capturedAt));
+            return LOCATION_CHECKIN_OPTIONS[record.locationId] + ': '
+                + record.latitude.toFixed(6) + ', ' + record.longitude.toFixed(6)
+                + ' (accuracy ±' + Math.round(record.accuracyMeters) + ' m) · ' + formattedTime;
+        }
+
         function renderLocationCheckinDetails(dateString) {
             const container = document.getElementById('location-checkin-details');
             if (!container) return;
             container.replaceChildren();
 
-            const records = loadLocationCheckins(localStorage, dateString);
-            for (const [locationId, record] of Object.entries(records)) {
-                const capturedAt = new Date(record.capturedAt);
-                const formattedTime = new Intl.DateTimeFormat(undefined, {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                }).format(capturedAt);
+            const entries = loadLocationCheckinEntries(localStorage, dateString);
+            for (const record of entries) {
                 const line = document.createElement('p');
                 line.className = 'location-checkin-entry';
-                line.textContent = LOCATION_CHECKIN_OPTIONS[locationId] + ': '
-                    + record.latitude.toFixed(6) + ', ' + record.longitude.toFixed(6)
-                    + ' (accuracy ±' + Math.round(record.accuracyMeters) + ' m) · ' + formattedTime;
+                line.textContent = formatLocationCheckinEntry(record);
                 container.append(line);
             }
 
-            container.classList.toggle('hidden', Object.keys(records).length === 0);
+            container.classList.toggle('hidden', entries.length === 0);
+        }
+
+        function renderDiaryLocationLogs(dateString = getCurrentWritingDate()) {
+            const container = document.getElementById('diary-location-log');
+            if (!container) return;
+            container.replaceChildren();
+
+            const dateLabel = document.getElementById('diary-location-date');
+            if (dateLabel) {
+                dateLabel.textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'long' })
+                    .format(new Date(dateString + 'T00:00:00'));
+            }
+
+            const entries = loadLocationCheckinEntries(localStorage, dateString);
+            if (!entries.length) {
+                const empty = document.createElement('li');
+                empty.className = 'rounded-xl bg-white/70 px-3 py-3 text-xs text-purple-800';
+                empty.textContent = 'No location check-ins were recorded for this date.';
+                container.append(empty);
+                return;
+            }
+
+            entries.forEach((record, index) => {
+                const item = document.createElement('li');
+                item.className = 'rounded-xl bg-white/80 border border-purple-100 px-3 py-3';
+                const title = document.createElement('p');
+                title.className = 'font-bold text-xs text-purple-950';
+                title.textContent = (index + 1) + '. ' + LOCATION_CHECKIN_OPTIONS[record.locationId];
+                const details = document.createElement('p');
+                details.className = 'mt-1 text-xs text-purple-800 break-words';
+                details.textContent = record.latitude.toFixed(6) + ', ' + record.longitude.toFixed(6)
+                    + ' (accuracy ±' + Math.round(record.accuracyMeters) + ' m) · '
+                    + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                        .format(new Date(record.capturedAt));
+                item.append(title, details);
+                container.append(item);
+            });
         }
 
         function requestLocationCheckin(checkbox) {
@@ -793,9 +836,6 @@ import {
 
             const dateString = document.getElementById('currentDate')?.value;
             if (!dateString) return;
-
-            const requestVersion = (locationCaptureVersions.get(locationId) || 0) + 1;
-            locationCaptureVersions.set(locationId, requestVersion);
 
             if (!navigator.geolocation) {
                 setLocationCheckinMessage('This browser does not provide location access. The location was not recorded.', 'error');
@@ -806,7 +846,6 @@ import {
 
             navigator.geolocation.getCurrentPosition(
                 position => {
-                    if (locationCaptureVersions.get(locationId) !== requestVersion) return;
                     try {
                         saveLocationCheckin(localStorage, dateString, locationId, position);
                         renderLocationCheckinDetails(document.getElementById('currentDate')?.value || dateString);
@@ -816,7 +855,6 @@ import {
                     }
                 },
                 error => {
-                    if (locationCaptureVersions.get(locationId) !== requestVersion) return;
                     const message = error?.code === 1
                         ? 'Location permission was not granted. The location was not recorded.'
                         : error?.code === 3
@@ -1382,28 +1420,76 @@ import {
             if(writingCryptoKey&&previousDate)await savePrivateWritingForDate(previousDate);
             loadData();
             if(writingCryptoKey){
-                try{await loadPrivateWritingForDate(getCurrentWritingDate());}
-                catch(error){setWritingSecurityStatus('Could not decrypt this date’s private writing. Nothing was overwritten. '+(error?.message||''),'error');}
+                const dateString = getCurrentWritingDate();
+                try {
+                    await loadPrivateWritingForDate(dateString);
+                    renderDiaryLocationLogs(dateString);
+                } catch(error) {
+                    setWritingSecurityStatus('Could not decrypt this date’s private writing. Nothing was overwritten. '+(error?.message||''),'error');
+                }
             }
+        }
+
+        function resetChecklistWizard() {
+            currentStep = 1;
+            for (let step = 1; step <= 6; step++) {
+                document.getElementById('card-step-' + step)?.classList.toggle('hidden', step !== 1);
+                document.getElementById('dot-' + step)?.classList.toggle('opacity-30', step !== 1);
+            }
+            const stepNumber = document.getElementById('current-step-num');
+            if (stepNumber) stepNumber.textContent = '1';
+            const previous = document.getElementById('btn-prev');
+            if (previous) {
+                previous.disabled = true;
+                previous.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            const next = document.getElementById('btn-next');
+            if (next) next.textContent = 'Next Card ➔';
+            document.getElementById('finish-status')?.classList.add('hidden');
+            document.getElementById('trophy-banner')?.classList.add('hidden');
+            document.getElementById('grand-finale-overlay')?.classList.add('hidden');
+            document.getElementById('location-checkin-footer')?.classList.remove('hidden');
+            const checklistMain = document.querySelector('#view-checklist main');
+            if (checklistMain) checklistMain.scrollTop = 0;
         }
 
         async function resetDayData() {
             const dateStr=document.getElementById('currentDate').value;
-            if(confirm("Reset today's checklist?")){
+            const confirmation = "Start the Health Checklist over for " + dateStr
+                + "? This clears checklist progress and reflection notes for that date and resets the Garden so you can plant your seeds again. "
+                + "Your Personal Diary entries and all location logs will be kept.";
+            if (!confirm(confirmation)) return;
+
+            try {
                 await flushPrivateWritingQueue();
-                for (const locationId of Object.keys(LOCATION_CHECKIN_OPTIONS)) {
-                    locationCaptureVersions.set(locationId, (locationCaptureVersions.get(locationId) || 0) + 1);
-                }
                 localStorage.removeItem(getStorageKey(dateStr));
-                localStorage.removeItem(getLocationCheckinStorageKey(dateStr));
                 localStorage.removeItem(getSecureWritingStorageKey('notes',dateStr));
-                loadData();
-                setLocationCheckinMessage('', 'info');
-                if(writingCryptoKey){
-                    try{await loadPrivateWritingForDate(dateStr);}
-                    catch(error){setWritingSecurityStatus('Checklist reset, but saved private writing could not be read. '+(error?.message||''),'error');}
+                localStorage.removeItem(GARDEN_STORAGE_KEY);
+            } catch (error) {
+                setWritingSecurityStatus('The reset could not be completed. Please review the current checklist state before trying again. '
+                    + (error?.message || ''), 'error');
+                return;
+            }
+
+            document.dispatchEvent(new CustomEvent('garden:reset-for-checklist'));
+            resetChecklistWizard();
+            loadData();
+            setLocationCheckinMessage('', 'info');
+
+            if (writingCryptoKey) {
+                try {
+                    await loadPrivateWritingForDate(dateStr);
+                    renderDiaryLocationLogs(dateStr);
+                } catch(error) {
+                    setWritingSecurityStatus('The checklist was reset, but saved private writing could not be read. '
+                        + (error?.message || ''), 'error');
                 }
             }
+        }
+
+        async function handleDiaryKeyActionWithLocationLogs() {
+            await handleDiaryKeyAction();
+            if (writingCryptoKey) renderDiaryLocationLogs(getCurrentWritingDate());
         }
 
         async function toggleVoiceRecording() {
@@ -1461,7 +1547,7 @@ import {
             closeGrandFinale:()=>closeGrandFinale(),
             closeModal:()=>closeModal(),
             completeAnimation:()=>handleModalPrimaryAction(),
-            handleDiaryKeyAction:()=>handleDiaryKeyAction(),
+            handleDiaryKeyAction:()=>handleDiaryKeyActionWithLocationLogs(),
             handleNextStep:()=>handleNextStep(),
             lockPrivateWriting:()=>lockPrivateWriting(),
             resetDayData:()=>resetDayData(),
