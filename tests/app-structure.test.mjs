@@ -265,7 +265,8 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/writing-security.js',
   './app-gate.test.mjs',
   './app-structure.test.mjs',
-  './garden-model.test.mjs'
+  './garden-model.test.mjs',
+  './location-checkin.test.mjs'
  ];
  const emDash=String.fromCodePoint(0x2014);
  for(const path of textFiles){
