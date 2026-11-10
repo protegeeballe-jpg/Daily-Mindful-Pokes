@@ -404,7 +404,7 @@ test('Diary voice notes are saved persistently, encrypted, and preserved by chec
   assert.doesNotMatch(html,/audio-container|diary-audio|temporary playback in this session/);
   assert.match(app,/savePrivateVoiceNoteForDate\(dateString, blob\)/);
   assert.match(app,/loadPrivateVoiceNotesForDate\(dateString\)/);
-  assert.match(app,/mediaRecorder\.mimeType/);
+  assert.match(app,/mediaRecorder\?\.mimeType/);
   assert.doesNotMatch(app,/audio\/mp3/);
   assert.match(app,/registerVoiceNoteStopHandler\(stopActiveVoiceRecording\)/);
   assert.match(writing,/function savePrivateVoiceNoteForDate\(dateStr,blob\)/);
