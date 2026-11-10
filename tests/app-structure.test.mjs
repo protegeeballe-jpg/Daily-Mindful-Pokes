@@ -534,22 +534,22 @@ test('Google Drive panel and buttons use compact phone-only dimensions',()=>{
 test('app-wide buttons share one Lexend label size while icon-only controls remain distinct',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  const legalCss=readFileSync(new URL('../assets/legal.css',import.meta.url),'utf8');
- assert.match(appCss,/:root\\s*\\{[^}]*--ui-button-font-size:\\s*\\.78rem/s);
- assert.match(gardenCss,/body \\*::after/);
+ assert.match(appCss,/:root\s*\{[^}]*--ui-button-font-size:\s*\.78rem/s);
+ assert.match(gardenCss,/body \*::after/);
  assert.match(gardenCss,/font-size:var\\(--ui-button-font-size\\) !important/);
  assert.match(appCss,/font-size:var\\(--ui-button-font-size\\) !important/);
  assert.match(legalCss,/font-family: "Lexend".*!important/);
  assert.match(legalCss,/font-size: \\.78rem !important/);
- assert.match(gardenCss,/max-width: min\\(100%, 24rem\\)/);
- assert.match(gardenCss,/max-height: min\\(86dvh, 42rem\\)/);
- assert.match(gardenCss,/padding: \\.8rem !important/);
+ assert.match(gardenCss,/max-width: min\(100%, 24rem\)/);
+ assert.match(gardenCss,/max-height: min\(86dvh, 42rem\)/);
+ assert.match(gardenCss,/padding: \.8rem !important/);
 });
  
 test('phone checklist date, clock, and Reset text use matching compact sizes',()=>{
  const dateRules=appCss.slice(appCss.lastIndexOf('/* Match the phone date text'));
  assert.match(dateRules,/@media \(max-width:620px\)/);
  assert.match(dateRules,/checklist-date-input\s*\{[^}]*font-size:\.58rem !important/s);
- assert.match(dateRules,/checklist-reset-button\s*\{[^}]*font-size:\.58rem !important/s);
+ assert.match(dateRules,/checklist-reset-button\s*\{[^}]*font-size:var\(--ui-button-font-size\) !important/s);
  assert.match(appCss,/checklist-device-clock\s*\{[^}]*font-size:\.58rem !important/s);
 });
 
