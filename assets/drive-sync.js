@@ -9,6 +9,7 @@ const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const DRIVE_FILE_NAME = 'faith-focus-armor-backup.gz';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
+const ENCRYPTED_RECORD_PREFIXES = ['dmp_diary_cipher_v1_', 'dmp_notes_cipher_v1_'];
 const ENCRYPTED_RECORD_PATTERN = /^dmp_(?:diary|notes)_cipher_v1_\d{4}-\d{2}-\d{2}$/;
 const DAILY_RECORD_PATTERN = /^mindful_pokes_data_\d{4}-\d{2}-\d{2}$/;
 const SCORE_RECORD_PATTERN = /^score_awarded_\d{4}-\d{2}-\d{2}$/;
