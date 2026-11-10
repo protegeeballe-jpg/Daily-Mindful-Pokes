@@ -195,6 +195,16 @@
             </section>
             <div id="diary-editor-panel" class="hidden">
             <textarea id="private-diary-entry" class="w-full h-64 bg-white/80 border-2 border-purple-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Your private thoughts are encrypted before they are saved on this device."></textarea>
+            <section id="diary-location-history" class="mt-5 rounded-2xl border border-purple-200 bg-purple-50/70 p-4" aria-labelledby="diary-location-history-heading">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h3 id="diary-location-history-heading" class="font-bold text-sm text-purple-950">Location History</h3>
+                    <span class="rounded-full bg-purple-100 px-2 py-1 text-[10px] font-bold tracking-wide text-purple-800">READ ONLY</span>
+                </div>
+                <p class="mt-2 text-xs text-purple-800">Your Health Checklist location check-ins for <strong id="diary-location-date">this date</strong> appear here. These records cannot be edited or removed through the App, and they are kept when you reset the Health Checklist.</p>
+                <ol id="diary-location-log" class="mt-3 space-y-2" aria-live="polite">
+                    <li class="rounded-xl bg-white/70 px-3 py-3 text-xs text-purple-800">Unlock your Diary to view location history for this date.</li>
+                </ol>
+            </section>
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
                 <button id="record-btn" data-action="toggleVoiceRecording" class="px-5 py-2.5 bg-rose-400 hover:bg-rose-500 text-white font-bold text-xs rounded-2xl shadow-sm transition flex items-center gap-2">
                     🎙️ <span id="record-text">Record Voice Note</span>
