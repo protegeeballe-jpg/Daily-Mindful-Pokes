@@ -30,7 +30,7 @@
                 <li><strong>Checklist and progress:</strong> selected dates, checklist completion states, guided-step states, released-cloud states, completion markers, and confidence points.</li>
                 <li><strong>Garden information:</strong> your selected tree and flower, planting date, and watering dates.</li>
                 <li><strong>Private writing:</strong> diary entries and the four checklist reflection fields. These are encrypted in the browser with AES-256-GCM. A separate passphrase is processed with PBKDF2-HMAC-SHA-256 to derive the encryption key. The key is held in memory while the writing is unlocked; the passphrase is not saved by the App.</li>
-                <li><strong>Compressed local cache:</strong> to support low-memory mobile devices, local app data is automatically compressed using the native browser `CompressionStream` (gzip) API upon successful login and stored locally under `faith_focus_compressed_backup`.</li>
+                <li><strong>Compressed local cache:</strong> to support low-memory mobile devices, local app data is compressed using the native browser `CompressionStream` (gzip) API when you explicitly request a backup.</li>
             </ul>
 
             <h2>2. What is and is not encrypted</h2>
