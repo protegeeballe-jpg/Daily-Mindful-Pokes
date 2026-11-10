@@ -390,3 +390,7 @@ body.garden-overlay-open { overflow: hidden; }
   line-height:1.2;
  }
 }
+
+
+/* Keep the Drive feedback line out of the layout until a user action needs it. */
+.drive-sync-status:empty { display:none; }
