@@ -413,7 +413,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
 #view-checklist #btn-next {
  min-height:32px !important;
  padding:.24rem .42rem !important;
- font-size:.7rem !important;
+ font-size:var(--ui-button-font-size) !important;
  line-height:1.1;
  border-radius:.65rem;
  box-shadow:none;
@@ -438,7 +438,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
  min-width:36px;
  min-height:32px;
  padding:.22rem .38rem !important;
- font-size:.68rem !important;
+ font-size:var(--ui-button-font-size) !important;
  border-radius:.55rem;
 }
 
@@ -478,7 +478,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
   min-width:0 !important;
   min-height:24px !important;
   padding:.08rem .2rem !important;
-  font-size:.55rem !important;
+  font-size:var(--ui-button-font-size) !important;
   line-height:1 !important;
  }
  #view-checklist .checklist-header-right {
@@ -513,7 +513,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
   min-width:27px !important;
   min-height:24px !important;
   padding:.08rem .18rem !important;
-  font-size:.56rem !important;
+  font-size:var(--ui-button-font-size) !important;
   line-height:1 !important;
  }
  #view-checklist main {
@@ -541,7 +541,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
  #view-checklist .checklist-step-navigation button {
   min-height:30px !important;
   padding:.18rem .42rem !important;
-  font-size:.64rem !important;
+  font-size:var(--ui-button-font-size) !important;
   line-height:1.05 !important;
   border-radius:.55rem;
   box-shadow:none !important;
@@ -561,7 +561,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
   line-height:1 !important;
  }
  #view-checklist .checklist-header-right > .checklist-reset-button {
-  font-size:.58rem !important;
+  font-size:var(--ui-button-font-size) !important;
  }
 }
 
