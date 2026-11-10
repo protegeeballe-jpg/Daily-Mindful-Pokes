@@ -1100,9 +1100,9 @@ import {
 
             try {
                 await flushPrivateWritingQueue();
-                const entryText = await readPrivateDiaryEntryForDate(dateString);
+                await loadPrivateWritingForDate(dateString);
                 diaryViewingHistoricalDate = dateString;
-                editor.value = entryText;
+                editor.value = typeof editor.value === 'string' ? editor.value : '';
                 editor.readOnly = true;
                 editor.setAttribute('aria-label', 'Read-only Diary entry for ' + formatDiaryArchiveDate(dateString));
                 editor.placeholder = 'No written entry was saved for this date.';
