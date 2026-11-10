@@ -44,7 +44,7 @@ import {
 } from './app-gate.js';
 import {
     LOCATION_CHECKIN_OPTIONS, getLocationCheckinStorageKey,
-    loadLocationCheckins, saveLocationCheckin
+    loadLocationCheckins, removeLocationCheckin, saveLocationCheckin
 } from './location-checkin.js';
 import {
     writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
@@ -1391,10 +1391,14 @@ import {
             const dateStr=document.getElementById('currentDate').value;
             if(confirm("Reset today's checklist?")){
                 await flushPrivateWritingQueue();
+                for (const locationId of Object.keys(LOCATION_CHECKIN_OPTIONS)) {
+                    locationCaptureVersions.set(locationId, (locationCaptureVersions.get(locationId) || 0) + 1);
+                }
                 localStorage.removeItem(getStorageKey(dateStr));
                 localStorage.removeItem(getLocationCheckinStorageKey(dateStr));
                 localStorage.removeItem(getSecureWritingStorageKey('notes',dateStr));
                 loadData();
+                setLocationCheckinMessage('', 'info');
                 if(writingCryptoKey){
                     try{await loadPrivateWritingForDate(dateStr);}
                     catch(error){setWritingSecurityStatus('Checklist reset, but saved private writing could not be read. '+(error?.message||''),'error');}
@@ -1487,6 +1491,13 @@ import {
                 requestLocationCheckin(checkbox);
             } else if (Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId)) {
                 locationCaptureVersions.set(locationId, (locationCaptureVersions.get(locationId) || 0) + 1);
+                try {
+                    removeLocationCheckin(localStorage, document.getElementById('currentDate')?.value, locationId);
+                    renderLocationCheckinDetails(document.getElementById('currentDate')?.value);
+                    setLocationCheckinMessage('', 'info');
+                } catch (error) {
+                    setLocationCheckinMessage('The saved location detail could not be cleared on this device.', 'error');
+                }
             }
         });
         document.getElementById('app-pin-form')?.addEventListener('submit',event=>{
