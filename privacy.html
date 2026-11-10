@@ -19,7 +19,7 @@
             <span>Faith &amp; Focus: Daily Armor</span>
         </a>
         <article class="legal-card">
-            <p class="legal-meta">Effective date: November 9, 2026 · Last updated: November 9, 2026</p>
+            <p class="legal-meta">Effective date: November 10, 2026 · Last updated: November 10, 2026</p>
             <h1>Privacy Policy</h1>
             <p>This Privacy Policy explains how Faith &amp; Focus: Daily Armor (the “App”) handles information when you use the web application. The App is maintained by the owner of the public project repository. It is designed to keep routine and writing records in your own browser rather than in an operator-managed account or central server.</p>
 
@@ -28,14 +28,14 @@
             <ul>
                 <li><strong>App access settings:</strong> a salted password-derived verifier for the local app PIN. The App does not store the PIN itself as plain text.</li>
                 <li><strong>Checklist and progress:</strong> selected dates, checklist completion states, guided-step states, released-cloud states, completion markers, and confidence points.</li>
-                <li><strong>Location check-ins:</strong> when you tick one of the four place checkboxes on the first checklist card, the browser requests a one-time current location. The App stores the coordinates, reported accuracy, and capture time in separate browser storage on this device. These records are not sent to the App maintainer and are excluded from Google Drive backups. Your browser or operating system location provider handles the location request under its own privacy practices.</li>
+                <li><strong>Location check-ins:</strong> when you tick one of the four place checkboxes on the first checklist card, the browser requests a one-time current location. Each successful capture is appended to a date-specific, read-only location history shown in the unlocked Diary. The coordinates, reported accuracy, selected place, and capture time are stored in separate browser storage on this device. They are not sent to the App maintainer, are excluded from Google Drive backups, and are not removed by the Health Checklist Reset. Your browser or operating system location provider handles the location request under its own privacy practices.</li>
                 <li><strong>Garden information:</strong> your selected tree and flower, planting date, and watering dates.</li>
                 <li><strong>Private writing:</strong> diary entries and the four checklist reflection fields. These are encrypted in the browser with AES-256-GCM. A separate passphrase is processed with PBKDF2-HMAC-SHA-256 to derive the encryption key. The key is held in memory while the writing is unlocked; the passphrase is not saved by the App.</li>
                 <li><strong>Compressed local cache:</strong> to support low-memory mobile devices, local app data is compressed using the native browser `CompressionStream` (gzip) API when you explicitly request a backup.</li>
             </ul>
 
             <h2>2. What is and is not encrypted</h2>
-            <p>The app PIN is a local screen gate; it does not encrypt ordinary checklist progress, confidence points, or garden information. Those records remain in browser storage in their normal data format. Private diary entries and checklist reflections are stored separately as encrypted records.</p>
+            <p>The app PIN is a local screen gate; it does not encrypt ordinary checklist progress, confidence points, garden information, or location history. Those records remain in browser storage in their normal data format. Private diary entries and checklist reflections are stored separately as encrypted records. Location history is read-only in the App but is not encrypted at rest; anyone with access to the device or its browser storage may be able to access it.</p>
             <p>For enhanced session security, the App features an <strong>inactivity auto-lock timer</strong> (automatically locking private writing after 5 minutes of idle time) and a <strong>background visibility lock</strong> (immediately dropping active encryption keys from memory when switching apps or locking the device screen).</p>
             <p>Choose a strong, memorable private-writing passphrase and keep it safe. The App cannot recover private writing if that passphrase is lost. Clearing browser or site data can permanently remove local records unless backed up to Google Drive.</p>
 
@@ -64,7 +64,7 @@
             <p>The App maintainer does not sell personal information and does not use App records for advertising. The App does not transmit diary entries, checklist progress, or garden records to third parties. All cloud features communicate strictly and directly with your personal Google Drive account upon manual request.</p>
 
             <h2>7. Retention and deletion</h2>
-            <p>Local records remain in your browser until you remove them, clear the site's stored data, or use an App control that deletes the relevant record. Clearing site data may delete the app PIN verifier, checklist history, confidence points, garden records, and encrypted writing. You can use the manual Google Drive backup feature to preserve your compressed data before clearing browser storage.</p>
+            <p>The Health Checklist Reset clears checklist completion progress and checklist reflection fields for the selected date, and restarts the Garden planting setup. It does not delete your main Personal Diary entries or location history. The App provides no control to edit or delete location history. Clearing the site's stored data or browser storage can still permanently remove local records. Optional Google Drive backups do not include location history.</p>
 
             <h2>8. Children's privacy and family use</h2>
             <p>The App can be used locally without creating an online account. A parent or guardian should supervise a child's use and should consider what personal or sensitive information is entered into a shared device.</p>
