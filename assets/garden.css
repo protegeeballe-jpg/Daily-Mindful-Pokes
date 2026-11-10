@@ -354,3 +354,39 @@ body.garden-overlay-open { overflow: hidden; }
 .drive-sync-controls,
 .drive-sync-actions {gap:.35rem;}
 .drive-sync-controls {margin-top:.45rem;}
+
+
+/* Keep Drive controls and their panel visually secondary on phones. */
+@media (max-width:420px) {
+ .drive-sync-panel {
+  width:min(calc(100% - .8rem), 720px);
+  box-sizing:border-box;
+  margin:.35rem auto 0;
+  padding:.42rem .48rem;
+  border-radius:.72rem;
+  box-shadow:none;
+ }
+ .drive-sync-copy h3 {font-size:.76rem;line-height:1.15;}
+ .drive-sync-copy p {font-size:.6rem;line-height:1.25;}
+ .drive-sync-controls {margin-top:.28rem;gap:.18rem;}
+ .drive-sync-actions {gap:.18rem;}
+ .drive-sync-panel .garden-action-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:auto;
+  max-width:100%;
+  min-height:22px;
+  padding:.1rem .18rem !important;
+  font-size:.55rem !important;
+  line-height:1.05;
+  border-radius:.42rem;
+  box-shadow:none;
+ }
+ .drive-sync-status {
+  min-height:0;
+  margin:.24rem 0 0;
+  font-size:.56rem;
+  line-height:1.2;
+ }
+}
