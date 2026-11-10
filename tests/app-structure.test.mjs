@@ -443,6 +443,16 @@ test('Personal Diary notebook organizes written entries, locations, and voice no
   assert.match(app,/LOCATION_CHECKIN_STORAGE_PREFIX/);
   assert.match(app,/exportPrivateVoiceNotes\(\)/);
   assert.match(app,/right\.dateString\.localeCompare\(left\.dateString\)/);
+  assert.match(html,/id="diary-return-today"/);
+  assert.match(html,/data-action="returnToCurrentDiary"/);
+  assert.match(app,/editor\.readOnly = true/);
+  assert.match(app,/recordButton\.disabled = true/);
+  assert.match(app,/document\.getElementById\('diary-return-today'\)\?\.classList\.remove\('hidden'\)/);
+  assert.match(app,/function restoreCurrentDiaryDate\(\)/);
+  assert.match(app,/openDiaryArchive:()=>openDiaryArchive\(\)/);
+  assert.match(app,/writingCryptoKey && diaryViewingHistoricalDate/);
+  assert.match(app,/writingCryptoKey && !diaryViewingHistoricalDate/);
+  assert.match(appCss,/\.diary-return-today\s*\{/);
   assert.match(app,/async function openDiaryArchiveDate\(dateString\)/);
   assert.match(app,/readPrivateDiaryEntryForDate\(dateString\)/);
   assert.match(app,/loadLocationCheckinEntries\(localStorage, dateString\)/);
