@@ -23,6 +23,21 @@ test('the security-question bank contains 20 stable, unique questions', () => {
     assert.ok(ACCOUNT_SECURITY_QUESTIONS.every(question => question.text.endsWith('?')));
 });
 
+test('the question bank uses the user-provided Faith & Focus prompts', () => {
+    assert.equal(
+        ACCOUNT_SECURITY_QUESTIONS[0].text,
+        'What is the name of the first church, chapel, or spiritual community you regularly attended?'
+    );
+    assert.equal(
+        ACCOUNT_SECURITY_QUESTIONS[9].text,
+        "What is your mother's middle name?"
+    );
+    assert.equal(
+        ACCOUNT_SECURITY_QUESTIONS[19].text,
+        'What specific virtue or principle do you value above all others in your daily practice?'
+    );
+});
+
 test('username requires uppercase and lowercase letters only', () => {
     assert.equal(validateAccountUsername('FaithFocus').valid, true);
     assert.equal(validateAccountUsername('FAITHFOCUS').valid, false);
@@ -70,9 +85,11 @@ test('registration requires exactly three distinct security questions', () => {
     assert.equal(validateSecurityQuestionSelection([1, 'x', 20]).valid, false);
 });
 
-test('security answers are normalized consistently without allowing missing answers', () => {
-    assert.equal(normalizeSecurityAnswer('  BLUE   House  '), 'blue house');
-    assert.equal(normalizeSecurityAnswer('ＢＬＵＥ House'), 'blue house');
+test('security answers are normalized consistently and allow punctuation or spacing variations', () => {
+    assert.equal(normalizeSecurityAnswer('  Saint Mary\'s!  '), 'saintmarys');
+    assert.equal(normalizeSecurityAnswer('ＢＬＵＥ House'), 'bluehouse');
+    assert.equal(normalizeSecurityAnswer('Green-Hill'), 'greenhill');
+    assert.equal(normalizeSecurityAnswer(undefined), '');
     assert.equal(validateSecurityAnswers([
         { questionId: 1, answer: 'Green Hill' },
         { questionId: 2, answer: 'Little Star' },
