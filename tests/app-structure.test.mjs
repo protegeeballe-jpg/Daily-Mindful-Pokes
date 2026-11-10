@@ -449,7 +449,7 @@ test('Personal Diary notebook organizes written entries, locations, and voice no
   assert.match(app,/recordButton\.disabled = true/);
   assert.match(app,/document\.getElementById\('diary-return-today'\)\?\.classList\.remove\('hidden'\)/);
   assert.match(app,/function restoreCurrentDiaryDate\(\)/);
-  assert.match(app,/openDiaryArchive:openDiaryArchive|openDiaryArchive:async/);
+  assert.match(app,/openDiaryArchive:\(\)=>openDiaryArchive\(\)/);
   assert.match(app,/writingCryptoKey && diaryViewingHistoricalDate/);
   assert.match(app,/writingCryptoKey && !diaryViewingHistoricalDate/);
   assert.match(appCss,/\.diary-return-today\s*\{/);
