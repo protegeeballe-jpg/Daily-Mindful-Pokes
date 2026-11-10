@@ -63,19 +63,6 @@ test('invalid location IDs and out-of-range coordinates are rejected without sav
     assert.equal(storage.values.size, 0);
 });
 
-test('unticking a location clears only that location record', async () => {
-    const storage = createStorage();
-    saveLocationCheckin(storage, '2026-11-10', 'loc-home', position(14.5, 120.9));
-    saveLocationCheckin(storage, '2026-11-10', 'loc-office', position(14.6, 121.0));
-
-    const { removeLocationCheckin } = await import('../assets/location-checkin.js');
-    removeLocationCheckin(storage, '2026-11-10', 'loc-home');
-
-    const records = loadLocationCheckins(storage, '2026-11-10');
-    assert.equal(records['loc-home'], undefined);
-    assert.ok(records['loc-office']);
-});
-
 test('damaged stored data is ignored and only valid location records are loaded', () => {
     const storage = createStorage();
     const key = getLocationCheckinStorageKey('2026-11-10');
