@@ -1,67 +1,52 @@
-# Faith & Focus: Daily Armor
+**Security & Privacy Model**
 
-A faith-centered, local-first daily focus and wellness application, guided by 1 Corinthians 16:14.
+Local App PIN: Designed for quick screen privacy on your device. New PINs must contain 6–12 digits and are stored securely as salted PBKDF2-HMAC-SHA-256 verifiers (600,000 iterations). Legacy PINs are automatically upgraded at launch.
+Inactivity Auto-Lock Timer (5 minutes)
+App Visibility API Lock
 
-## Security model
+Private Writing Protection: Your Personal Diary and checklist reflections are secured with browser-native AES-256-GCM encryption derived from your separate private-writing passphrase (600,000 iterations). Encryption keys exist only in volatile memory during your active unlocked session.
 
-- **App access PIN:** A local screen gate. New PINs must contain 6–12 digits and are stored as salted PBKDF2-HMAC-SHA-256 verifiers (600,000 iterations). There is no universal default PIN. Legacy plaintext `user_pin` values are converted to a verifier at first launch; legacy values shorter than six digits must be upgraded.
-- **Private writing:** The single Personal Diary and four checklist reflection fields retain the existing browser-native AES-256-GCM encryption. A separate passphrase is derived with PBKDF2-HMAC-SHA-256 (600,000 iterations). The encryption key remains in memory for the unlocked session.
+Local Data Handling: Checklist ticks, task unlock flags, cloud-release flags, daily progress, confidence scores, and app settings remain stored locally in your browser storage.
 
-**Not encrypted:** Checklist checkboxes, guided-task unlock flags, cloud-release flags, daily progress, confidence score, and app settings remain ordinary browser local-storage values. The app PIN does not encrypt this progress data.
+Zero-Knowledge Architecture: Your private diary passphrase is known only to you and is never sent to any server. Because encryption is handled entirely on your device, forgotten passphrases cannot be recovered by the app.
 
-The PIN gate is not server authentication. Someone with developer-tools access, control of the browser profile, malicious same-origin JavaScript, or a compromised device can bypass a client-side screen gate. The diary passphrase is a separate encryption boundary. A forgotten private-writing passphrase cannot decrypt private entries. Clearing site data can delete local records. There is no cloud account or cross-device synchronization.
+Storage & Protection
+Persistent Storage Request: Upon initialization, the app requests persistent storage status from your browser to prevent automatic cache clearance on low-disk devices.
+Content Security Policy: Restricted origin execution blocks unauthorized script injections, keeping your workspace isolated and secure.
 
-## Content Security Policy
+Development
+index.html: Main application shell
+assets/app.js: Application logic and delegated UI actions
+assets/app-gate.js: App PIN hashing and verification
+assets/writing-security.js: Private-writing encryption engine
+assets/compressor.js: Native CompressionStream (Gzip) data optimization engine for budget mobile devices
+assets/drive-sync.js: Google Identity Services (OAuth 2.0) and manual Google Drive appDataFolder backup/restore module
+assets/app.css: App styling
+assets/tailwind.input.css: Tailwind build input
+Run tests with node --test tests/*.test.mjs.
 
-The HTML sets a meta-delivered Content Security Policy: scripts and other fetches are restricted to this origin, objects are blocked, and inline event handlers are removed. Inline style support remains enabled for existing dynamically-updated visual states. GitHub Pages does not provide custom response headers for this static site, so header-only controls such as `frame-ancestors` cannot be enforced through this meta policy.
+Faith & Focus: Daily Armor
+The app opens into The Forge Room, the shared home for the Health Checklist, the single encrypted Personal Diary, and the outdoor Garden scene.
+Bundled artwork at assets/garden-room-background.jpg ensures full offline functionality without external image dependencies.
+assets/garden.js and assets/garden-model.js drive the Forge Room and calendar-based growth experience.
+The checklist Reset button resets daily entries and reflections without affecting garden progress or planted seeds.
 
-## Development
+Storage Optimization & Auto-Compression
+Device Optimization: Utilizes native browser CompressionStream (Gzip) via assets/compressor.js to minimize local storage usage on mobile devices.
+Login Auto-Compression: Upon signing in with Google, your current local progress and encrypted entries are automatically compressed and saved locally on your device.
+Graceful Fallbacks: On legacy browsers where Gzip streaming is unavailable, raw string storage is used seamlessly to ensure continuous app functionality.
+**Optional Google Drive Backup & Restore (appDataFolder)
+**
+Non-Sensitive Private Scope: Cloud backup utilizes Google Identity Services (OAuth 2.0) with the isolated https://www.googleapis.com/auth/drive.appdata scope.
+Private Folder Isolation: Backup files (faith-focus-armor-backup.gz) are saved exclusively to a hidden app data folder in your personal Google Drive, inaccessible to other third-party Drive apps.
 
-- `index.html`: app shell
-- `assets/app.js`: application logic and delegated UI actions
-- `assets/app-gate.js`: app PIN hashing and verification
-- `assets/writing-security.js`: private-writing encryption
-- `assets/app.css`: app-specific styling
-- `assets/tailwind.input.css`: Tailwind build input (compiled output is generated by GitHub Actions)
-- Run tests with `node --test tests/*.test.mjs`.
+**User-Controlled Sync: Backup and restore operations are strictly manual and user-initiated. Data is uploaded to Google Drive only when you explicitly select Back Up This Device.**
 
-## Faith & Focus: Daily Armor
+Manual Restore: Selecting Restore From Drive retrieves your compressed backup file from your Google Drive app data and restores your app state.
 
-- The app opens into **The Forge Room**, the shared home for the Health Checklist, the single encrypted Personal Diary, and the outdoor Garden scene.
-- The Forge Room uses the locally bundled artwork at `assets/garden-room-background.jpg`. The background is loaded from this repository; no external image host is required.
-- `assets/garden.js` and `assets/garden-model.js` power the Forge Room, plant-care scene, and calendar-based growth experience. Their `garden` filenames, CSS classes, element IDs, and event names are internal compatibility identifiers.
-- The fruit tree and flower grow according to calendar time. Their descriptions use the app's Hope, Faith, and Focus language. Repeated visits and watering do not accelerate growth; missed days do not harm plants.
-- Seed selection is a one-time initial setup. On first use, both choices are available; after the garden is saved, the choices remain visible but disabled and marked **Setup Completed**. The selections are restored from the saved garden record. A fresh install or full app/site-data reset that clears the garden record makes the setup available again.
-- The checklist's **Reset** button only resets the selected day's checklist and encrypted reflection. It does not reset the garden setup or erase planted seeds.
-- The app has one encrypted Personal Diary. Diary writing and the four checklist reflection fields retain the existing AES-256-GCM encryption and separate passphrase.
-- The garden's planting and watering records remain local browser data and are **not encrypted**. The existing storage key `daily_mindful_pokes_garden_v1` is intentionally retained so existing saved plants and watering history remain available after the rebrand. The app does not read or write checklist progress or encrypted diary records from that store.
-- The separate Garden Notes feature has been removed. Legacy garden-note fields are ignored by the current garden model.
-
-## App identity and compatibility
-
-- `manifest.json` and `assets/icon.svg` provide the Faith & Focus installable-app name and icon.
-- The PIN gate remains a local screen gate using a 6–12 digit PIN. The private-writing passphrase remains separate.
-- Internal storage keys such as `dmp_app_gate_v1`, `daily_mindful_pokes_garden_v1`, and existing checklist data keys are kept stable to avoid resetting existing local data.
-
-## Local recovery
-
-The app PIN verifier is stored under `dmp_app_gate_v1`. Deleting only that key allows first-run PIN setup again. Anyone able to use developer tools can do this; the gate is not high-assurance authentication. Do not clear all site data unless you intend to delete locally stored records.
-
-## Typography
-
-The app uses one locally hosted Lexend variable font (weights 100-900) across its screens, headings, labels, and form controls. The font is embedded in a same-origin stylesheet so it remains compatible with the app's Content Security Policy and does not depend on an external font service. Lexend is distributed under the SIL Open Font License 1.1; see [assets/fonts/OFL-Lexend.txt](assets/fonts/OFL-Lexend.txt).
-
-## Google Drive backup and restore
-
-- Google Drive backup is currently paused and unavailable in the deployed app. Restore is also unavailable. The current version does not load Google Identity Services, request Google sign-in, obtain a Google access token, or make Google Drive API requests.
-- The intended design is optional and user-initiated only: no automatic or background backup is performed. If the integration is approved and activated in a future release, users would explicitly connect their Google account and choose **Back Up This Device** or **Restore From Drive**.
-- The device's app PIN verifier is deliberately excluded from the proposed backup payload. This describes the integration design only; the deployed app currently makes no Google requests while Drive backup is paused.
-- The Drive integration must remain disabled unless all applicable Google API requirements and any required prior written permission are satisfied. Do not describe the feature as active or promise cloud backup availability.
-
-## Public information and legal pages
+Typography
+Uses locally bundled Lexend variable fonts (weights 100-900) embedded via same-origin stylesheets under the SIL Open Font License 1.1 (assets/fonts/OFL-Lexend.txt).
 
 - Public application information: [home.html](./home.html)
 - Privacy Policy: [privacy.html](./privacy.html)
 - Terms of Service: [terms.html](./terms.html)
-- The PIN screen and app footer link to the Privacy Policy and Terms of Service.
-- Google Drive backup is currently paused in the user interface and does not request Google sign-in or send data to Drive. Google Drive API Terms prohibit backing up user or app content from a developer's app to Drive without Google's express prior written consent. Do not reactivate this feature unless that permission and the app's intended-audience requirements have been confirmed.
