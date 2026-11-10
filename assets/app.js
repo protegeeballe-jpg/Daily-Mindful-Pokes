@@ -1126,7 +1126,6 @@ import {
                 const label = document.getElementById('diary-current-date-label');
                 if (label) label.textContent = formatDiaryArchiveDate(dateString) + ' · SAVED ENTRY';
                 document.getElementById('diary-return-today')?.classList.remove('hidden');
-                document.getElementById('diary-editor-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (error) {
                 setWritingSecurityStatus('This saved Diary date could not be opened. Your existing entries were not changed. '
                     + (error?.message || ''), 'error');
