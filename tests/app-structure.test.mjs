@@ -500,7 +500,7 @@ test('compact checklist and Drive controls reduce visual clutter without removin
  assert.match(appCss,/checklist-reset-button/);
  assert.match(gardenCss,/\.drive-sync-panel \.garden-action-button/);
  assert.match(gardenCss,/padding:\.22rem \.32rem/);
- assert.match(gardenCss,/font-size:\.65rem/);
+ assert.match(gardenCss,/font-size:var\(--ui-button-font-size\) !important/);
  assert.match(html,/id="drive-connect-button"/);
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
@@ -526,11 +526,25 @@ test('Google Drive panel and buttons use compact phone-only dimensions',()=>{
  assert.match(mobileRules,/@media \(max-width:420px\)/);
  assert.match(mobileRules,/width:min\(calc\(100% - \.8rem\), 720px\)/);
  assert.match(mobileRules,/min-height:22px/);
- assert.match(mobileRules,/font-size:\.55rem/);
+ assert.match(mobileRules,/font-size:var\(--ui-button-font-size\) !important/);
  assert.match(html,/id="drive-connect-button"/);
 });
 
 
+test('app-wide buttons share one Lexend label size while icon-only controls remain distinct',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ const legalCss=readFileSync(new URL('../assets/legal.css',import.meta.url),'utf8');
+ assert.match(gardenCss,/:root\\s*\\{[^}]*--ui-button-font-size:\\s*\\.78rem/s);
+ assert.match(gardenCss,/body \\*::after/);
+ assert.match(gardenCss,/font-size:var\\(--ui-button-font-size\\) !important/);
+ assert.match(appCss,/font-size:var\\(--ui-button-font-size\\) !important/);
+ assert.match(legalCss,/font-family: "Lexend".*!important/);
+ assert.match(legalCss,/font-size: \\.78rem !important/);
+ assert.match(gardenCss,/max-width: min\\(100%, 24rem\\)/);
+ assert.match(gardenCss,/max-height: min\\(86dvh, 42rem\\)/);
+ assert.match(gardenCss,/padding: \\.8rem !important/);
+});
+ 
 test('phone checklist date, clock, and Reset text use matching compact sizes',()=>{
  const dateRules=appCss.slice(appCss.lastIndexOf('/* Match the phone date text'));
  assert.match(dateRules,/@media \(max-width:620px\)/);
