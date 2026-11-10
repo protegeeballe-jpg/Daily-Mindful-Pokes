@@ -59,6 +59,7 @@ import {
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let currentStep = 1;
+        let lastObservedDeviceDate = null;
         let activeModalType = null;
         let activeTargetCheckboxId = null;
         let mediaRecorder, audioChunks = [];
@@ -222,15 +223,32 @@ import {
             showPage('garden');
         }
 
+        function getDeviceLocalDateString(now = new Date()) {
+            return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+        }
+
         function updateDeviceClock() {
-            const clock = document.getElementById('device-clock');
-            if (!clock) return;
             const now = new Date();
-            clock.textContent = new Intl.DateTimeFormat(undefined, {
-                hour: 'numeric',
-                minute: '2-digit'
-            }).format(now);
-            clock.dateTime = now.toISOString();
+            const clock = document.getElementById('device-clock');
+            if (clock) {
+                clock.textContent = new Intl.DateTimeFormat(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }).format(now);
+                clock.dateTime = now.toISOString();
+            }
+
+            const today = getDeviceLocalDateString(now);
+            const dateInput = document.getElementById('currentDate');
+            if (lastObservedDeviceDate && lastObservedDeviceDate !== today
+                && dateInput?.value === lastObservedDeviceDate) {
+                dateInput.value = today;
+                handleDateChange().catch(error =>
+                    setWritingSecurityStatus('The new device date could not be loaded. Your previous Diary entries remain saved. '
+                        + (error?.message || ''), 'error')
+                );
+            }
+            lastObservedDeviceDate = today;
         }
 
         function showPage(pageId) {
@@ -1855,8 +1873,9 @@ import {
             const previousDate=writingLoadedDate;
             if(writingCryptoKey&&previousDate)await savePrivateWritingForDate(previousDate);
             loadData();
+            const dateString = getCurrentWritingDate();
+            updateDiaryDateLabel(dateString);
             if(writingCryptoKey){
-                const dateString = getCurrentWritingDate();
                 try {
                     await loadPrivateWritingForDate(dateString);
                     renderDiaryLocationLogs(dateString);
