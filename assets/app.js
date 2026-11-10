@@ -43,6 +43,10 @@ import {
     APP_PIN_CONFIG_KEY,createAppPinRecord,isValidAppPin,migrateLegacyAppPin,verifyAppPin
 } from './app-gate.js';
 import {
+    LOCATION_CHECKIN_OPTIONS, getLocationCheckinStorageKey,
+    loadLocationCheckins, saveLocationCheckin
+} from './location-checkin.js';
+import {
     writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
     handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,
@@ -260,6 +264,7 @@ import {
             if (nextStep >= 1 && nextStep <= 6) {
                 document.getElementById('card-step-' + currentStep).classList.add('hidden');
                 currentStep = nextStep;
+                document.getElementById('location-checkin-footer')?.classList.toggle('hidden', currentStep !== 1);
                 document.getElementById('card-step-' + currentStep).classList.remove('hidden');
 
                 document.getElementById('current-step-num').innerText = currentStep;
@@ -748,6 +753,80 @@ import {
         }
 
         function getStorageKey(dateStr) { return 'mindful_pokes_data_' + dateStr; }
+
+        const locationCaptureVersions = new Map();
+
+        function setLocationCheckinMessage(message, state = 'info') {
+            const element = document.getElementById('location-checkin-message');
+            if (!element) return;
+            element.textContent = message;
+            element.dataset.state = state;
+            element.classList.toggle('hidden', !message);
+        }
+
+        function renderLocationCheckinDetails(dateString) {
+            const container = document.getElementById('location-checkin-details');
+            if (!container) return;
+            container.replaceChildren();
+
+            const records = loadLocationCheckins(localStorage, dateString);
+            for (const [locationId, record] of Object.entries(records)) {
+                const capturedAt = new Date(record.capturedAt);
+                const formattedTime = new Intl.DateTimeFormat(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                }).format(capturedAt);
+                const line = document.createElement('p');
+                line.className = 'location-checkin-entry';
+                line.textContent = LOCATION_CHECKIN_OPTIONS[locationId] + ': '
+                    + record.latitude.toFixed(6) + ', ' + record.longitude.toFixed(6)
+                    + ' (accuracy ±' + Math.round(record.accuracyMeters) + ' m) · ' + formattedTime;
+                container.append(line);
+            }
+
+            container.classList.toggle('hidden', Object.keys(records).length === 0);
+        }
+
+        function requestLocationCheckin(checkbox) {
+            const locationId = checkbox?.dataset?.id;
+            if (!checkbox?.checked || !Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId)) return;
+
+            const dateString = document.getElementById('currentDate')?.value;
+            if (!dateString) return;
+
+            const requestVersion = (locationCaptureVersions.get(locationId) || 0) + 1;
+            locationCaptureVersions.set(locationId, requestVersion);
+
+            if (!navigator.geolocation) {
+                setLocationCheckinMessage('This browser does not provide location access. The location was not recorded.', 'error');
+                return;
+            }
+
+            setLocationCheckinMessage('Getting a fresh location for ' + LOCATION_CHECKIN_OPTIONS[locationId] + '…');
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    if (locationCaptureVersions.get(locationId) !== requestVersion) return;
+                    try {
+                        saveLocationCheckin(localStorage, dateString, locationId, position);
+                        renderLocationCheckinDetails(document.getElementById('currentDate')?.value || dateString);
+                        setLocationCheckinMessage('Location recorded for ' + LOCATION_CHECKIN_OPTIONS[locationId] + '.', 'success');
+                    } catch (error) {
+                        setLocationCheckinMessage('The location was received but could not be saved on this device.', 'error');
+                    }
+                },
+                error => {
+                    if (locationCaptureVersions.get(locationId) !== requestVersion) return;
+                    const message = error?.code === 1
+                        ? 'Location permission was not granted. The location was not recorded.'
+                        : error?.code === 3
+                            ? 'Location capture timed out. Uncheck and check the box again to retry.'
+                            : 'A current location could not be obtained. Uncheck and check the box again to retry.';
+                    setLocationCheckinMessage(message, 'error');
+                },
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+            );
+        }
 
         function updateScoreDisplay() {
             let totalScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
@@ -1260,6 +1339,7 @@ import {
 
             checkSectionCompletion();
             updateScoreDisplay();
+            renderLocationCheckinDetails(dateStr);
         }
 
         function saveData(e) {
@@ -1312,6 +1392,7 @@ import {
             if(confirm("Reset today's checklist?")){
                 await flushPrivateWritingQueue();
                 localStorage.removeItem(getStorageKey(dateStr));
+                localStorage.removeItem(getLocationCheckinStorageKey(dateStr));
                 localStorage.removeItem(getSecureWritingStorageKey('notes',dateStr));
                 loadData();
                 if(writingCryptoKey){
@@ -1398,6 +1479,16 @@ import {
             const trigger=event.target.closest('[data-change-action]');
             if(trigger&&trigger.dataset.changeAction==='handleDateChange')handleDateChange();
         },true);
+        document.addEventListener('change', event => {
+            const checkbox = event.target;
+            if (!checkbox?.matches?.('#card-step-1 .app-chk.sec-1')) return;
+            const locationId = checkbox.dataset.id;
+            if (checkbox.checked) {
+                requestLocationCheckin(checkbox);
+            } else if (Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId)) {
+                locationCaptureVersions.set(locationId, (locationCaptureVersions.get(locationId) || 0) + 1);
+            }
+        });
         document.getElementById('app-pin-form')?.addEventListener('submit',event=>{
             event.preventDefault();
             submitAppPin();
