@@ -37,7 +37,7 @@ body.garden-overlay-open { overflow: hidden; }
 .garden-small-button:focus-visible,.garden-action-button:focus-visible,.garden-overlay select:focus-visible,.garden-overlay textarea:focus-visible {
     outline: 3px solid #709e82; outline-offset: 3px;
 }
-.garden-screen-title { margin: .4rem 0 1rem; text-align: center; color: #355b43; font: 800 clamp(1.8rem,5vw,2.8rem)/1.15 Georgia,serif; }
+.garden-screen-title { margin: .4rem 0 1rem; text-align: center; color: #355b43; font: 800 clamp(1.8rem,5vw,2.8rem)/1.15 var(--app-font-family); }
 .garden-intro { max-width: 650px; margin: 0 auto 1rem; text-align: center; color: #5d715f; }
 .garden-room-card {
     position:relative;
@@ -103,7 +103,7 @@ body.garden-overlay-open { overflow: hidden; }
     -webkit-backdrop-filter:blur(8px);
     backdrop-filter:blur(8px);
 }
-.garden-planting-panel h3 { margin:0 0 .35rem; color:#355b43; font:800 1.3rem Georgia,serif; }
+.garden-planting-panel h3 { margin:0 0 .35rem; color:#355b43; font:800 1.3rem var(--app-font-family); }
 .garden-planting-panel p { color:#647665; font-size:.88rem; }
 .garden-planting-panel fieldset {
     min-width:0;
@@ -175,7 +175,7 @@ body.garden-overlay-open { overflow: hidden; }
 .garden-plant-label { font-size:.75rem; font-weight:900; }
 .garden-growth-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; padding:1rem; }
 .garden-growth-card { padding:1rem; border:1px solid #d4e0cf; border-radius:1.1rem; background:#fffdf7; }
-.garden-growth-card h3 { margin:0; color:#355b43; font:800 1.1rem Georgia,serif; }
+.garden-growth-card h3 { margin:0; color:#355b43; font:800 1.1rem var(--app-font-family); }
 .garden-growth-description { min-height:1.4rem; margin:.45rem 0; color:#647665; font-size:.82rem; }
 .garden-growth-meta { display:flex; justify-content:space-between; gap:.5rem; color:#718070; font-size:.7rem; }
 .garden-meter { height:.6rem; margin:.55rem 0 .35rem; overflow:hidden; border-radius:99px; background:#e7ecdf; }
@@ -394,3 +394,155 @@ body.garden-overlay-open { overflow: hidden; }
 
 /* Keep the Drive feedback line out of the layout until a user action needs it. */
 .drive-sync-status:empty { display:none; }
+
+
+/* App-wide typography and compact window-panel tuning.
+   Checklist activity cards are intentionally left unchanged. */
+:root {
+    --ui-button-font-size: .78rem;
+}
+html,
+body,
+body *,
+body *::before,
+body *::after {
+    font-family: "Lexend", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+    font-family: inherit !important;
+    font-size: var(--ui-button-font-size) !important;
+    line-height: 1.2;
+}
+/* Preserve a clear close glyph; this control has no text label. */
+.diary-archive-close,
+#anim-modal [data-action="closeModal"] {
+    font-size: 1.15rem !important;
+}
+
+/* Access and activity dialogs. */
+#view-pin > .card-yellow {
+    box-sizing: border-box;
+    max-width: min(100%, 24rem);
+    padding: 1.15rem !important;
+    border-radius: 1.25rem !important;
+}
+#anim-modal {
+    padding: .65rem !important;
+}
+#modal-content-box {
+    box-sizing: border-box;
+    max-width: min(100%, 26rem);
+    padding: 1.1rem !important;
+    border-radius: 1.25rem !important;
+}
+#modal-animation-target {
+    margin: .65rem 0 !important;
+}
+#modal-instructions {
+    margin-bottom: .7rem !important;
+}
+#modal-complete-btn {
+    min-height: 44px;
+    padding: .62rem .85rem !important;
+}
+
+/* Diary and Notebook panels. */
+#view-diary > .card-lavender {
+    padding: .8rem !important;
+    border-radius: 1.2rem !important;
+}
+#diary-lock-panel {
+    margin-bottom: .65rem !important;
+    padding: .8rem !important;
+}
+.diary-archive-panel {
+    padding: .55rem;
+}
+.diary-archive-dialog {
+    width: min(100%, 32rem);
+    max-height: min(86vh, 42rem);
+    max-height: min(86dvh, 42rem);
+    border-radius: 1rem;
+}
+.diary-archive-header {
+    padding: .65rem .8rem;
+}
+#diary-archive-list-view,
+#diary-archive-entry-view {
+    padding: .65rem .8rem .75rem;
+}
+.diary-archive-section {
+    margin-bottom: .6rem;
+    padding: .6rem;
+}
+.diary-archive-record {
+    gap: .25rem;
+    padding: .5rem;
+}
+
+/* Forge Room setup and backup panels. */
+.garden-topbar {
+    gap: .55rem;
+    margin-bottom: .55rem;
+    padding: .5rem .7rem;
+    border-radius: .95rem;
+}
+.garden-screen-title {
+    margin: .2rem 0 .45rem;
+}
+.garden-intro {
+    margin-bottom: .5rem;
+}
+.garden-planting-panel {
+    width: min(calc(100% - 1.2rem), 660px);
+    margin: 0 auto .7rem;
+    padding: .85rem;
+    border-radius: 1.1rem;
+}
+.garden-planting-panel fieldset {
+    margin: .65rem 0;
+}
+.garden-choice-grid {
+    gap: .55rem;
+    margin: .65rem 0;
+}
+.garden-choice select {
+    min-height: 42px;
+    padding: .5rem;
+}
+.drive-sync-panel {
+    max-width: 640px;
+    margin: .55rem auto 0;
+    padding: .55rem .65rem;
+    border-radius: .9rem;
+}
+.drive-sync-controls {
+    margin-top: .4rem;
+}
+.drive-sync-actions {
+    gap: .3rem;
+}
+
+/* Keep compact dimensions on narrow phones while retaining the shared button size. */
+@media (max-width: 420px) {
+    .diary-archive-panel {
+        padding: .4rem;
+    }
+    .diary-archive-dialog {
+        max-height: min(90vh, 42rem);
+        max-height: min(90dvh, 42rem);
+    }
+    .drive-sync-panel {
+        width: min(calc(100% - .8rem), 640px);
+        padding: .42rem .48rem;
+    }
+    .drive-sync-panel .garden-action-button {
+        font-size: var(--ui-button-font-size) !important;
+        line-height: 1.2;
+        min-height: 26px;
+        padding: .18rem .3rem !important;
+    }
+}
