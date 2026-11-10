@@ -454,7 +454,9 @@ test('Personal Diary notebook organizes written entries, locations, and voice no
   assert.match(app,/writingCryptoKey && !diaryViewingHistoricalDate/);
   assert.match(appCss,/\.diary-return-today\s*\{/);
   assert.match(app,/async function openDiaryArchiveDate\(dateString\)/);
-  assert.match(app,/readPrivateDiaryEntryForDate\(dateString\)/);
+  assert.match(app,/await loadPrivateWritingForDate\(dateString\)/);
+  assert.match(app,/writingLoadedDate !== dateString/);
+  assert.match(app,/await savePrivateWritingForDate\(previousDate\)/);
   assert.match(app,/loadLocationCheckinEntries\(localStorage, dateString\)/);
   assert.match(app,/loadPrivateVoiceNotesForDate\(dateString\)/);
   assert.match(app,/function formatDiaryArchiveDate\(dateString\)/);
