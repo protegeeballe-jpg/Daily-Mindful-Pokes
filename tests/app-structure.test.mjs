@@ -6,6 +6,7 @@ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
 const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
 const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
 const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
+const voiceNoteStore=readFileSync(new URL('../assets/voice-note-store.js',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
 const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
@@ -267,6 +268,7 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/garden.css',
   '../assets/garden.js',
   '../assets/location-checkin.js',
+  '../assets/voice-note-store.js',
   '../assets/fonts/OFL-Lexend.txt',
   '../assets/icon.svg',
   '../assets/tailwind.generated.css',
@@ -275,7 +277,8 @@ test('repository text files avoid em dash punctuation',()=>{
   './app-gate.test.mjs',
   './app-structure.test.mjs',
   './garden-model.test.mjs',
-  './location-checkin.test.mjs'
+  './location-checkin.test.mjs',
+  './voice-note-store.test.mjs'
  ];
  const emDash=String.fromCodePoint(0x2014);
  for(const path of textFiles){
@@ -388,7 +391,38 @@ test('Google Drive backup uses a strict allowlist and excludes the app PIN',()=>
  assert.match(drive,/PRIVATE_NOTE_IDS\.some\(id => Object\.hasOwn\(data, id\)\)/);
  assert.match(drive,/ENCRYPTED_RECORD_PATTERN/);
  assert.match(drive,/score_awarded_/);
+ assert.match(drive,/validatePrivateVoiceNoteBackup/);
+ assert.match(drive,/const voiceNotes = await exportPrivateVoiceNotes\(\)/);
+ assert.match(drive,/if \(includesVoiceNotes\) await restorePrivateVoiceNotes\(downloaded\.voiceNotes\)/);
  assert.match(readme,/The device's app PIN verifier is deliberately excluded/);
+});
+
+test('Diary voice notes are saved persistently, encrypted, and preserved by checklist reset',()=>{
+  assert.match(html,/id="diary-voice-notes"/);
+  assert.match(html,/id="diary-voice-note-list"/);
+  assert.match(html,/Voice notes are encrypted with your private-writing passphrase/);
+  assert.doesNotMatch(html,/audio-container|diary-audio|temporary playback in this session/);
+  assert.match(app,/savePrivateVoiceNoteForDate\(dateString, blob\)/);
+  assert.match(app,/loadPrivateVoiceNotesForDate\(dateString\)/);
+  assert.match(app,/mediaRecorder\.mimeType/);
+  assert.doesNotMatch(app,/audio\/mp3/);
+  assert.match(app,/registerVoiceNoteStopHandler\(stopActiveVoiceRecording\)/);
+  assert.match(writing,/function savePrivateVoiceNoteForDate\(dateStr,blob\)/);
+  assert.match(writing,/await stopRegisteredVoiceNoteRecording\(\)/);
+  assert.match(writing,/document\.dispatchEvent\(new CustomEvent\('private-writing:locked'\)\)/);
+  assert.match(voiceNoteStore,/indexedDB\.open/);
+  assert.match(voiceNoteStore,/crypto\.subtle\.encrypt/);
+  assert.match(voiceNoteStore,/crypto\.subtle\.decrypt/);
+  assert.match(voiceNoteStore,/export async function exportEncryptedVoiceNotes/);
+  assert.match(voiceNoteStore,/export async function restoreEncryptedVoiceNotes/);
+  const resetStart=app.indexOf('async function resetDayData()');
+  const resetEnd=app.indexOf('async function toggleVoiceRecording()',resetStart);
+  const dailyReset=app.slice(resetStart,resetEnd);
+  assert.doesNotMatch(dailyReset,/voiceNotes|voice-note|restoreEncryptedVoiceNotes|clear.*voice/i);
+  const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+  assert.match(drive,/exportPrivateVoiceNotes/);
+  assert.match(drive,/restorePrivateVoiceNotes/);
+  assert.match(drive,/voiceNotes/);
 });
 
 test('public legal pages accurately describe optional manual Google Drive backup',()=>{
