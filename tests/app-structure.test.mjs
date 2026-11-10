@@ -257,6 +257,7 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/garden-model.js',
   '../assets/garden.css',
   '../assets/garden.js',
+  '../assets/location-checkin.js',
   '../assets/fonts/OFL-Lexend.txt',
   '../assets/icon.svg',
   '../assets/tailwind.generated.css',
@@ -445,6 +446,31 @@ test('phone checklist date, clock, and Reset text use matching compact sizes',()
  assert.match(dateRules,/checklist-date-input\s*\{[^}]*font-size:\.58rem !important/s);
  assert.match(dateRules,/checklist-reset-button\s*\{[^}]*font-size:\.58rem !important/s);
  assert.match(appCss,/checklist-device-clock\s*\{[^}]*font-size:\.58rem !important/s);
+});
+
+test('the four Card 1 checkboxes capture one-time local coordinates without changing the card design',()=>{
+ const firstCardStart=html.indexOf('<!-- CARD 1 -->');
+ const firstCardEnd=html.indexOf('<!-- CARD 2 -->',firstCardStart);
+ const firstCard=html.slice(firstCardStart,firstCardEnd);
+ const locationIds=['loc-home','loc-office','loc-house','loc-out'];
+ for(const id of locationIds){
+  assert.match(firstCard,new RegExp('type="checkbox"[^>]*class="app-chk sec-1"[^>]*data-id="'+id+'"'));
+ }
+ assert.equal((firstCard.match(/class="app-chk sec-1"/g)||[]).length,4);
+ assert.match(app,/navigator\.geolocation\.getCurrentPosition/);
+ assert.match(app,/enableHighAccuracy: true, maximumAge: 0, timeout: 15000/);
+ assert.match(app,/saveLocationCheckin\(localStorage, dateString, locationId, position\)/);
+ assert.doesNotMatch(app,/navigator\.geolocation\.watchPosition/);
+ assert.match(html,/Only you can view these details in the App/);
+ const locationModule=readFileSync(new URL('../assets/location-checkin.js',import.meta.url),'utf8');
+ const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ assert.match(locationModule,/faith_focus_location_checkins_v1_/);
+ assert.doesNotMatch(drive,/faith_focus_location_checkins_v1_/);
+ assert.match(app,/localStorage\.removeItem\(getLocationCheckinStorageKey\(dateStr\)\)/);
+ const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
+ const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
+ assert.match(privacy,/Location check-ins/);
+ assert.match(terms,/one-time current location/);
 });
 
 test('Drive panel closes cleanly before the outdoor scene so garden scenes remain siblings',()=>{
