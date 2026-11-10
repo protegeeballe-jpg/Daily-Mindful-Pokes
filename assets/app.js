@@ -71,6 +71,7 @@ import {
         let voiceNotesRenderVersion = 0;
         let diaryArchiveVoiceUrls = [];
         let diaryArchiveDateSummaries = [];
+        let diaryViewingHistoricalDate = null;
 
         // Inactivity auto-lock timer (5 minutes = 300,000 ms)
         const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
@@ -241,7 +242,7 @@ import {
             const today = getDeviceLocalDateString(now);
             const dateInput = document.getElementById('currentDate');
             if (lastObservedDeviceDate && lastObservedDeviceDate !== today
-                && dateInput?.value === lastObservedDeviceDate) {
+                && !diaryViewingHistoricalDate && dateInput?.value === lastObservedDeviceDate) {
                 dateInput.value = today;
                 handleDateChange().catch(error =>
                     setWritingSecurityStatus('The new device date could not be loaded. Your previous Diary entries remain saved. '
@@ -1087,112 +1088,66 @@ import {
         }
 
         async function openDiaryArchiveDate(dateString) {
-            if (!writingCryptoKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return;
+            if (!writingCryptoKey || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return;
 
-            const detail = document.getElementById('diary-archive-entry-view');
-            const listView = document.getElementById('diary-archive-list-view');
-            const title = document.getElementById('diary-archive-entry-date');
-            const written = document.getElementById('diary-archive-entry-written');
-            const locations = document.getElementById('diary-archive-entry-locations');
-            const voiceNotesList = document.getElementById('diary-archive-entry-voice-notes');
-            if (!detail || !listView || !title || !written || !locations || !voiceNotesList) return;
-
-            diaryArchiveVoiceUrls.forEach(url => URL.revokeObjectURL(url));
-            diaryArchiveVoiceUrls = [];
-            listView.classList.add('hidden');
-            detail.classList.remove('hidden');
-            title.textContent = formatDiaryArchiveDate(dateString);
-            written.replaceChildren();
-            locations.replaceChildren();
-            voiceNotesList.replaceChildren();
-
-            const writtenHeading = document.createElement('h4');
-            writtenHeading.className = 'diary-archive-section-title';
-            writtenHeading.textContent = 'Written entry';
-            written.append(writtenHeading);
-
-            const writtenBody = document.createElement('p');
-            writtenBody.className = 'diary-archive-written-body';
-            const locationHeading = document.createElement('h4');
-            locationHeading.className = 'diary-archive-section-title';
-            locationHeading.textContent = 'Places checked in';
-            locations.append(locationHeading);
-            const voiceHeading = document.createElement('h4');
-            voiceHeading.className = 'diary-archive-section-title';
-            voiceHeading.textContent = 'Voice notes';
-            voiceNotesList.append(voiceHeading);
+            const editor = document.getElementById('private-diary-entry');
+            const recordButton = document.getElementById('record-btn');
+            if (!editor || !recordButton) return;
 
             try {
-                const [entryText, voiceNotes] = await Promise.all([
-                    readPrivateDiaryEntryForDate(dateString),
-                    loadPrivateVoiceNotesForDate(dateString)
-                ]);
-                writtenBody.textContent = entryText.trim() || 'No written entry was saved for this date.';
-                written.append(writtenBody);
+                await flushPrivateWritingQueue();
+                const entryText = await readPrivateDiaryEntryForDate(dateString);
+                diaryViewingHistoricalDate = dateString;
+                editor.value = entryText;
+                editor.readOnly = true;
+                editor.setAttribute('aria-label', 'Read-only Diary entry for ' + formatDiaryArchiveDate(dateString));
+                editor.placeholder = 'No written entry was saved for this date.';
+                recordButton.disabled = true;
+                recordButton.setAttribute('aria-disabled', 'true');
+                recordButton.title = 'Voice notes from past dates can be played below, but new recordings are for today.';
+                recordButton.classList.add('opacity-50', 'cursor-not-allowed');
 
-                const locationEntries = loadLocationCheckinEntries(localStorage, dateString);
-                if (!locationEntries.length) {
-                    const empty = document.createElement('li');
-                    empty.className = 'diary-archive-empty';
-                    empty.textContent = 'No location check-ins were saved for this date.';
-                    locations.append(empty);
-                } else {
-                    locationEntries.forEach((record, index) => {
-                        const item = document.createElement('li');
-                        item.className = 'diary-archive-record';
+                updateDiaryDateLabel(dateString);
+                renderDiaryLocationLogs(dateString);
+                await renderDiaryVoiceNotes(dateString);
 
-                        const label = document.createElement('strong');
-                        label.className = 'diary-archive-record-title';
-                        label.textContent = (index + 1) + '. ' + LOCATION_CHECKIN_OPTIONS[record.locationId];
+                const panel = document.getElementById('diary-archive-panel');
+                if (panel) panel.classList.add('hidden');
+                document.getElementById('diary-archive-list-view')?.classList.remove('hidden');
+                document.getElementById('diary-archive-entry-view')?.classList.add('hidden');
+                diaryArchiveVoiceUrls.forEach(url => URL.revokeObjectURL(url));
+                diaryArchiveVoiceUrls = [];
+                document.getElementById('diary-archive-entry-voice-notes')?.replaceChildren();
 
-                        const row = document.createElement('div');
-                        row.className = 'diary-archive-record-details';
-                        row.append(createLocationCoordinateControls(record));
-
-                        const metadata = document.createElement('p');
-                        metadata.className = 'diary-archive-record-meta';
-                        metadata.textContent = 'Accuracy ±' + Math.round(record.accuracyMeters) + ' m · '
-                            + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-                                .format(new Date(record.capturedAt));
-
-                        item.append(label, row, metadata);
-                        locations.append(item);
-                    });
-                }
-
-                if (!voiceNotes.length) {
-                    const empty = document.createElement('li');
-                    empty.className = 'diary-archive-empty';
-                    empty.textContent = 'No voice notes were saved for this date.';
-                    voiceNotesList.append(empty);
-                } else {
-                    voiceNotes.forEach((note, index) => {
-                        const item = document.createElement('li');
-                        item.className = 'diary-archive-record';
-
-                        const label = document.createElement('strong');
-                        label.className = 'diary-archive-record-title';
-                        label.textContent = 'Voice Note ' + (index + 1) + ' · '
-                            + new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-                                .format(new Date(note.capturedAt));
-
-                        const player = document.createElement('audio');
-                        player.controls = true;
-                        player.preload = 'none';
-                        player.className = 'diary-archive-audio';
-                        player.setAttribute('aria-label', 'Play archived voice note ' + (index + 1));
-                        const url = URL.createObjectURL(note.blob);
-                        diaryArchiveVoiceUrls.push(url);
-                        player.src = url;
-
-                        item.append(label, player);
-                        voiceNotesList.append(item);
-                    });
-                }
+                const label = document.getElementById('diary-current-date-label');
+                if (label) label.textContent = formatDiaryArchiveDate(dateString) + ' · SAVED ENTRY';
+                document.getElementById('diary-editor-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (error) {
-                writtenBody.textContent = 'This date could not be opened. ' + (error?.message || '');
-                written.append(writtenBody);
+                setWritingSecurityStatus('This saved Diary date could not be opened. Your existing entries were not changed. '
+                    + (error?.message || ''), 'error');
             }
+        }
+
+        function restoreCurrentDiaryDate() {
+            if (!diaryViewingHistoricalDate) return;
+            diaryViewingHistoricalDate = null;
+            const editor = document.getElementById('private-diary-entry');
+            const recordButton = document.getElementById('record-btn');
+            if (editor) {
+                editor.readOnly = false;
+                editor.removeAttribute('aria-label');
+                editor.placeholder = 'Your private thoughts are encrypted before they are saved on this device.';
+            }
+            if (recordButton) {
+                recordButton.disabled = false;
+                recordButton.removeAttribute('aria-disabled');
+                recordButton.removeAttribute('title');
+                recordButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            handleDateChange().catch(error =>
+                setWritingSecurityStatus('Your current Diary page could not be restored. Saved entries remain unchanged. '
+                    + (error?.message || ''), 'error')
+            );
         }
 
         function updateDiaryDateLabel(dateString = getCurrentWritingDate()) {
@@ -1874,6 +1829,15 @@ import {
             if(writingCryptoKey&&previousDate)await savePrivateWritingForDate(previousDate);
             loadData();
             const dateString = getCurrentWritingDate();
+            if (diaryViewingHistoricalDate) {
+                const historicalDate = diaryViewingHistoricalDate;
+                const editor = document.getElementById('private-diary-entry');
+                if (editor) editor.readOnly = true;
+                updateDiaryDateLabel(historicalDate);
+                renderDiaryLocationLogs(historicalDate);
+                await renderDiaryVoiceNotes(historicalDate);
+                return;
+            }
             updateDiaryDateLabel(dateString);
             if(writingCryptoKey){
                 try {
@@ -2084,7 +2048,13 @@ import {
         const delegatedClickActions={
             showPage:el=>showPage(el.dataset.page),
             openModal:el=>openModal(el.dataset.modal,el.dataset.target),
-            openDiaryArchive:()=>openDiaryArchive(),
+            openDiaryArchive:()=>{
+                if (diaryViewingHistoricalDate) {
+                    restoreCurrentDiaryDate();
+                    return;
+                }
+                openDiaryArchive();
+            },
             closeDiaryArchive:()=>closeDiaryArchive(),
             backDiaryArchiveList:()=>showDiaryArchiveList(),
             openDiaryArchiveDate:el=>openDiaryArchiveDate(el.dataset.date),
