@@ -835,3 +835,20 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
     .diary-notebook-button {min-height:2rem;padding:.3rem .5rem;}
     .diary-notebook-button-label {font-size:.65rem;}
 }
+
+.diary-return-today {
+    flex:0 0 auto;
+    padding:.35rem .55rem;
+    border:1px solid #d9c3ee;
+    border-radius:.65rem;
+    background:#faf6ff;
+    color:#68458a;
+    font-size:.62rem;
+    font-weight:800;
+}
+.diary-return-today:hover {background:#f1e8fb;}
+.diary-return-today:focus-visible {outline:3px solid #a88ac8;outline-offset:2px;}
+#private-diary-entry[readonly] {
+    background-image:linear-gradient(transparent 95%,rgba(150,120,175,.07) 95%);
+    cursor:default;
+}
