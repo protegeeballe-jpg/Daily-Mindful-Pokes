@@ -943,7 +943,7 @@ import {
         async function collectDiaryArchiveDates() {
             const summaries = new Map();
             const ensureDate = dateString => {
-                if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return null;
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null;
                 if (!summaries.has(dateString)) {
                     summaries.set(dateString, {
                         dateString,
@@ -1069,7 +1069,7 @@ import {
         }
 
         async function openDiaryArchiveDate(dateString) {
-            if (!writingCryptoKey || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return;
+            if (!writingCryptoKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return;
 
             const detail = document.getElementById('diary-archive-entry-view');
             const listView = document.getElementById('diary-archive-list-view');
