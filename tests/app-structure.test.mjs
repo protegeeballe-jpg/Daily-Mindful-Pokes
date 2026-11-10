@@ -398,6 +398,7 @@ test('public legal pages accurately describe optional manual Google Drive backup
 
 
 test('compact checklist and Drive controls reduce visual clutter without removing controls',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  assert.match(appCss,/#view-checklist #btn-prev/);
  assert.match(appCss,/#view-checklist #btn-next/);
  assert.match(appCss,/min-height:32px/);
