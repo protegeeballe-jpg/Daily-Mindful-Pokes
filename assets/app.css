@@ -581,7 +581,7 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
 }
 .location-checkin-message[data-state="success"] {color:#2f6b43;}
 .location-checkin-message[data-state="error"] {color:#a33745;}
-.location-checkin-details {
+.location-checkin-details:not(.hidden) {
     display:grid;
     gap:.12rem;
     margin:0 auto .25rem;
