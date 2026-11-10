@@ -289,8 +289,12 @@ import {
             if (pageId === 'diary') {
                 renderDiarySecurityUI();
                 const dateString = getCurrentWritingDate();
-                updateDiaryDateLabel(dateString);
-                if (writingCryptoKey && writingLoadedDate !== dateString) {
+                if (writingCryptoKey && diaryViewingHistoricalDate) {
+                    openDiaryArchiveDate(diaryViewingHistoricalDate);
+                } else {
+                    updateDiaryDateLabel(dateString);
+                }
+                if (!diaryViewingHistoricalDate && writingCryptoKey && writingLoadedDate !== dateString) {
                     loadPrivateWritingForDate(dateString)
                         .then(async () => {
                             renderDiaryLocationLogs(dateString);
