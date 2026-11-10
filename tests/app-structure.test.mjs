@@ -426,6 +426,16 @@ test('Diary voice notes are saved persistently, encrypted, and preserved by chec
   assert.match(drive,/voiceNotes/);
 });
 
+test('Diary editor scrolls within its fixed viewport so the Record Voice Note button remains reachable',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ assert.match(gardenCss,/#view-diary:not\\(\\.hidden\\) > \\.card-lavender\\s*\\{[^}]*display:flex/s);
+ assert.match(gardenCss,/#diary-editor-panel:not\\(\\.hidden\\)\\s*\\{[^}]*overflow-y:auto/s);
+ assert.match(gardenCss,/-webkit-overflow-scrolling:touch/);
+ assert.match(gardenCss,/#diary-editor-panel #record-btn\\s*\\{[^}]*min-height:2\\.5rem/s);
+ assert.match(html,/id="record-btn" data-action="toggleVoiceRecording"/);
+ assert.match(app,/toggleVoiceRecording:..toggleVoiceRecording\\(\\)/);
+});
+
 test('Personal Diary notebook organizes written entries, locations, and voice notes by local date',()=>{
   assert.match(html,/id="diary-archive-button"/);
   assert.match(html,/data-action="openDiaryArchive"/);
