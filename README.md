@@ -1,4 +1,4 @@
-**Security & Privacy Model**
+# Faith & Focus: Daily Armor\n\n**Security & Privacy Model**
 
 Local App PIN: Designed for quick screen privacy on your device. New PINs must contain 6–12 digits and are stored securely as salted PBKDF2-HMAC-SHA-256 verifiers (600,000 iterations). Legacy PINs are automatically upgraded at launch.
 Inactivity Auto-Lock Timer (5 minutes)
@@ -33,14 +33,14 @@ The checklist Reset button resets daily entries and reflections without affectin
 
 Storage Optimization & Auto-Compression
 Device Optimization: Utilizes native browser CompressionStream (Gzip) via assets/compressor.js to minimize local storage usage on mobile devices.
-Login Auto-Compression: Upon signing in with Google, your current local progress and encrypted entries are automatically compressed and saved locally on your device.
+Local Backup Preparation: Compression is performed when you explicitly request a backup. No Google sign-in or upload is triggered automatically.
 Graceful Fallbacks: On legacy browsers where Gzip streaming is unavailable, raw string storage is used seamlessly to ensure continuous app functionality.
 **Optional Google Drive Backup & Restore (appDataFolder)
 **
 Non-Sensitive Private Scope: Cloud backup utilizes Google Identity Services (OAuth 2.0) with the isolated https://www.googleapis.com/auth/drive.appdata scope.
 Private Folder Isolation: Backup files (faith-focus-armor-backup.gz) are saved exclusively to a hidden app data folder in your personal Google Drive, inaccessible to other third-party Drive apps.
 
-**User-Controlled Sync: Backup and restore operations are strictly manual and user-initiated. Data is uploaded to Google Drive only when you explicitly select Back Up This Device.**
+**User-Controlled Sync: Backup and restore operations are strictly manual and user-initiated. Data is uploaded to Google Drive only when you explicitly select Back Up This Device. The device's app PIN verifier is deliberately excluded from every backup.**
 
 Manual Restore: Selecting Restore From Drive retrieves your compressed backup file from your Google Drive app data and restores your app state.
 
