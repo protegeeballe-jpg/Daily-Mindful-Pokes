@@ -412,3 +412,27 @@ test('compact checklist and Drive controls reduce visual clutter without removin
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
 });
+
+
+test('phone checklist toolbar stays compact and next-card navigation remains visible',()=>{
+ const mobileRules=appCss.slice(appCss.lastIndexOf('/* Phone layout:'));
+ assert.match(mobileRules,/@media \(max-width:620px\)/);
+ assert.match(mobileRules,/width:fit-content/);
+ assert.match(mobileRules,/flex-flow:row nowrap/);
+ assert.match(mobileRules,/checklist-date-input/);
+ assert.match(mobileRules,/display:none !important/);
+ assert.match(mobileRules,/position:fixed !important/);
+ assert.match(mobileRules,/checklist-step-navigation/);
+ assert.match(mobileRules,/safe-area-inset-bottom/);
+ assert.match(html,/class="checklist-step-navigation flex justify-between items-center mt-6"/);
+});
+
+test('Google Drive panel and buttons use compact phone-only dimensions',()=>{
+ const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
+ const mobileRules=gardenCss.slice(gardenCss.lastIndexOf('/* Keep Drive controls'));
+ assert.match(mobileRules,/@media \(max-width:420px\)/);
+ assert.match(mobileRules,/width:min\(calc\(100% - \.8rem\), 720px\)/);
+ assert.match(mobileRules,/min-height:22px/);
+ assert.match(mobileRules,/font-size:\.55rem/);
+ assert.match(html,/id="drive-connect-button"/);
+});
