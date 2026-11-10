@@ -129,10 +129,10 @@
                         <p>Optional cloud backup is being reviewed against Google Drive API requirements. Your app continues to work locally.</p>
                     </div>
                     <div class="drive-sync-controls">
-                        <button id="drive-connect-button" type="button" class="garden-action-button primary" disabled>Google Drive Backup Paused</button>
+                        <button id="drive-connect-button" type="button" class="garden-action-button primary">Google Drive Backup</button>
                         <div id="drive-sync-actions" class="drive-sync-actions hidden">
-                            <button id="drive-backup-button" type="button" class="garden-action-button primary" disabled>Back Up This Device</button>
-                            <button id="drive-restore-button" type="button" class="garden-action-button" disabled>Restore From Drive</button>
+                            <button id="drive-backup-button" type="button" class="garden-action-button primary">Back Up This Device</button>
+                            <button id="drive-restore-button" type="button" class="garden-action-button">Restore From Drive</button>
                         </div>
                     </div>
                     <p id="drive-sync-status" class="drive-sync-status" role="status" aria-live="polite">Drive access is not currently requested. No app data is sent to Google Drive by this feature.</p>
@@ -274,7 +274,7 @@
                         <span>Prayer / Positive Intention</span>
                         <button data-action="openModal" data-modal="prayer" data-target="start-2" class="px-3 py-1.5 bg-emerald-200 text-emerald-900 rounded-xl text-xs font-bold hover:bg-emerald-300">🙏 Pray Animation</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-2" class="app-chk sec-2" data-id="start-2" disabled> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE you)</span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-2" class="app-chk sec-2" data-id="start-2"> <span>Prayer / Positive Intention (Self, Family, & DESPICABLE you)</span></label>
                     
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-2" data-id="start-3"> <span>Gentle Stretch or Movement</span></label>
                     
@@ -282,7 +282,7 @@
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
                         <button data-action="openModal" data-modal="water" data-target="start-4" class="px-3 py-1.5 bg-cyan-200 text-cyan-900 rounded-xl text-xs font-bold hover:bg-cyan-300">💧 Drinking Guide</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-4" class="app-chk sec-2" data-id="start-4" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER (Beauty Potion) 💧</span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-start-4" class="app-chk sec-2" data-id="start-4"> <span class="font-bold text-cyan-800">DRINK YOUR WATER (Beauty Potion) 💧</span></label>
                 </div>
             </div>
 
@@ -299,20 +299,20 @@
                         <span class="text-xs font-semibold text-sky-900">Breathing Exercise (4-2-6 Ratio)</span>
                         <button data-action="openModal" data-modal="breathing" data-target="mid-2" class="px-3 py-1.5 bg-sky-200 text-sky-900 rounded-xl text-xs font-bold hover:bg-sky-300">🌬️ Breathing Guide</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-2" class="app-chk sec-3" data-id="mid-2" disabled> <span>1 Min Breathing Exercise</span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-2" class="app-chk sec-3" data-id="mid-2"> <span>1 Min Breathing Exercise</span></label>
                     
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
                         <button data-action="openModal" data-modal="water" data-target="mid-3" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-3" class="app-chk sec-3" data-id="mid-3" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧</span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-3" class="app-chk sec-3" data-id="mid-3"> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧</span></label>
                     
                     <hr class="border-sky-200 my-2">
                     <div class="flex items-center justify-between bg-white/70 p-2.5 rounded-2xl">
                         <span class="font-bold text-sky-800">Spiritual / Emotional Check</span>
                         <button data-action="openModal" data-modal="feeling" data-target="mid-4" class="px-2 py-1 bg-rose-200 text-rose-900 rounded-lg text-xs font-bold">💓 Feel Check</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-4" class="app-chk sec-3" data-id="mid-4" disabled> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"</span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-mid-4" class="app-chk sec-3" data-id="mid-4"> <span>"How am I feeling NOW?" / "What are my thoughts NOW?"</span></label>
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-3" data-id="mid-5"> <span>Acknowledge existence & <strong>LET IT GO LIKE YOUR FART</strong> 💨</span></label>
                 </div>
             </div>
@@ -334,7 +334,7 @@
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
                         <button data-action="openModal" data-modal="water" data-target="end-3" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-end-3" class="app-chk sec-4" data-id="end-3" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧 </span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-end-3" class="app-chk sec-4" data-id="end-3"> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧 </span></label>
                     
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-4" data-id="end-4"> <span>Give yourself a mindful GOOD JOB poke on your nose! ✨ </span></label>
                 </div>
@@ -357,7 +357,7 @@
                         <span class="font-bold text-purple-900">Screen Curfew Animation</span>
                         <button data-action="openModal" data-modal="curfew" data-target="sleep-3" class="px-2 py-1 bg-purple-200 text-purple-900 rounded-lg text-xs font-bold">📵 Curfew Guide</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-3" class="app-chk sec-5" data-id="sleep-3" disabled> <span>Screen Curfew (No Screens 30 min before sleep)</span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-3" class="app-chk sec-5" data-id="sleep-3"> <span>Screen Curfew (No Screens 30 min before sleep)</span></label>
                     
                     <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="app-chk sec-5" data-id="sleep-4"> <span>Prayer / Positive Intention</span></label>
                     
@@ -365,7 +365,7 @@
                         <span class="font-bold text-cyan-800">DRINK YOUR WATER</span>
                         <button data-action="openModal" data-modal="water" data-target="sleep-5" class="px-2 py-1 bg-cyan-200 text-cyan-900 rounded-lg text-xs font-bold">💧 Water</button>
                     </div>
-                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-5" class="app-chk sec-5" data-id="sleep-5" disabled> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧 </span></label>
+                    <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" id="chk-sleep-5" class="app-chk sec-5" data-id="sleep-5"> <span class="font-bold text-cyan-800">DRINK YOUR WATER 💧 </span></label>
                 </div>
             </div>
 
@@ -404,7 +404,7 @@
                         <p id="cloud-progress" class="mt-3 text-xs font-semibold text-sky-800" aria-live="polite">0 of 3 clouds of Emotion released. Tap each cloud to let it drift away.</p>
                     </div>
                     <label class="flex items-center gap-2 pt-2 cursor-pointer font-bold text-sky-900">
-                        <input type="checkbox" id="chk-cloud-checked" class="app-chk sec-6" data-id="cloud-checked" disabled> Mark Cloud Check Complete
+                        <input type="checkbox" id="chk-cloud-checked" class="app-chk sec-6" data-id="cloud-checked"> Mark Cloud Check Complete
                     </label>
                 </div>
             </div>
