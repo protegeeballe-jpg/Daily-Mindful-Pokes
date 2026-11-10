@@ -166,6 +166,15 @@ import {
                 savePrivateWritingForDate(writingLoadedDate).catch(error=>setWritingSecurityStatus('Encrypted autosave failed. Your text is still visible; do not lock or close the page until saving succeeds. '+(error?.message||''),'error'));
             },500);
         }
+        export async function readPrivateDiaryEntryForDate(dateStr){
+            if(!writingCryptoKey)throw new Error('Unlock your Diary to read archived entries.');
+            if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr))throw new TypeError('The archive date is invalid.');
+            const record=localStorage.getItem(getSecureWritingStorageKey('diary',dateStr));
+            if(!record)return '';
+            const value=await decryptPrivatePayload('diary',dateStr,record,writingCryptoKey);
+            return typeof value==='string'?value:'';
+        }
+
         async function loadPrivateWritingForDate(dateStr){
             if(!writingCryptoKey)return;
             if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
