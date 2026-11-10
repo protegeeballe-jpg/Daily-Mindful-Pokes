@@ -10,26 +10,26 @@
 export const ACCOUNT_PASSWORD_LENGTH = 6;
 
 export const ACCOUNT_SECURITY_QUESTIONS = Object.freeze([
-    Object.freeze({ id: 1, text: 'What was the name of your first school?' }),
-    Object.freeze({ id: 2, text: 'What was the nickname you had as a child?' }),
-    Object.freeze({ id: 3, text: 'What was the name of your childhood best friend?' }),
-    Object.freeze({ id: 4, text: 'What was the first name of your favorite teacher?' }),
-    Object.freeze({ id: 5, text: 'What was the name of your first pet?' }),
-    Object.freeze({ id: 6, text: 'What was your childhood favorite cartoon?' }),
-    Object.freeze({ id: 7, text: 'What was the first book you remember reading?' }),
-    Object.freeze({ id: 8, text: 'What was the first concert or live show you attended?' }),
-    Object.freeze({ id: 9, text: 'What was the name of the street where you grew up?' }),
-    Object.freeze({ id: 10, text: 'What was the name of your favorite childhood playground?' }),
-    Object.freeze({ id: 11, text: 'What was the first dish you learned to cook?' }),
-    Object.freeze({ id: 12, text: 'What was your favorite subject in school?' }),
-    Object.freeze({ id: 13, text: 'What was the name of your favorite childhood toy?' }),
-    Object.freeze({ id: 14, text: 'What was the first movie you watched in a cinema?' }),
-    Object.freeze({ id: 15, text: 'What was the name of your first sports team?' }),
-    Object.freeze({ id: 16, text: 'What was your favorite childhood game?' }),
-    Object.freeze({ id: 17, text: 'What was the first country you wanted to visit?' }),
-    Object.freeze({ id: 18, text: 'What was the name of your childhood neighbor or playmate?' }),
-    Object.freeze({ id: 19, text: 'What was your favorite family holiday tradition?' }),
-    Object.freeze({ id: 20, text: 'What was the first musical instrument you wanted to learn?' })
+    Object.freeze({ id: 1, text: 'What is the name of the first church, chapel, or spiritual community you regularly attended?' }),
+    Object.freeze({ id: 2, text: 'What book (other than religious texts) profoundly shaped your worldview during childhood?' }),
+    Object.freeze({ id: 3, text: 'What was the name of the first mentor or spiritual guide who influenced your path?' }),
+    Object.freeze({ id: 4, text: 'What city or town was your paternal grandfather born in?' }),
+    Object.freeze({ id: 5, text: 'What was the exact name of your favorite childhood pet?' }),
+    Object.freeze({ id: 6, text: 'What is your all-time favorite verse, quote, or proverb that guides your daily discipline?' }),
+    Object.freeze({ id: 7, text: "What was the make and model of your family's first car?" }),
+    Object.freeze({ id: 8, text: 'What street did you live on when you experienced your most significant personal realization?' }),
+    Object.freeze({ id: 9, text: 'What was the name of the elementary school you attended for the longest duration?' }),
+    Object.freeze({ id: 10, text: "What is your mother's middle name?" }),
+    Object.freeze({ id: 11, text: 'What instrument, if any, did you learn to play first?' }),
+    Object.freeze({ id: 12, text: 'What was the primary subject or theme of the first journal or notebook you ever filled?' }),
+    Object.freeze({ id: 13, text: 'What traditional dish or meal represents your earliest childhood memory of home?' }),
+    Object.freeze({ id: 14, text: 'What is the name of the body of water (river, lake, ocean) closest to where you grew up?' }),
+    Object.freeze({ id: 15, text: 'What specific outdoor location or sanctuary do you consider your place of deepest reflection?' }),
+    Object.freeze({ id: 16, text: 'What was your childhood nickname given by your family?' }),
+    Object.freeze({ id: 17, text: 'What professional title or trade did your grandfather hold?' }),
+    Object.freeze({ id: 18, text: 'What was the title of the first album, cassette, or record you ever purchased or owned?' }),
+    Object.freeze({ id: 19, text: 'What historical figure do you find most intellectually or spiritually compelling?' }),
+    Object.freeze({ id: 20, text: 'What specific virtue or principle do you value above all others in your daily practice?' })
 ]);
 
 const QUESTION_IDS = new Set(ACCOUNT_SECURITY_QUESTIONS.map(question => question.id));
@@ -137,18 +137,18 @@ export function validateSecurityQuestionSelection(selectedIds) {
 }
 
 /**
- * Normalize an answer consistently before the server applies its password
- * hashing function. Never store or log the returned normalized value in
- * plaintext. Security-answer verification and throttling belong on the
- * authenticated account service.
+ * Normalize answers deterministically: Unicode-normalize, lowercase, and
+ * remove whitespace and punctuation. The normalized answer is still a
+ * low-entropy user input, not a cryptographic key. The future account
+ * service must use a vetted password-hashing function (e.g. Argon2id), unique
+ * salts, rate limits, and a separate high-entropy Diary recovery mechanism.
  */
 export function normalizeSecurityAnswer(answer) {
     if (typeof answer !== 'string') return '';
     return answer
         .normalize('NFKC')
-        .trim()
-        .replace(/\s+/gu, ' ')
-        .toLowerCase();
+        .toLowerCase()
+        .replace(/[\s\p{P}\p{Z}]+/gu, '');
 }
 
 export function validateSecurityAnswers(answers) {
