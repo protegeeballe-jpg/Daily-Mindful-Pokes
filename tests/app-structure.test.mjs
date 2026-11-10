@@ -467,6 +467,13 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
  assert.match(locationModule,/faith_focus_location_checkins_v1_/);
  assert.doesNotMatch(drive,/faith_focus_location_checkins_v1_/);
+ const locationChangeStart=app.indexOf("if (!checkbox?.matches?.('#card-step-1 .app-chk.sec-1')) return;");
+ const locationChangeEnd=app.indexOf("document.getElementById('app-pin-form')",locationChangeStart);
+ assert.ok(locationChangeStart>=0 && locationChangeEnd>locationChangeStart);
+ const locationChangeHandler=app.slice(locationChangeStart,locationChangeEnd);
+ assert.match(locationChangeHandler,/if \(checkbox.checked\) requestLocationCheckin\(checkbox\);/);
+ assert.doesNotMatch(locationChangeHandler,/removeLocationCheckin|locationCaptureVersions|else/);
+ assert.doesNotMatch(app,/removeLocationCheckin/);
  assert.match(app,/localStorage\.removeItem\(getLocationCheckinStorageKey\(dateStr\)\)/);
  const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
  const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
