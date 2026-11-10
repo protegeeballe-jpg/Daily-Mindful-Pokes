@@ -44,7 +44,7 @@ import {
 } from './app-gate.js';
 import {
     LOCATION_CHECKIN_OPTIONS, getLocationCheckinStorageKey,
-    loadLocationCheckins, removeLocationCheckin, saveLocationCheckin
+    loadLocationCheckins, saveLocationCheckin
 } from './location-checkin.js';
 import {
     writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
@@ -1486,19 +1486,7 @@ import {
         document.addEventListener('change', event => {
             const checkbox = event.target;
             if (!checkbox?.matches?.('#card-step-1 .app-chk.sec-1')) return;
-            const locationId = checkbox.dataset.id;
-            if (checkbox.checked) {
-                requestLocationCheckin(checkbox);
-            } else if (Object.hasOwn(LOCATION_CHECKIN_OPTIONS, locationId)) {
-                locationCaptureVersions.set(locationId, (locationCaptureVersions.get(locationId) || 0) + 1);
-                try {
-                    removeLocationCheckin(localStorage, document.getElementById('currentDate')?.value, locationId);
-                    renderLocationCheckinDetails(document.getElementById('currentDate')?.value);
-                    setLocationCheckinMessage('', 'info');
-                } catch (error) {
-                    setLocationCheckinMessage('The saved location detail could not be cleared on this device.', 'error');
-                }
-            }
+            if (checkbox.checked) requestLocationCheckin(checkbox);
         });
         document.getElementById('app-pin-form')?.addEventListener('submit',event=>{
             event.preventDefault();
