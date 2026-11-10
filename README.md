@@ -32,7 +32,7 @@ Faith & Focus: Daily Armor
 The app opens into The Forge Room, the shared home for the Health Checklist, the single encrypted Personal Diary, and the outdoor Garden scene.
 Bundled artwork at assets/garden-room-background.jpg ensures full offline functionality without external image dependencies.
 assets/garden.js and assets/garden-model.js drive the Forge Room and calendar-based growth experience.
-The Health Checklist Reset clears checklist progress and reflection fields for the selected date, restarts the Garden planting setup, and returns to the seed-planting scene. It preserves the main Personal Diary entries and all location history.
+The Health Checklist Reset clears checklist progress and reflection fields for the selected date, restarts the Garden planting setup, and returns to the seed-planting scene. It preserves the main Personal Diary entries, saved voice notes, and all location history.
 
 Storage Optimization & Auto-Compression
 Device Optimization: Utilizes native browser CompressionStream (Gzip) via assets/compressor.js to minimize local storage usage on mobile devices.
