@@ -466,6 +466,9 @@ test('Personal Diary notebook organizes written entries, locations, and voice no
   assert.match(app,/function getDeviceLocalDateString\(/);
   assert.match(app,/dateInput\?\.value === lastObservedDeviceDate/);
   assert.match(appCss,/\.diary-archive-panel\s*\{/);
+  assert.match(appCss,/\.diary-archive-panel:not\(\.hidden\)\s*\{\s*display:flex/);
+  assert.match(appCss,/\.diary-archive-panel\.hidden\s*\{\s*display:none/);
+  assert.match(html,/id="diary-archive-panel" class="diary-archive-panel hidden"/);
   assert.match(appCss,/\.diary-notebook-button\s*\{/);
 });
 
