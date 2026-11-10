@@ -6,7 +6,7 @@ App Visibility API Lock
 
 Private Writing Protection: Your Personal Diary and checklist reflections are secured with browser-native AES-256-GCM encryption derived from your separate private-writing passphrase (600,000 iterations). Encryption keys exist only in volatile memory during your active unlocked session.
 
-Local Data Handling: Checklist ticks, task unlock flags, cloud-release flags, daily progress, confidence scores, and app settings remain stored locally in your browser storage.
+Local Data Handling: Checklist checkboxes, task unlock flags, cloud-release flags, daily progress, confidence scores, and app settings remain stored locally in your browser storage. These ordinary progress records are not encrypted by the app.
 
 Zero-Knowledge Architecture: Your private diary passphrase is known only to you and is never sent to any server. Because encryption is handled entirely on your device, forgotten passphrases cannot be recovered by the app.
 
