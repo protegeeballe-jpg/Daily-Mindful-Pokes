@@ -1,5 +1,4 @@
-
-        let celebrationCanvas=null,celebrationContext=null,celebrationParticles=[],celebrationFrame=null;
+let celebrationCanvas=null,celebrationContext=null,celebrationParticles=[],celebrationFrame=null;
         function confetti(options={}){
             if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
             celebrationCanvas=document.getElementById('celebration-canvas');
@@ -56,6 +55,46 @@ import {
         let activeModalType = null;
         let activeTargetCheckboxId = null;
         let mediaRecorder, audioChunks = [];
+
+        // Inactivity auto-lock timer (5 minutes = 300,000 ms)
+        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+        let inactivityTimer = null;
+
+        function resetInactivityTimer() {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            if (writingCryptoKey) {
+                inactivityTimer = setTimeout(() => {
+                    flushAndSaveCurrentPrivateWriting()
+                        .then(() => lockPrivateWriting())
+                        .catch(error => {
+                            lockPrivateWriting();
+                            setWritingSecurityStatus('Auto-locked due to inactivity. ' + (error?.message || ''), 'info');
+                        });
+                }, INACTIVITY_LIMIT_MS);
+            }
+        }
+
+        function setupInactivityListeners() {
+            ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(eventType => {
+                document.addEventListener(eventType, resetInactivityTimer, { passive: true });
+            });
+        }
+
+        // Request Persistent Storage to prevent automatic browser data clearing
+        async function requestPersistentStorage() {
+            if (navigator.storage && navigator.storage.persist) {
+                try {
+                    const isPersisted = await navigator.storage.persist();
+                    if (isPersisted) {
+                        console.log("Storage persistence granted: Data will not be automatically cleared.");
+                    } else {
+                        console.warn("Storage persistence denied by browser.");
+                    }
+                } catch (err) {
+                    console.warn("Persistent storage request failed:", err);
+                }
+            }
+        }
 
         // The four-digit PIN is only an app gate; private writing uses a separate encryption key.
 
@@ -1313,6 +1352,10 @@ import {
         }
 
         window.addEventListener('load',async function() {
+            requestPersistentStorage();
+            setupInactivityListeners();
+            resetInactivityTimer();
+
             const now=new Date();
             const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
             document.getElementById('currentDate').value=today;
@@ -1374,7 +1417,11 @@ import {
         });
         document.addEventListener('visibilitychange',()=>{
             if(document.visibilityState==='hidden'){
-                flushAndSaveCurrentPrivateWriting().catch(error=>setWritingSecurityStatus('Encrypted save failed. '+(error?.message||''),'error'));
+                flushAndSaveCurrentPrivateWriting()
+                    .then(() => lockPrivateWriting())
+                    .catch(error => {
+                        lockPrivateWriting();
+                        setWritingSecurityStatus('Encrypted save failed on hide. '+(error?.message||''),'error');
+                    });
             }
         });
-    
