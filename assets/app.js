@@ -1121,6 +1121,7 @@ import {
 
                 const label = document.getElementById('diary-current-date-label');
                 if (label) label.textContent = formatDiaryArchiveDate(dateString) + ' · SAVED ENTRY';
+                document.getElementById('diary-return-today')?.classList.remove('hidden');
                 document.getElementById('diary-editor-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (error) {
                 setWritingSecurityStatus('This saved Diary date could not be opened. Your existing entries were not changed. '
@@ -1131,6 +1132,7 @@ import {
         function restoreCurrentDiaryDate() {
             if (!diaryViewingHistoricalDate) return;
             diaryViewingHistoricalDate = null;
+            document.getElementById('diary-return-today')?.classList.add('hidden');
             const editor = document.getElementById('private-diary-entry');
             const recordButton = document.getElementById('record-btn');
             if (editor) {
@@ -2048,13 +2050,8 @@ import {
         const delegatedClickActions={
             showPage:el=>showPage(el.dataset.page),
             openModal:el=>openModal(el.dataset.modal,el.dataset.target),
-            openDiaryArchive:()=>{
-                if (diaryViewingHistoricalDate) {
-                    restoreCurrentDiaryDate();
-                    return;
-                }
-                openDiaryArchive();
-            },
+            openDiaryArchive:()=>openDiaryArchive(),
+            returnToCurrentDiary:()=>restoreCurrentDiaryDate(),
             closeDiaryArchive:()=>closeDiaryArchive(),
             backDiaryArchiveList:()=>showDiaryArchiveList(),
             openDiaryArchiveDate:el=>openDiaryArchiveDate(el.dataset.date),
