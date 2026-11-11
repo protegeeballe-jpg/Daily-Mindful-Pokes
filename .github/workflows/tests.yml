@@ -20,6 +20,8 @@ jobs:
       - name: Check application module syntax
         run: |
           node --check assets/app.js
+          node --check sw.js
+          node --check assets/service-worker-registration.js
           node --check assets/app-gate.js
           node --check assets/account-security.js
           node --check assets/writing-security.js

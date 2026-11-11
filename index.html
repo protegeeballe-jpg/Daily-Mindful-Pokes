@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://faith-focus-proxy.nine-westhigh.workers.dev; frame-src https://accounts.google.com; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests">
     <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#FBF9F5">
     <title>Faith & Focus | Your Daily Armor</title>
     <!-- Tailwind CSS -->
     <!-- Canvas Confetti -->
@@ -15,6 +16,7 @@
     <link rel="stylesheet" href="./assets/tailwind.generated.css">
     <link rel="stylesheet" href="./assets/app.css">
     <link rel="stylesheet" href="./assets/garden.css">
+    <link rel="manifest" href="./manifest.json">
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
@@ -695,6 +697,7 @@
     <script type="module" src="./assets/settings-modal.js"></script>
     <script type="module" src="./assets/drive-sync.js"></script>
     <script type="module" src="./assets/gist-sync.js"></script>
+    <script type="module" src="./assets/service-worker-registration.js"></script>
 <canvas id="celebration-canvas" aria-hidden="true"></canvas>
 </body>
 </html>
