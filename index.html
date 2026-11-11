@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://faith-focus-proxy.nine-westhigh.workers.dev; frame-src https://accounts.google.com; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests">
     <meta name="referrer" content="no-referrer">
     <title>Faith & Focus | Your Daily Armor</title>
     <!-- Tailwind CSS -->
@@ -123,7 +123,31 @@
                     <button id="garden-window-button" type="button" class="garden-action-button" data-garden-action="toggle-window" aria-pressed="false">Open the window 🍃</button>
                     <button type="button" class="garden-action-button" data-garden-action="visit-garden">Go to the garden 🌳</button>
                 </div>
-                <section id="drive-sync-panel" class="drive-sync-panel" aria-label="Google Drive backup and restore">
+                <section id="gist-sync-panel" class="drive-sync-panel gist-sync-panel" aria-label="Encrypted GitHub Gist synchronization">
+                    <div class="drive-sync-copy">
+                        <h3>Encrypted GitHub Gist Sync</h3>
+                        <p>Manually save or restore your checklist, Little Garden, Diary, and encrypted voice notes across devices. Use the same two keys on each device.</p>
+                    </div>
+                    <div class="gist-sync-fields">
+                        <label for="gist-sync-key">Cloudflare Sync Key
+                            <input id="gist-sync-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Your Cloudflare SYNC_KEY">
+                        </label>
+                        <label for="gist-backup-passphrase">Gist backup encryption passphrase
+                            <input id="gist-backup-passphrase" type="password" autocomplete="off" placeholder="Separate passphrase, 16+ characters">
+                        </label>
+                    </div>
+                    <p class="gist-sync-help">The Cloudflare Sync Key authorizes the Worker. The separate backup passphrase encrypts the complete backup in this browser and is never sent to the Worker. Do not use your Diary passphrase here.</p>
+                    <div class="drive-sync-controls">
+                        <button id="gist-restore-button" type="button" class="garden-action-button">Restore From Gist</button>
+                        <button id="gist-backup-button" type="button" class="garden-action-button primary">Save This Device to Gist</button>
+                    </div>
+                    <p id="gist-sync-status" class="drive-sync-status gist-sync-status" role="status" aria-live="polite"></p>
+                </section>
+                <section id="drive-sync-panel" class="drive-sync-panel" aria-label="Optional Google Drive backup and restore">
+                    <div class="drive-sync-copy">
+                        <h3>Google Drive Backup (optional)</h3>
+                        <p>Independent fallback backup. Google Drive remains available alongside Gist sync.</p>
+                    </div>
                     <div class="drive-sync-controls">
                         <button id="drive-connect-button" type="button" class="garden-action-button primary">Google Drive Backup</button>
                         <div id="drive-sync-actions" class="drive-sync-actions hidden">
@@ -621,6 +645,7 @@
     <script type="module" src="./assets/app.js"></script>
     <script type="module" src="./assets/garden.js"></script>
     <script type="module" src="./assets/drive-sync.js"></script>
+    <script type="module" src="./assets/gist-sync.js"></script>
 <canvas id="celebration-canvas" aria-hidden="true"></canvas>
 </body>
 </html>
