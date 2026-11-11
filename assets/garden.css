@@ -287,15 +287,17 @@ body.garden-overlay-open { overflow: hidden; }
  .garden-growth-grid {padding:.2rem;}
 }
 
-/* Explicit Google Drive backup controls in the Forge Room. */
+/* Shared styles for backup controls, now displayed only inside Settings. */
 .drive-sync-panel {
-    max-width: 720px;
-    margin: 1rem auto 0;
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
     padding: .9rem 1rem;
-    border: 1px solid rgba(112,143,111,.28);
-    border-radius: 1.15rem;
-    background: rgba(255,255,255,.78);
-    box-shadow: 0 3px 0 rgba(96,119,91,.08);
+    border: 0;
+    border-radius: 0 0 .95rem .95rem;
+    background: rgba(255,255,255,.68);
+    box-shadow: none;
 }
 .drive-sync-copy h3 {
     margin: 0 0 .2rem;
@@ -313,13 +315,13 @@ body.garden-overlay-open { overflow: hidden; }
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: .55rem;
-    margin-top: .7rem;
+    gap: .5rem;
+    margin-top: .65rem;
 }
 .drive-sync-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: .55rem;
+    gap: .5rem;
 }
 .drive-sync-panel button:disabled {
     cursor: not-allowed;
@@ -335,65 +337,7 @@ body.garden-overlay-open { overflow: hidden; }
 }
 .drive-sync-status[data-state="error"] { color: #a33745; }
 .drive-sync-status[data-state="success"] { color: #2f6b43; }
-@media (max-width: 420px) {
-    .drive-sync-panel { padding: .75rem; }
-    .drive-sync-controls, .drive-sync-actions { gap: .4rem; }
-    .drive-sync-panel .garden-action-button { padding: .5rem .65rem; font-size: .72rem; }
-}
-
-
-/* Smaller Google Drive actions reduce visual clutter in the Room panel. */
-.drive-sync-panel .garden-action-button {
- padding:.22rem .32rem !important;
- font-size:var(--ui-button-font-size) !important;
- line-height:1.15;
- min-height:26px;
- border-radius:.55rem;
- box-shadow:none;
-}
-.drive-sync-controls,
-.drive-sync-actions {gap:.35rem;}
-.drive-sync-controls {margin-top:.45rem;}
-
-
-/* Keep Drive controls and their panel visually secondary on phones. */
-@media (max-width:420px) {
- .drive-sync-panel {
-  width:min(calc(100% - .8rem), 720px);
-  box-sizing:border-box;
-  margin:.35rem auto 0;
-  padding:.42rem .48rem;
-  border-radius:.72rem;
-  box-shadow:none;
- }
- .drive-sync-copy h3 {font-size:.76rem;line-height:1.15;}
- .drive-sync-copy p {font-size:.6rem;line-height:1.25;}
- .drive-sync-controls {margin-top:.28rem;gap:.18rem;}
- .drive-sync-actions {gap:.18rem;}
- .drive-sync-panel .garden-action-button {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:auto;
-  max-width:100%;
-  min-height:22px;
-  padding:.1rem .18rem !important;
-  font-size:var(--ui-button-font-size) !important;
-  line-height:1.05;
-  border-radius:.42rem;
-  box-shadow:none;
- }
- .drive-sync-status {
-  min-height:0;
-  margin:.24rem 0 0;
-  font-size:.56rem;
-  line-height:1.2;
- }
-}
-
-
-/* Keep the Drive feedback line out of the layout until a user action needs it. */
-.drive-sync-status:empty { display:none; }
+.drive-sync-status:empty { display: none; }
 
 
 /* App-wide typography and compact window-panel tuning.
@@ -535,17 +479,6 @@ input[type="reset"] {
         max-height: min(90vh, 42rem);
         max-height: min(90dvh, 42rem);
     }
-    .drive-sync-panel {
-        width: min(calc(100% - .8rem), 640px);
-        padding: .42rem .48rem;
-    }
-    .drive-sync-panel .garden-action-button {
-        font-size: var(--ui-button-font-size) !important;
-        line-height: 1.2;
-        min-height: 26px;
-        padding: .18rem .3rem !important;
-    }
-}
 
 
 /* Keep the complete Diary editor reachable inside the fixed-height app scene.
@@ -636,4 +569,238 @@ input[type="reset"] {
     .gist-sync-fields label { font-size: .62rem; }
     .gist-sync-fields input { padding: .4rem .45rem; font-size: .68rem; }
     .gist-sync-help { font-size: .56rem; }
+}
+
+/* Shared Settings control: available from the Forge Room, Garden, Checklist, and Diary scenes. */
+.garden-topbar-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .35rem;
+}
+.garden-settings-button {
+    display: inline-grid;
+    place-items: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    border: 1px solid #b5cdb1;
+    border-radius: 50%;
+    background: #fffdf4;
+    color: #31533d;
+    box-shadow: 0 2px 0 rgba(88,117,88,.12);
+    cursor: pointer;
+    transition: transform .16s ease, background .16s ease;
+}
+.garden-settings-button span {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+.garden-settings-button:hover {
+    background: #f2f7e9;
+    transform: translateY(-1px);
+}
+.garden-settings-button:focus-visible,
+.settings-close-button:focus-visible,
+.settings-disclosure > summary:focus-visible {
+    outline: 3px solid #709e82;
+    outline-offset: 3px;
+}
+
+.settings-modal {
+    position: fixed;
+    inset: 0;
+    width: min(calc(100% - 1.5rem), 42rem);
+    max-width: none;
+    max-height: min(88vh, 48rem);
+    max-height: min(88dvh, 48rem);
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(112,143,111,.35);
+    border-radius: 1.25rem;
+    background: #f8fbf5;
+    color: #344b3b;
+    box-shadow: 0 24px 70px rgba(31,48,35,.28);
+}
+.settings-modal::backdrop {
+    background: rgba(24,39,29,.48);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+.settings-modal-shell {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+    min-height: 0;
+}
+.settings-modal-header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.05rem 1.1rem .9rem;
+    border-bottom: 1px solid rgba(112,143,111,.2);
+    background: rgba(255,255,255,.76);
+}
+.settings-modal-eyebrow {
+    margin: 0 0 .25rem;
+    color: #718873;
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+.settings-modal-header h2 {
+    margin: 0;
+    color: #355b43;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+.settings-modal-header p:last-child {
+    max-width: 32rem;
+    margin: .3rem 0 0;
+    color: #657765;
+    font-size: .72rem;
+    line-height: 1.4;
+}
+.settings-close-button {
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid rgba(112,143,111,.28);
+    border-radius: 50%;
+    background: #fff;
+    color: #45634a;
+    font-size: 1.35rem !important;
+    line-height: 1;
+    cursor: pointer;
+}
+.settings-modal-content {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: .7rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: .9rem 1rem 1rem;
+}
+.settings-disclosure {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(112,143,111,.28);
+    border-radius: .95rem;
+    background: rgba(255,255,255,.72);
+}
+.settings-disclosure > summary {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    min-height: 3.5rem;
+    padding: .7rem .85rem;
+    color: #355b43;
+    cursor: pointer;
+    list-style: none;
+}
+.settings-disclosure > summary::-webkit-details-marker { display: none; }
+.settings-disclosure > summary::after {
+    content: "+";
+    margin-left: auto;
+    color: #66816a;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+.settings-disclosure[open] > summary::after { content: "−"; }
+.settings-disclosure-icon {
+    display: grid;
+    flex: 0 0 2.1rem;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: .7rem;
+    background: #edf4e9;
+    color: #486b4d;
+    font-size: 1.1rem;
+}
+.settings-disclosure-copy {
+    display: grid;
+    min-width: 0;
+    gap: .12rem;
+}
+.settings-disclosure-copy strong {
+    color: #355b43;
+    font-size: .82rem;
+    font-weight: 800;
+}
+.settings-disclosure-copy small {
+    color: #718171;
+    font-size: .64rem;
+    line-height: 1.3;
+}
+.settings-disclosure > .drive-sync-panel {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: .85rem;
+    border: 0;
+    border-top: 1px solid rgba(112,143,111,.18);
+    border-radius: 0;
+    background: rgba(255,255,255,.35);
+    box-shadow: none;
+}
+.settings-modal .drive-sync-copy h3 { font-size: .9rem; }
+.settings-modal .drive-sync-copy p { font-size: .7rem; }
+.settings-modal .drive-sync-controls,
+.settings-modal .drive-sync-actions { gap: .45rem; }
+.settings-modal .drive-sync-panel .garden-action-button {
+    min-height: 38px;
+    padding: .5rem .75rem !important;
+    border-radius: .65rem;
+    font-size: .76rem !important;
+    line-height: 1.2;
+    box-shadow: 0 1px 0 rgba(88,117,88,.1);
+}
+.settings-modal .gist-sync-fields { margin-top: .6rem; }
+.settings-modal .gist-sync-fields label { font-size: .68rem; }
+.settings-modal .gist-sync-fields input {
+    min-height: 40px;
+    padding: .5rem .6rem;
+    font-size: .72rem;
+}
+.settings-modal .gist-sync-help {
+    margin-top: .55rem;
+    font-size: .64rem;
+    line-height: 1.45;
+}
+.settings-modal-note {
+    margin: 0;
+    padding: .1rem .15rem;
+    color: #778477;
+    font-size: .62rem;
+    line-height: 1.4;
+}
+@media (max-width: 520px) {
+    .settings-modal {
+        width: calc(100% - .8rem);
+        max-height: min(92vh, 48rem);
+        max-height: min(92dvh, 48rem);
+        border-radius: 1rem;
+    }
+    .settings-modal-header { padding: .85rem .85rem .75rem; }
+    .settings-modal-header h2 { font-size: 1.05rem; }
+    .settings-modal-content { padding: .7rem .7rem .8rem; gap: .55rem; }
+    .settings-disclosure > summary { min-height: 3.25rem; padding: .6rem .7rem; }
+    .settings-disclosure > .drive-sync-panel { padding: .7rem; }
+    .settings-modal .drive-sync-panel .garden-action-button {
+        min-height: 40px;
+        padding: .48rem .58rem !important;
+    }
+    .settings-modal .gist-sync-fields { grid-template-columns: 1fr; gap: .45rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .garden-settings-button { transition: none; }
 }

@@ -502,7 +502,7 @@ test('public legal pages accurately describe optional manual Google Drive backup
 });
 
 
-test('compact checklist and Drive controls reduce visual clutter without removing controls',()=>{
+test('checklist controls remain compact and backup controls are comfortably sized inside Settings',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  assert.match(appCss,/#view-checklist #btn-prev/);
  assert.match(appCss,/#view-checklist #btn-next/);
@@ -510,9 +510,8 @@ test('compact checklist and Drive controls reduce visual clutter without removin
  assert.match(appCss,/width:5\.7rem/);
  assert.match(appCss,/min-width:3\.1rem/);
  assert.match(appCss,/checklist-reset-button/);
- assert.match(gardenCss,/\.drive-sync-panel \.garden-action-button/);
- assert.match(gardenCss,/padding:\.22rem \.32rem/);
- assert.match(gardenCss,/font-size:var\(--ui-button-font-size\) !important/);
+ assert.match(gardenCss,/\.settings-modal \.drive-sync-panel \.garden-action-button/);
+ assert.match(gardenCss,/min-height:38px/);
  assert.match(html,/id="drive-connect-button"/);
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
@@ -532,13 +531,13 @@ test('phone checklist toolbar stays compact and next-card navigation remains vis
  assert.match(html,/class="checklist-step-navigation flex justify-between items-center mt-6"/);
 });
 
-test('Google Drive panel and buttons use compact phone-only dimensions',()=>{
+test('Settings modal and backup disclosures adapt to narrow phone screens',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
- const mobileRules=gardenCss.slice(gardenCss.lastIndexOf('/* Keep Drive controls'));
- assert.match(mobileRules,/@media \(max-width:420px\)/);
- assert.match(mobileRules,/width:min\(calc\(100% - \.8rem\), 720px\)/);
- assert.match(mobileRules,/min-height:22px/);
- assert.match(mobileRules,/font-size:var\(--ui-button-font-size\) !important/);
+ const settingsRules=gardenCss.slice(gardenCss.indexOf('/* Shared Settings control'));
+ assert.match(settingsRules,/@media \(max-width: 520px\)/);
+ assert.match(settingsRules,/width:calc\(100% - \.8rem\)/);
+ assert.match(settingsRules,/max-height:min\(92dvh,48rem\)/);
+ assert.match(settingsRules,/settings-disclosure > \.drive-sync-panel/);
  assert.match(html,/id="drive-connect-button"/);
 });
 
@@ -616,26 +615,31 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  assert.match(terms,/one-time current location/);
 });
 
-test('Gist sync and optional Drive backup remain separate panels before the outdoor garden scene',()=>{
+test('Gist and Google Drive backups live in separate collapsible Settings sections',()=>{
+ const settingsStart=html.indexOf('<dialog id="settings-modal"');
+ const settingsEnd=html.indexOf('</dialog>',settingsStart);
+ assert.ok(settingsStart>=0 && settingsEnd>settingsStart,'Settings must be a native modal dialog');
+ assert.match(html,/id="settings-open-button"[^>]*aria-controls="settings-modal"/);
+ assert.match(html,/id="settings-close-button"/);
+ assert.match(html,/src="\.\/assets\/settings-modal\.js"/);
+ const settings=html.slice(settingsStart,settingsEnd);
+ assert.match(settings,/<details id="gist-sync-settings"/);
+ assert.match(settings,/<details id="drive-sync-settings"/);
+ assert.match(settings,/id="gist-sync-panel"/);
+ assert.match(settings,/id="gist-sync-key"/);
+ assert.match(settings,/id="gist-backup-passphrase"/);
+ assert.match(settings,/id="gist-restore-button"/);
+ assert.match(settings,/id="gist-backup-button"/);
+ assert.match(settings,/Do not use your Diary passphrase here/);
+ assert.match(settings,/Google Drive Backup \(optional\)/);
+ assert.match(settings,/id="drive-sync-panel"/);
+ assert.match(settings,/id="drive-connect-button"/);
+ assert.match(settings,/id="drive-backup-button"/);
+ assert.match(settings,/id="drive-restore-button"/);
+ assert.match(settings,/id="drive-sync-status"/);
  const roomStart=html.indexOf('<section data-garden-scene="room"');
- const gistStart=html.indexOf('<section id="gist-sync-panel"',roomStart);
- const driveStart=html.indexOf('<section id="drive-sync-panel"',gistStart);
- const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',driveStart);
- assert.ok(roomStart>=0 && gistStart>roomStart && driveStart>gistStart && outdoorStart>driveStart);
-
- const gistRegion=html.slice(gistStart,driveStart);
- assert.match(gistRegion,/id="gist-sync-key"/);
- assert.match(gistRegion,/id="gist-backup-passphrase"/);
- assert.match(gistRegion,/id="gist-restore-button"/);
- assert.match(gistRegion,/id="gist-backup-button"/);
- assert.match(gistRegion,/Do not use your Diary passphrase here/);
- assert.match(gistRegion,/<\/section>\s*$/);
-
- const driveRegion=html.slice(driveStart,outdoorStart);
- assert.match(driveRegion,/Google Drive Backup \(optional\)/);
- assert.match(driveRegion,/id="drive-connect-button"/);
- assert.match(driveRegion,/id="drive-backup-button"/);
- assert.match(driveRegion,/id="drive-restore-button"/);
- assert.match(driveRegion,/id="drive-sync-status"/);
- assert.match(driveRegion,/<\/section>\s*<\/section>\s*$/);
+ const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',roomStart);
+ const roomMarkup=html.slice(roomStart,outdoorStart);
+ assert.doesNotMatch(roomMarkup,/gist-sync-panel|drive-sync-panel/);
+ assert.match(settings,/Daily progress is saved on this device first/);
 });

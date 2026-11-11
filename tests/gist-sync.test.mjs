@@ -33,9 +33,16 @@ test('Gist sync uses ETag stale-version checks and does not persist credentials'
   assert.match(worker, /Access-Control-Allow-Origin/);
 });
 
-test('Gist UI is distinct from the independent optional Google Drive backup', () => {
-  assert.match(html, /id="gist-sync-panel"/);
-  assert.match(html, /id="drive-sync-panel"/);
-  assert.match(html, /Google Drive Backup \(optional\)/);
+test('Gist and Google Drive controls are separate collapsible Settings options', () => {
+  const settingsStart = html.indexOf('<dialog id="settings-modal"');
+  const settingsEnd = html.indexOf('</dialog>', settingsStart);
+  assert.ok(settingsStart >= 0 && settingsEnd > settingsStart);
+  const settings = html.slice(settingsStart, settingsEnd);
+  assert.match(settings, /<details id="gist-sync-settings"/);
+  assert.match(settings, /<details id="drive-sync-settings"/);
+  assert.match(settings, /id="gist-sync-panel"/);
+  assert.match(settings, /id="drive-sync-panel"/);
+  assert.match(settings, /Google Drive Backup \(optional\)/);
   assert.match(html, /src="\.\/assets\/gist-sync\.js"/);
+  assert.match(html, /src="\.\/assets\/drive-sync\.js"/);
 });
