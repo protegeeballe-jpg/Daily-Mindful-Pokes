@@ -494,7 +494,7 @@
                 <section id="gist-sync-panel" class="drive-sync-panel gist-sync-panel" aria-label="Encrypted GitHub Gist synchronization">
                     <div class="drive-sync-copy">
                         <h3>Encrypted GitHub Gist Sync</h3>
-                        <p>Manually save or restore your checklist, Little Garden, Diary, and encrypted voice notes across devices. Use the same two keys on each device.</p>
+                        <p>Automatic background sync keeps this device's encrypted backup up to date. Your checklist, Garden, and Diary are always saved locally first. Use the manual controls below only when needed.</p>
                     </div>
                     <div class="gist-sync-fields">
                         <label for="gist-sync-key">Cloudflare Sync Key
@@ -504,6 +504,12 @@
                             <input id="gist-backup-passphrase" type="password" autocomplete="off" placeholder="Separate passphrase, 16+ characters">
                         </label>
                     </div>
+                    <p class="gist-sync-help">Enter both keys once on each device, then save them to this browser to enable automatic sync. They are stored in this browser's localStorage for convenience. Anyone who can execute script in this app's origin or access this browser profile may be able to read them. The Gist backup passphrase is never sent to the Worker.</p>
+                    <div class="drive-sync-controls">
+                        <button id="gist-enable-auto-sync" type="button" class="garden-action-button primary">Save keys &amp; enable automatic sync</button>
+                        <button id="gist-forget-credentials" type="button" class="garden-action-button hidden">Forget saved keys on this device</button>
+                    </div>
+                    <p id="gist-auto-sync-status" class="drive-sync-status gist-sync-status" role="status" aria-live="polite">Automatic Gist sync is not enabled on this device yet.</p>
                     <p class="gist-sync-help">The Cloudflare Sync Key authorizes the Worker. The separate backup passphrase encrypts the complete backup in this browser and is never sent to the Worker. Do not use your Diary passphrase here.</p>
                     <div class="drive-sync-controls">
                         <button id="gist-restore-button" type="button" class="garden-action-button">Restore From Gist</button>
