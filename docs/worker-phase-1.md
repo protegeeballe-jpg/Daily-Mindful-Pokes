@@ -35,9 +35,26 @@ The protected Diary, Garden, Checklist, voice-note, location, app-gate, and Goog
 
 `wrangler.toml` and all existing app modules are intentionally unchanged.
 
-## Required Cloudflare deployment and credential cleanup
+## Connect the existing Cloudflare Worker to this repository
 
-A GitHub repository change does not, by itself, prove that the deployed Cloudflare Worker changed. The repository currently has no Cloudflare deploy workflow in `.github/workflows`. Confirm the Worker's configured deployment source and deploy this reviewed `worker.js` through that configured method.
+Use the existing Worker named `faith-focus-proxy`. Do not create a second Worker.
+
+Cloudflare Workers Builds supports connecting an already-created Worker to GitHub:
+
+1. Open the Cloudflare dashboard and go to **Workers & Pages**.
+2. Select the existing **faith-focus-proxy** Worker.
+3. Open **Settings → Builds** and choose **Connect**.
+4. Authorize the GitHub integration when Cloudflare prompts you.
+5. Select Git account `protegeeballe-jpg` and repository `Faith-and-Focus-Daily-Armor`.
+6. Set the project root directory to the repository root (or leave it blank if the dashboard treats blank as root). The `wrangler.toml` file is already at the repository root.
+7. Leave the build command empty; this Worker has no compilation step. Use the default deploy command, `npx wrangler deploy`.
+8. Under **Settings → Build → Branch control**, set the production branch to `security/phase-1-harden-worker` before triggering production deployment. Do not deploy `main` while it still contains the old Gist proxy.
+9. Confirm the build's deployed commit is the reviewed branch head. Check the Worker URL against the route tests below before considering the old proxy retired.
+
+Cloudflare documents that an existing Worker can be connected under **Settings → Builds**, and that the Git production branch controls which commits are deployed to production. The repository's Wrangler `name` is `faith-focus-proxy`, matching the existing Worker name.
+
+**Credential distinction:** Cloudflare's GitHub integration authorizes repository access through Cloudflare's Git integration. The existing runtime secret `GITHUB_TOKEN` was only used by the old Worker to call GitHub's API. It is not the GitHub integration credential and it is not a Cloudflare deployment credential. The new Worker source does not use it.
+
 
 After the hardened Worker is deployed:
 
