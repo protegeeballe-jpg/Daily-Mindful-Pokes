@@ -24,8 +24,11 @@ test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
  assert.equal(packageMetadata.name,'faith-focus-daily-armor');
  assert.match(readme,/^# Faith & Focus: Daily Armor/m);
  assert.doesNotMatch(readme,/Daily Mindful Pokes/i);
- assert.match(appIcon,/<title id="icon-title">Faith &amp; Focus: Daily Armor<\/title>/);
- assert.match(appIcon,/shield-fill/);
+ assert.deepEqual([...appIcon.subarray(0,8)],[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
+ assert.equal(appIcon.readUInt32BE(16),1024);
+ assert.equal(appIcon.readUInt32BE(20),1024);
+ assert.equal(manifest.icons[0].src,'./assets/icon.png');
+ assert.equal(manifest.icons[0].type,'image/png');
 });
 test('HTML uses a local app module and no inline handlers or scripts',()=>{
  assert.match(html,/type="module" src="\.\/assets\/app\.js"/);
@@ -270,7 +273,6 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/location-checkin.js',
   '../assets/voice-note-store.js',
   '../assets/fonts/OFL-Lexend.txt',
-  '../assets/icon.svg',
   '../assets/tailwind.generated.css',
   '../assets/tailwind.input.css',
   '../assets/writing-security.js',
