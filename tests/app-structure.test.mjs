@@ -10,7 +10,7 @@ const voiceNoteStore=readFileSync(new URL('../assets/voice-note-store.js',import
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
 const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
-const appIcon=readFileSync(new URL('../assets/icon.svg',import.meta.url),'utf8');
+const appIcon=readFileSync(new URL('../assets/icon.png',import.meta.url));
 test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
@@ -24,8 +24,11 @@ test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
  assert.equal(packageMetadata.name,'faith-focus-daily-armor');
  assert.match(readme,/^# Faith & Focus: Daily Armor/m);
  assert.doesNotMatch(readme,/Daily Mindful Pokes/i);
- assert.match(appIcon,/<title id="icon-title">Faith &amp; Focus: Daily Armor<\/title>/);
- assert.match(appIcon,/shield-fill/);
+ assert.deepEqual([...appIcon.subarray(0,8)],[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
+ assert.equal(appIcon.readUInt32BE(16),1024);
+ assert.equal(appIcon.readUInt32BE(20),1024);
+ assert.equal(manifest.icons[0].src,'./assets/icon.png');
+ assert.equal(manifest.icons[0].type,'image/png');
 });
 test('HTML uses a local app module and no inline handlers or scripts',()=>{
  assert.match(html,/type="module" src="\.\/assets\/app\.js"/);
@@ -270,7 +273,6 @@ test('repository text files avoid em dash punctuation',()=>{
   '../assets/location-checkin.js',
   '../assets/voice-note-store.js',
   '../assets/fonts/OFL-Lexend.txt',
-  '../assets/icon.svg',
   '../assets/tailwind.generated.css',
   '../assets/tailwind.input.css',
   '../assets/writing-security.js',
