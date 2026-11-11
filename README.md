@@ -53,3 +53,20 @@ Uses locally bundled Lexend variable fonts (weights 100-900) embedded via same-o
 - Public application information: [home.html](./home.html)
 - Privacy Policy: [privacy.html](./privacy.html)
 - Terms of Service: [terms.html](./terms.html)
+
+
+## Optional encrypted GitHub Gist sync
+
+`assets/gist-sync.js` adds manual encrypted backup and restore through the Cloudflare Worker at `faith-focus-proxy.nine-westhigh.workers.dev/backup`. It coexists with `assets/drive-sync.js`; Google Drive remains a separate optional fallback and is not removed.
+
+The browser builds a shared validated backup payload containing supported checklist and garden state, encrypted Diary records, and encrypted IndexedDB voice notes. The complete payload is optionally gzip-compressed and encrypted with AES-256-GCM using a dedicated Gist backup passphrase derived with PBKDF2-HMAC-SHA-256 (600,000 iterations). That passphrase is never sent to the Worker. A separate Cloudflare `SYNC_KEY` is sent in an HTTPS request header. The GitHub token remains only in the Cloudflare Secret `GITHUB_TOKEN`.
+
+Cloudflare Worker configuration:
+- `GITHUB_TOKEN`: GitHub token with Gist write access, stored as a Worker Secret.
+- `GIST_ID`: the ID of the existing secret Gist.
+- `SYNC_KEY`: a random secret of at least 32 characters, stored as a Worker Secret and entered on each device.
+- The Gist may initially have no `faith-focus-daily-armor.enc.json` file; the Worker GET returns an empty version and the first save creates the backup file.
+
+The browser does not persist the Sync Key or Gist backup passphrase. Enter the same two values on each device. Restore the latest Gist backup on a device before saving from it; stale ETags are rejected by the Worker. GitHub documents that ETags support conditional GET requests but that conditional requests for unsafe methods such as PATCH are not supported unless an endpoint explicitly documents otherwise. Therefore the Worker pre-write ETag comparison detects stale devices in ordinary sequential use, but does not provide a fully atomic lock for two truly simultaneous saves. A Cloudflare Durable Object lock would be needed for strict global serialization.
+
+GitHub secret Gists are unlisted, not private. The entire file is encrypted before upload, but anyone with the Gist URL can still download the ciphertext. Keep the Gist backup passphrase private. The App PIN and location history are excluded from cloud backups.
