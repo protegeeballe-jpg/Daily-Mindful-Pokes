@@ -588,3 +588,52 @@ input[type="reset"] {
     align-self:flex-start;
     min-height:2.5rem;
 }
+
+
+/* Encrypted GitHub Gist sync fields; existing Google Drive styles remain in place. */
+.gist-sync-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+    margin-top: .65rem;
+}
+.gist-sync-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    color: #355b43;
+    font-size: .68rem;
+    font-weight: 700;
+}
+.gist-sync-fields input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: .48rem .55rem;
+    border: 1px solid rgba(112,143,111,.4);
+    border-radius: .55rem;
+    background: #fff;
+    color: #243b2d;
+    font: inherit;
+    font-size: .72rem;
+    user-select: text;
+}
+.gist-sync-fields input:focus {
+    outline: 2px solid rgba(72,125,86,.35);
+    outline-offset: 1px;
+}
+.gist-sync-help {
+    margin: .4rem 0 0;
+    color: #68796b;
+    font-size: .62rem;
+    line-height: 1.35;
+}
+.gist-sync-status:empty { display: none; }
+.gist-sync-status[data-state="error"] { color: #a33745; }
+.gist-sync-status[data-state="success"] { color: #2f6b43; }
+@media (max-width: 520px) {
+    .gist-sync-fields { grid-template-columns: 1fr; gap: .35rem; }
+    .gist-sync-fields label { font-size: .62rem; }
+    .gist-sync-fields input { padding: .4rem .45rem; font-size: .68rem; }
+    .gist-sync-help { font-size: .56rem; }
+}
