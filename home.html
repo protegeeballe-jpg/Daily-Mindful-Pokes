@@ -42,7 +42,8 @@
             </div>
             <div class="legal-notice">
                 <p><strong>Local-first by design with enhanced privacy.</strong> The app stores its routine, garden, and writing records locally on your device, utilizing automatic Gzip compression for optimal performance. Private diary and reflection fields are encrypted using your separate private-writing passphrase, protected by an inactivity auto-lock timer and background session security.</p>
-                <p><strong>Optional Google Drive backup.</strong> You can optionally and manually back up or restore your encrypted and compressed app data directly to your personal Google Drive (via a private app folder). Sync operations are strictly user-initiated with no background or automatic data uploading.</p>
+                <p><strong>Encrypted GitHub Gist sync.</strong> You can manually save and restore a client-side encrypted backup through the Faith &amp; Focus Cloudflare Worker. A separate backup passphrase stays in your browser; the GitHub token stays in a Cloudflare Secret. Secret Gists are unlisted, not private, so the entire backup is encrypted before upload.</p>
+                <p><strong>Optional Google Drive backup.</strong> Google Drive remains a separate, independent backup option. It can be used alongside Gist sync and is not replaced or disabled by it. All cloud operations are user-initiated; there are no background uploads.</p>
             </div>
             <nav class="legal-nav" aria-label="Application links">
                 <a class="legal-button" href="./index.html">Open Faith &amp; Focus</a>
