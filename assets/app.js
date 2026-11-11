@@ -222,6 +222,7 @@ import {
             document.getElementById('app-pin-form')?.reset();
             document.getElementById('view-pin')?.classList.add('hidden');
             showPage('garden');
+            window.dispatchEvent(new Event('faith-focus:app-unlocked'));
         }
 
         function getDeviceLocalDateString(now = new Date()) {
