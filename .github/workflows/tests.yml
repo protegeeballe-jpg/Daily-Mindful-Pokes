@@ -17,8 +17,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check application module syntax
+      - name: Check application and Worker module syntax
         run: |
+          node --check worker.js
           node --check assets/app.js
           node --check assets/app-gate.js
           node --check assets/account-security.js
