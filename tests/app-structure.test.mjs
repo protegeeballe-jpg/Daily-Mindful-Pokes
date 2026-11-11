@@ -10,7 +10,7 @@ const voiceNoteStore=readFileSync(new URL('../assets/voice-note-store.js',import
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
 const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
-const appIcon=readFileSync(new URL('../assets/icon.svg',import.meta.url),'utf8');
+const appIcon=readFileSync(new URL('../assets/icon.png',import.meta.url));
 test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
