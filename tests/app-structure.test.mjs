@@ -616,12 +616,26 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  assert.match(terms,/one-time current location/);
 });
 
-test('Drive panel closes cleanly before the outdoor scene so garden scenes remain siblings',()=>{
+test('Gist sync and optional Drive backup remain separate panels before the outdoor garden scene',()=>{
  const roomStart=html.indexOf('<section data-garden-scene="room"');
- const driveStart=html.indexOf('<section id="drive-sync-panel"',roomStart);
+ const gistStart=html.indexOf('<section id="gist-sync-panel"',roomStart);
+ const driveStart=html.indexOf('<section id="drive-sync-panel"',gistStart);
  const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',driveStart);
- assert.ok(roomStart>=0 && driveStart>roomStart && outdoorStart>driveStart);
+ assert.ok(roomStart>=0 && gistStart>roomStart && driveStart>gistStart && outdoorStart>driveStart);
+
+ const gistRegion=html.slice(gistStart,driveStart);
+ assert.match(gistRegion,/id="gist-sync-key"/);
+ assert.match(gistRegion,/id="gist-backup-passphrase"/);
+ assert.match(gistRegion,/id="gist-restore-button"/);
+ assert.match(gistRegion,/id="gist-backup-button"/);
+ assert.match(gistRegion,/Do not use your Diary passphrase here/);
+ assert.match(gistRegion,/<\\/section>\\s*$/);
+
  const driveRegion=html.slice(driveStart,outdoorStart);
- assert.match(driveRegion,/<div class="drive-sync-controls">[\s\S]*<\/div>\s*<p id="drive-sync-status"[^>]*><\/p>\s*<\/section>\s*<\/section>\s*$/);
- assert.match(html,/id="drive-sync-panel"[^>]*aria-label="Google Drive backup and restore"/);
+ assert.match(driveRegion,/Google Drive Backup \\(optional\\)/);
+ assert.match(driveRegion,/id="drive-connect-button"/);
+ assert.match(driveRegion,/id="drive-backup-button"/);
+ assert.match(driveRegion,/id="drive-restore-button"/);
+ assert.match(driveRegion,/id="drive-sync-status"/);
+ assert.match(driveRegion,/<\\/section>\\s*<\\/section>\\s*$/);
 });
