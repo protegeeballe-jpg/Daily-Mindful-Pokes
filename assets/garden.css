@@ -427,7 +427,7 @@ input[type="reset"] {
     padding: .5rem;
 }
 
-/* Forge Room setup and backup panels. */
+/* Forge Room setup and shared top-bar spacing. */
 .garden-topbar {
     gap: .55rem;
     margin-bottom: .55rem;
@@ -457,20 +457,7 @@ input[type="reset"] {
     min-height: 42px;
     padding: .5rem;
 }
-.drive-sync-panel {
-    max-width: 640px;
-    margin: .55rem auto 0;
-    padding: .55rem .65rem;
-    border-radius: .9rem;
-}
-.drive-sync-controls {
-    margin-top: .4rem;
-}
-.drive-sync-actions {
-    gap: .3rem;
-}
 
-/* Keep compact dimensions on narrow phones while retaining the shared button size. */
 @media (max-width: 420px) {
     .diary-archive-panel {
         padding: .4rem;
@@ -479,9 +466,10 @@ input[type="reset"] {
         max-height: min(90vh, 42rem);
         max-height: min(90dvh, 42rem);
     }
+}
 
 
-/* Keep the complete Diary editor reachable inside the fixed-height app scene.
+/* /* Keep the complete Diary editor reachable inside the fixed-height app scene.
    The recording control remains below the Diary records and is reached by scrolling
    the editor panel, rather than being clipped by the outer viewport. */
 #view-diary:not(.hidden) > .card-lavender {
@@ -760,7 +748,7 @@ input[type="reset"] {
     min-height: 38px;
     padding: .5rem .75rem !important;
     border-radius: .65rem;
-    font-size: .76rem !important;
+    font-size:var(--ui-button-font-size) !important;
     line-height: 1.2;
     box-shadow: 0 1px 0 rgba(88,117,88,.1);
 }

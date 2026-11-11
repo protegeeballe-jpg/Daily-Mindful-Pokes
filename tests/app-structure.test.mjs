@@ -511,7 +511,7 @@ test('checklist controls remain compact and backup controls are comfortably size
  assert.match(appCss,/min-width:3\.1rem/);
  assert.match(appCss,/checklist-reset-button/);
  assert.match(gardenCss,/\.settings-modal \.drive-sync-panel \.garden-action-button/);
- assert.match(gardenCss,/min-height:38px/);
+ assert.match(gardenCss,/min-height:\s*38px/);
  assert.match(html,/id="drive-connect-button"/);
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
@@ -535,7 +535,7 @@ test('Settings modal and backup disclosures adapt to narrow phone screens',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
  const settingsRules=gardenCss.slice(gardenCss.indexOf('/* Shared Settings control'));
  assert.match(settingsRules,/@media \(max-width: 520px\)/);
- assert.match(settingsRules,/width:calc\(100% - \.8rem\)/);
+ assert.match(settingsRules,/width:\\s*calc\\(100% - \\.8rem\\)/);
  assert.match(settingsRules,/max-height:min\(92dvh,48rem\)/);
  assert.match(settingsRules,/settings-disclosure > \.drive-sync-panel/);
  assert.match(html,/id="drive-connect-button"/);
