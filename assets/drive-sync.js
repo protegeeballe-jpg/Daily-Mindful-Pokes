@@ -2,7 +2,8 @@ import { compressData, decompressData } from './compressor.js';
 import { GARDEN_STORAGE_KEY, validateGardenState } from './garden-model.js';
 import {
   WRITING_CONFIG_KEY, WRITING_DIARY_PREFIX, WRITING_NOTES_PREFIX, PRIVATE_NOTE_IDS,
-  exportPrivateVoiceNotes, restorePrivateVoiceNotes, validatePrivateVoiceNoteBackup
+  exportPrivateVoiceNotes, restorePrivateVoiceNotes, validatePrivateVoiceNoteBackup,
+  flushAndSaveCurrentPrivateWriting
 } from './writing-security.js';
 
 const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh.apps.googleusercontent.com';
@@ -176,6 +177,45 @@ export function validateBackup(payload) {
     }
   }
   return payload.records;
+}
+
+// Shared backup builder for the independent Google Drive and GitHub Gist options.
+export async function createBackupPayload() {
+  await flushAndSaveCurrentPrivateWriting();
+  const records = collectBackupRecords();
+  const voiceNotes = await exportPrivateVoiceNotes();
+  const payload = {
+    format: 'faith-focus-daily-armor-backup',
+    version: 1,
+    createdAt: new Date().toISOString(),
+    records,
+    voiceNotes
+  };
+  validateBackup(payload);
+  return payload;
+}
+
+// Apply a validated backup with rollback for localStorage and encrypted voice notes.
+export async function restoreBackupPayload(downloaded) {
+  const records = validateBackup(downloaded);
+  const previous = new Map();
+  for (const key of Object.keys(records)) previous.set(key, localStorage.getItem(key));
+
+  const includesVoiceNotes = Object.hasOwn(downloaded, 'voiceNotes');
+  const previousVoiceNotes = includesVoiceNotes ? await exportPrivateVoiceNotes() : null;
+
+  try {
+    for (const [key, value] of Object.entries(records)) localStorage.setItem(key, value);
+    if (includesVoiceNotes) await restorePrivateVoiceNotes(downloaded.voiceNotes);
+  } catch (writeError) {
+    for (const [key, value] of previous) {
+      if (value === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+    }
+    if (includesVoiceNotes) await restorePrivateVoiceNotes(previousVoiceNotes);
+    throw writeError;
+  }
+  return records;
 }
 
 async function loadGoogleIdentityServices() {
