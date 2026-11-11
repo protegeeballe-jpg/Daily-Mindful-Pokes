@@ -40,7 +40,7 @@ const PRECACHE_URLS = [
     './assets/compressor.js',
 
     './assets/garden-room-background.jpg',
-    './assets/icon.svg'
+    './assets/icon.png'
 ];
 
 async function precacheAppShell() {
