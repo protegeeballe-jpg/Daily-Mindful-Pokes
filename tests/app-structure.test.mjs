@@ -536,7 +536,7 @@ test('Settings modal and backup disclosures adapt to narrow phone screens',()=>{
  const settingsRules=gardenCss.slice(gardenCss.indexOf('/* Shared Settings control'));
  assert.match(settingsRules,/@media \(max-width: 520px\)/);
  assert.match(settingsRules,/width:\s*calc\(100% - \.8rem\)/);
- assert.match(settingsRules,/max-height:min\(92dvh,48rem\)/);
+ assert.match(settingsRules,/max-height:\s*min\(92dvh,48rem\)/);
  assert.match(settingsRules,/settings-disclosure > \.drive-sync-panel/);
  assert.match(html,/id="drive-connect-button"/);
 });
