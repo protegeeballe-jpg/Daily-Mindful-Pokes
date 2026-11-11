@@ -30,7 +30,7 @@ export default {
       });
 
       const responseHeaders = new Headers(response.headers);
-      responseHeaders.set("Access-Control-Allow-Origin": "*");
+      responseHeaders.set("Access-Control-Allow-Origin", "*");
 
       return new Response(response.body, {
         status: response.status,
