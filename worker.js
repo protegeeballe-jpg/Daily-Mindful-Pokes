@@ -49,7 +49,6 @@ async function githubRequest(url, token, options = {}) {
     "X-GitHub-Api-Version": "2022-11-28"
   });
   if (options.body) headers.set("Content-Type", "application/json");
-  if (options.ifMatch) headers.set("If-Match", options.ifMatch);
   return fetch(url, {
     method: options.method || "GET",
     headers,
@@ -107,11 +106,10 @@ export default {
         }
         const gist = await response.json();
         const file = gist.files?.[BACKUP_FILE_NAME];
-        if (!file) return jsonResponse({ error: "The configured backup file was not found." }, 404, origin);
 
         return jsonResponse({
-          content: typeof file.content === "string" ? file.content : "",
-          truncated: file.truncated === true,
+          content: typeof file?.content === "string" ? file.content : null,
+          truncated: file?.truncated === true,
           etag: response.headers.get("ETag") || ""
         }, 200, origin);
       }
@@ -142,17 +140,20 @@ export default {
       }
       const currentEtag = currentResponse.headers.get("ETag") || "";
       const currentGist = await currentResponse.json();
-      if (!currentGist.files?.[BACKUP_FILE_NAME]) {
-        return jsonResponse({ error: "The configured backup file was not found." }, 404, origin);
+      const currentFile = currentGist.files?.[BACKUP_FILE_NAME];
+      if (currentFile?.truncated) {
+        return jsonResponse({ error: "The existing backup file is too large to verify safely." }, 413, origin);
       }
       if (!currentEtag || currentEtag !== expectedEtag) {
         return jsonResponse({ error: "The Gist changed after this device last loaded it." }, 409, origin);
       }
 
+      // GitHub supports ETags for conditional GETs, but not conditional PATCH writes.
+      // This pre-write check detects stale devices; strict atomic serialization needs
+      // a Cloudflare Durable Object lock.
       const updateResponse = await githubRequest(gistUrl, env.GITHUB_TOKEN, {
         method: "PATCH",
-        body: JSON.stringify(update),
-        ifMatch: expectedEtag
+        body: JSON.stringify(update)
       });
       if (!updateResponse.ok) {
         return jsonResponse({ error: "GitHub could not update the configured Gist.", status: updateResponse.status }, updateResponse.status, origin);
