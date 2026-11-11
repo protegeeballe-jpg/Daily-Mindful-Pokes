@@ -87,10 +87,11 @@ function updateCredentialUi() {
     ? 'Update keys & automatic sync'
     : 'Save keys & enable automatic sync';
   const status = byId('gist-auto-sync-status');
-  if (status && !status.textContent) {
+  if (status && (!status.dataset.initialized || status.textContent.includes('not enabled'))) {
     status.textContent = enabled
-      ? 'Automatic Gist sync is enabled on this device.'
+      ? 'Automatic Gist sync is enabled on this device. It will check the cloud after the app PIN is unlocked.'
       : 'Automatic Gist sync is not enabled on this device yet.';
+    status.dataset.initialized = 'true';
   }
 }
 
