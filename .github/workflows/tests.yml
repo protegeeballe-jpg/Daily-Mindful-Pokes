@@ -26,6 +26,7 @@ jobs:
           node --check assets/garden.js
           node --check assets/garden-model.js
           node --check assets/drive-sync.js
+          node --check assets/gist-sync.js
           node --check assets/location-checkin.js
           node --check assets/voice-note-store.js
       - name: Run regression and security tests
