@@ -629,13 +629,13 @@ test('Gist sync and optional Drive backup remain separate panels before the outd
  assert.match(gistRegion,/id="gist-restore-button"/);
  assert.match(gistRegion,/id="gist-backup-button"/);
  assert.match(gistRegion,/Do not use your Diary passphrase here/);
- assert.match(gistRegion,/<\\/section>\\s*$/);
+ assert.match(gistRegion,/<\/section>\s*$/);
 
  const driveRegion=html.slice(driveStart,outdoorStart);
- assert.match(driveRegion,/Google Drive Backup \\(optional\\)/);
+ assert.match(driveRegion,/Google Drive Backup \(optional\)/);
  assert.match(driveRegion,/id="drive-connect-button"/);
  assert.match(driveRegion,/id="drive-backup-button"/);
  assert.match(driveRegion,/id="drive-restore-button"/);
  assert.match(driveRegion,/id="drive-sync-status"/);
- assert.match(driveRegion,/<\\/section>\\s*<\\/section>\\s*$/);
+ assert.match(driveRegion,/<\/section>\s*<\/section>\s*$/);
 });
