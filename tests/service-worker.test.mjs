@@ -51,7 +51,7 @@ test('the offline shell includes every page and runtime dependency needed by the
         './assets/voice-note-store.js',
         './assets/compressor.js',
         './assets/garden-room-background.jpg',
-        './assets/icon.svg'
+        './assets/icon.png'
     ];
 
     for (const resource of requiredResources) {
