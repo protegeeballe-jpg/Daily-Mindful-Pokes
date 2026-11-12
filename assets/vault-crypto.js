@@ -12,6 +12,8 @@ export const VAULT_PACKET_VERSION = 1;
 const encoder = new TextEncoder();
 const PASS_KEY_AAD = 'FaithFocus|master-key|v1|passphrase|';
 const RECOVERY_KEY_AAD = 'FaithFocus|master-key|v1|recovery|';
+const LEGACY_VAULT_ID_DOMAIN = 'FaithFocus|VaultID|v1|';
+const LEGACY_VAULT_SALT_DOMAIN = 'FaithFocus|PBKDF2-Salt|v1|';
 const PACKET_AAD_DOMAIN = 'Faith & Focus|Vault Daily Packet|v1|';
 
 export function normalizeVaultUsername(value) {
@@ -272,6 +274,88 @@ export async function finishVaultLogin(account, loginMaterial, passphraseEnvelop
     encryptionKey,
     writeToken: loginMaterial.writeToken
   };
+}
+
+export async function deriveLegacyVaultCredentials(username, passphrase, cryptoApi = globalThis.crypto) {
+  const usernameResult = validateVaultUsername(username);
+  const passphraseResult = validateVaultPassphrase(passphrase);
+  if (!usernameResult.valid) throw new Error('The username is not valid.');
+  if (!passphraseResult.valid) throw new Error(passphraseResult.message);
+  const usernameBytes = encoder.encode(usernameResult.normalized);
+  const vaultIdBytes = await sha256(encoder.encode(LEGACY_VAULT_ID_DOMAIN + usernameResult.normalized), cryptoApi);
+  const salt = await sha256(concatBytes(encoder.encode(LEGACY_VAULT_SALT_DOMAIN), usernameBytes), cryptoApi);
+  const material = await cryptoApi.subtle.importKey(
+    'raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveBits']
+  );
+  const derived = new Uint8Array(await cryptoApi.subtle.deriveBits({
+    name: 'PBKDF2', salt, iterations: VAULT_KDF_ITERATIONS, hash: 'SHA-256'
+  }, material, 512));
+  const masterKeyBytes = derived.slice(0, 32);
+  const writeToken = derived.slice(32, 64);
+  const encryptionKey = await cryptoApi.subtle.importKey(
+    'raw', masterKeyBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+  const vaultId = bytesToHex(vaultIdBytes);
+  derived.fill(0);
+  salt.fill(0);
+  return { username: usernameResult.normalized, vaultId, encryptionKey, masterKeyBytes, writeToken };
+}
+
+export async function createLegacyVaultUpgrade(username, passphrase, answers, legacyCredentials, cryptoApi = globalThis.crypto) {
+  const usernameResult = validateVaultUsername(username);
+  const passphraseResult = validateVaultPassphrase(passphrase, { creating: true });
+  const answerResult = validateRecoveryAnswers(answers);
+  if (!usernameResult.valid || !passphraseResult.valid || !answerResult.valid) {
+    throw new Error(!usernameResult.valid ? 'The username is not valid.'
+      : !passphraseResult.valid ? passphraseResult.message : answerResult.message);
+  }
+  if (!legacyCredentials || legacyCredentials.username !== usernameResult.normalized
+      || !/^[a-f0-9]{64}$/.test(legacyCredentials.vaultId || '')
+      || !(legacyCredentials.masterKeyBytes instanceof Uint8Array)
+      || legacyCredentials.masterKeyBytes.length !== 32
+      || !(legacyCredentials.writeToken instanceof Uint8Array)
+      || legacyCredentials.writeToken.length !== 32) {
+    throw new TypeError('A verified legacy account key is required.');
+  }
+
+  const masterBytes = legacyCredentials.masterKeyBytes.slice();
+  const passphraseSalt = randomBytes(16, cryptoApi);
+  const recoverySalt = randomBytes(16, cryptoApi);
+  try {
+    const passphraseMaterial = await derivePassphraseMaterial(passphrase, passphraseSalt, legacyCredentials.vaultId, cryptoApi);
+    const recoveryKey = await deriveRecoveryWrappingKey(answers, recoverySalt, legacyCredentials.vaultId, cryptoApi);
+    const passphraseEnvelope = await wrapMasterKey(
+      masterBytes, passphraseMaterial.wrappingKey, PASS_KEY_AAD + legacyCredentials.vaultId, cryptoApi
+    );
+    const recoveryEnvelope = await wrapMasterKey(
+      masterBytes, recoveryKey, RECOVERY_KEY_AAD + legacyCredentials.vaultId, cryptoApi
+    );
+    const encryptionKey = await cryptoApi.subtle.importKey(
+      'raw', masterBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+    return {
+      username: usernameResult.normalized,
+      vaultId: legacyCredentials.vaultId,
+      encryptionKey,
+      writeToken: passphraseMaterial.writeToken,
+      legacyWriteToken: legacyCredentials.writeToken.slice(),
+      accountRecord: {
+        username: usernameResult.normalized,
+        vaultId: legacyCredentials.vaultId,
+        passphraseSalt: toBase64(passphraseSalt),
+        passphraseIterations: VAULT_KDF_ITERATIONS,
+        passphraseEnvelope,
+        recoverySalt: toBase64(recoverySalt),
+        recoveryIterations: RECOVERY_KDF_ITERATIONS,
+        recoveryEnvelope,
+        questionAnswers: answers.map(item => ({ questionId: Number(item.questionId), answer: item.answer }))
+      }
+    };
+  } finally {
+    masterBytes.fill(0);
+    passphraseSalt.fill(0);
+    recoverySalt.fill(0);
+  }
 }
 
 export async function unlockVaultAccount(account, passphrase, cryptoApi = globalThis.crypto) {
