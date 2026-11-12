@@ -83,6 +83,37 @@ async function buildDailyBundle(dateString) {
     if (value !== null) records[key] = value;
   }
 
+  // Always represent every checklist item in each date bundle. Missing historical
+  // values are explicit false states rather than omitted checklist controls.
+  const checklistKey = 'mindful_pokes_data_' + dateString;
+  let checklist = {};
+  try {
+    const existing = records[checklistKey];
+    checklist = existing ? JSON.parse(existing) : {};
+    if (!checklist || typeof checklist !== 'object' || Array.isArray(checklist)) checklist = {};
+  } catch {
+    checklist = {};
+  }
+  const isCurrentDate = dateString === getCurrentDateString();
+  document.querySelectorAll('.app-chk').forEach(checkbox => {
+    const id = checkbox.dataset.id;
+    if (!id) return;
+    if (isCurrentDate) {
+      checklist[id] = checkbox.checked === true;
+      checklist[id + '__guided'] = checkbox.dataset.guideUnlocked === 'true' || checkbox.checked === true;
+    } else {
+      if (typeof checklist[id] !== 'boolean') checklist[id] = false;
+      if (typeof checklist[id + '__guided'] !== 'boolean') checklist[id + '__guided'] = false;
+    }
+  });
+  document.querySelectorAll('.cloud-item[data-cloud]').forEach(item => {
+    const key = 'cloud_' + item.dataset.cloud;
+    if (isCurrentDate) checklist[key] = item.dataset.released === 'true';
+    else if (typeof checklist[key] !== 'boolean') checklist[key] = false;
+  });
+  checklist.cloud_flow_version = 1;
+  records[checklistKey] = JSON.stringify(checklist);
+
   const voiceNotes = await exportEncryptedVoiceNotesForDate(dateString);
   return {
     format: 'faith-focus-daily-bundle',
