@@ -27,8 +27,7 @@ const LEGACY_WRITING_CONFIG_KEY = 'dmp_private_writing_crypto_v1';
 let activeVault = null;
 let cloudDebounceTimer = null;
 let applyingRemotePacket = 0;
-let syncInProgress = false;
-let syncQueued = false;
+let syncQueue = Promise.resolve();
 let localCaptureQueues = new Map();
 let localChangeVersions = new Map();
 let lastStatus = '';
@@ -360,18 +359,19 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
   return false;
 }
 
-async function synchronizeVault() {
+async function syfunction synchronizeVault() {
+  if (!activeVault) return Promise.resolve();
+  const operation = syncQueue.catch(() => {}).then(() => performVaultSync());
+  syncQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function performVaultSync() {
   if (!activeVault) return;
-  if (syncInProgress) {
-    syncQueued = true;
-    return;
-  }
-  syncInProgress = true;
   try {
     status('Checking your encrypted vault…');
     const index = await fetchRemoteIndex();
     const remoteDates = Object.keys(index).filter(isValidDateString).sort();
-    const localDates = new Set((await listLocalDailyPackets()).map(record => record.dateString));
     let restored = 0;
 
     for (const dateString of remoteDates) {
@@ -385,7 +385,7 @@ async function synchronizeVault() {
       if (!Object.hasOwn(index, record.dateString)) {
         await uploadDailyPacket(record.dateString);
       } else if (!record.remoteUpdatedAt) {
-        // Legacy local data can be recognized as a match or surfaced as a conflict during reconcile.
+        // The remote date was already reconciled above; mismatches are preserved as conflicts.
         continue;
       }
     }
@@ -398,16 +398,9 @@ async function synchronizeVault() {
   } catch (error) {
     status(error.message || 'Automatic vault synchronization could not finish.', 'error');
     throw error;
-  } finally {
-    syncInProgress = false;
-    if (syncQueued) {
-      syncQueued = false;
-      queueMicrotask(() => synchronizeVault().catch(() => {}));
-    }
   }
 }
-
-function scheduleCloudPush() {
+eCloudPush() {
   if (!activeVault) return;
   if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
   cloudDebounceTimer = window.setTimeout(() => {
