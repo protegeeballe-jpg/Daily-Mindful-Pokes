@@ -6,6 +6,11 @@ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
 const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
 const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
 const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
+const vaultCrypto=readFileSync(new URL('../assets/vault-crypto.js',import.meta.url),'utf8');
+const vaultSession=readFileSync(new URL('../assets/vault-session.js',import.meta.url),'utf8');
+const worker=readFileSync(new URL('../worker.js',import.meta.url),'utf8');
+const wrangler=readFileSync(new URL('../wrangler.toml',import.meta.url),'utf8');
+const serviceWorker=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
 const voiceNoteStore=readFileSync(new URL('../assets/voice-note-store.js',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
@@ -20,6 +25,13 @@ test('Faith & Focus branding, PWA metadata, and unified account copy stay aligne
  assert.match(html,/id="vault-login-form"/);
  assert.match(html,/id="vault-username"/);
  assert.match(html,/id="vault-passphrase"/);
+ assert.match(html,/id="vault-login-submit"[^>]*>Sign In</);
+ assert.match(html,/id="vault-show-signup"/);
+ assert.match(html,/id="vault-show-recovery"/);
+ assert.match(html,/id="vault-signup-form"/);
+ assert.match(html,/id="vault-recovery-form"/);
+ assert.match(html,/id="signup-question-3"/);
+ assert.match(html,/id="recovery-question-3"/);
  assert.match(html,/at least 12 characters/i);
  assert.doesNotMatch(html,/6–12 digit app PIN|Create your app PIN/);
  assert.equal(manifest.name,'Faith & Focus: Daily Armor');
@@ -51,13 +63,40 @@ test('CSP limits script execution to same-origin files and blocks objects',()=>{
  assert.match(html,/assets\/tailwind\.generated\.css/);
  assert.match(readme,/Content Security Policy/i);
 });
-test('private-writing encryption remains separate and preserved',()=>{
+test('new Diary access adopts the account encryption key while preserving verified one-time legacy migration',()=>{
  assert.match(writing,/AES-GCM/);
  assert.match(writing,/PBKDF2/);
- assert.match(writing,/WRITING_KDF_ITERATIONS=600000/);
- assert.match(writing,/tagLength:128/);
+ assert.match(writing,/adoptVaultEncryptionKey/);
+ assert.match(writing,/writingCryptoKey=vaultPrimaryKey/);
+ assert.match(writing,/preserveOriginals:true/);
+ assert.match(writing,/cleanupLegacyPrivateWriting/);
  assert.match(writing,/PRIVATE_NOTE_IDS/);
  assert.match(app,/handleDiaryKeyAction/);
+});
+
+test('account setup, sign-in and recovery use a permanent master key and the exact 20 questions',()=>{
+ assert.match(vaultCrypto,/const SECURITY_QUESTIONS = Object\.freeze\(/);
+ assert.equal((vaultCrypto.match(/^  'What /gm)||[]).length,20);
+ assert.match(vaultCrypto,/createNewVaultAccount/);
+ assert.match(vaultCrypto,/createVaultId/);
+ assert.match(vaultCrypto,/wrapMasterKeyWithRecovery/);
+ assert.match(vaultCrypto,/unwrapMasterKeyWithRecovery/);
+ assert.match(vaultCrypto,/deriveVaultCredentialsFromMaster/);
+ assert.match(vaultCrypto,/validateSecurityAnswer/);
+ assert.match(vaultSession,/account\\/signin/);
+ assert.match(vaultSession,/account\\/signup/);
+ assert.match(vaultSession,/account\\/recovery\\/lookup/);
+ assert.match(vaultSession,/account\\/recovery\\/update/);
+ assert.match(vaultSession,/Sign Up/);
+ assert.match(vaultSession,/Forgot Password \\/ Username/);
+ assert.match(worker,/class AccountDirectory/);
+ assert.match(worker,/RECOVERY_PEPPER/);
+ assert.match(worker,/recoveryLookupHash/);
+ assert.match(worker,/recovery-rate:/);
+ assert.match(wrangler,/name = \"ACCOUNT_DIRECTORY\"/);
+ assert.match(wrangler,/class_name = \"AccountDirectory\"/);
+ assert.match(wrangler,/tag = \"v2\"/);
+ assert.match(serviceWorker,/faith-focus-shell-v3-single-account-recovery/);
 });
 test('ordinary progress storage is documented as not encrypted',()=>{
  assert.match(app,/mindful_pokes_data_/);
