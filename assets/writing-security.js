@@ -200,7 +200,7 @@ import {
             if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing and voice notes are encrypted on this device.';}
             else document.dispatchEvent(new CustomEvent('private-writing:locked'));
         }
-        async function migrateLegacyPrivateWriting(key){
+        async function migrateLegacyPrivateWriting(key,{preserveSource=false}={}){
             const dates=new Set();
             for(let i=0;i<localStorage.length;i++){
                 const storageKey=localStorage.key(i);
@@ -209,23 +209,105 @@ import {
                 match=storageKey&&storageKey.match(/^mindful_pokes_data_(\d{4}-\d{2}-\d{2})$/);
                 if(match)dates.add(match[1]);
             }
+
+            const plans=[];
             for(const dateStr of dates){
-                const oldDiaryKey='private_diary_'+dateStr,oldDiary=localStorage.getItem(oldDiaryKey);
-                const appDataKey='mindful_pokes_data_'+dateStr,rawAppData=localStorage.getItem(appDataKey);
+                const oldDiaryKey='private_diary_'+dateStr;
+                const appDataKey='mindful_pokes_data_'+dateStr;
+                const oldDiary=localStorage.getItem(oldDiaryKey);
+                const rawAppData=localStorage.getItem(appDataKey);
                 let appData={},valid=true;
                 if(rawAppData){try{appData=JSON.parse(rawAppData)||{};}catch(error){valid=false;}}
                 const secureDiaryKey=getSecureWritingStorageKey('diary',dateStr);
-                if(oldDiary!==null&&!localStorage.getItem(secureDiaryKey))localStorage.setItem(secureDiaryKey,await encryptPrivatePayload('diary',dateStr,oldDiary,key));
-                if(oldDiary!==null)localStorage.removeItem(oldDiaryKey);
+                const secureNotesKey=getSecureWritingStorageKey('notes',dateStr);
+                const originalSecureDiary=localStorage.getItem(secureDiaryKey);
+                const originalSecureNotes=localStorage.getItem(secureNotesKey);
+                const nextDiary=oldDiary!==null&&!originalSecureDiary
+                    ?await encryptPrivatePayload('diary',dateStr,oldDiary,key)
+                    :originalSecureDiary;
+                const legacyNotes={};
+                let hasContent=false,hadFields=false;
                 if(valid&&rawAppData){
-                    const hadFields=PRIVATE_NOTE_IDS.some(id=>Object.prototype.hasOwnProperty.call(appData,id));
-                    const legacyNotes={};let hasContent=false;
-                    PRIVATE_NOTE_IDS.forEach(id=>{if(typeof appData[id]==='string'){legacyNotes[id]=appData[id];hasContent=hasContent||appData[id].length>0;}delete appData[id];});
-                    const secureNotesKey=getSecureWritingStorageKey('notes',dateStr);
-                    if(hasContent&&!localStorage.getItem(secureNotesKey))localStorage.setItem(secureNotesKey,await encryptPrivatePayload('notes',dateStr,legacyNotes,key));
-                    if(hadFields)localStorage.setItem(appDataKey,JSON.stringify(appData));
+                    PRIVATE_NOTE_IDS.forEach(id=>{
+                        if(Object.prototype.hasOwnProperty.call(appData,id))hadFields=true;
+                        if(typeof appData[id]==='string'){
+                            legacyNotes[id]=appData[id];
+                            hasContent=hasContent||appData[id].length>0;
+                        }
+                    });
                 }
+                const nextNotes=hasContent&&!originalSecureNotes
+                    ?await encryptPrivatePayload('notes',dateStr,legacyNotes,key)
+                    :originalSecureNotes;
+                const cleanedAppData={...appData};
+                if(valid&&rawAppData&&!preserveSource){
+                    PRIVATE_NOTE_IDS.forEach(id=>delete cleanedAppData[id]);
+                }
+                plans.push({
+                    dateStr,oldDiaryKey,appDataKey,secureDiaryKey,secureNotesKey,
+                    oldDiary,rawAppData,originalSecureDiary,originalSecureNotes,
+                    nextDiary,nextNotes,hadFields,valid,cleanedAppData
+                });
             }
+
+            try{
+                plans.forEach(item=>{
+                    if(item.nextDiary!==null&&item.nextDiary!==item.originalSecureDiary){
+                        localStorage.setItem(item.secureDiaryKey,item.nextDiary);
+                    }
+                    if(item.nextNotes!==null&&item.nextNotes!==item.originalSecureNotes){
+                        localStorage.setItem(item.secureNotesKey,item.nextNotes);
+                    }
+                    if(!preserveSource){
+                        if(item.oldDiary!==null)localStorage.removeItem(item.oldDiaryKey);
+                        if(item.valid&&item.rawAppData&&item.hadFields){
+                            localStorage.setItem(item.appDataKey,JSON.stringify(item.cleanedAppData));
+                        }
+                    }
+                });
+            }catch(error){
+                plans.forEach(item=>{
+                    if(item.originalSecureDiary===null)localStorage.removeItem(item.secureDiaryKey);
+                    else localStorage.setItem(item.secureDiaryKey,item.originalSecureDiary);
+                    if(item.originalSecureNotes===null)localStorage.removeItem(item.secureNotesKey);
+                    else localStorage.setItem(item.secureNotesKey,item.originalSecureNotes);
+                    if(item.oldDiary===null)localStorage.removeItem(item.oldDiaryKey);
+                    else localStorage.setItem(item.oldDiaryKey,item.oldDiary);
+                    if(item.rawAppData===null)localStorage.removeItem(item.appDataKey);
+                    else localStorage.setItem(item.appDataKey,item.rawAppData);
+                });
+                throw error;
+            }
+        }
+
+        function cleanupLegacyPlaintextPrivateWriting(){
+            const dates=new Set();
+            for(let i=0;i<localStorage.length;i++){
+                const storageKey=localStorage.key(i);
+                let match=storageKey&&storageKey.match(/^private_diary_(\d{4}-\d{2}-\d{2})$/);
+                if(match)dates.add(match[1]);
+                match=storageKey&&storageKey.match(/^mindful_pokes_data_(\d{4}-\d{2}-\d{2})$/);
+                if(match)dates.add(match[1]);
+            }
+            dates.forEach(dateStr=>{
+                localStorage.removeItem('private_diary_'+dateStr);
+                const appDataKey='mindful_pokes_data_'+dateStr;
+                const raw=localStorage.getItem(appDataKey);
+                if(!raw)return;
+                try{
+                    const data=JSON.parse(raw)||{};
+                    let changed=false;
+                    PRIVATE_NOTE_IDS.forEach(id=>{
+                        if(Object.prototype.hasOwnProperty.call(data,id)){
+                            delete data[id];
+                            changed=true;
+                        }
+                    });
+                    if(changed)localStorage.setItem(appDataKey,JSON.stringify(data));
+                }catch(error){
+                    // Preserve malformed source data instead of risking deletion.
+                }
+            });
         }
         async function handleDiaryKeyAction(){
             const passInput=document.getElementById('diary-passphrase'),confirmInput=document.getElementById('diary-passphrase-confirm'),button=document.getElementById('diary-key-action');
@@ -252,8 +334,11 @@ import {
                     if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
                 }
                 if(vaultPrimaryKey&&legacyMigrationRequired){
-                    await migrateLegacyPrivateWriting(key);
+                    // Stage plaintext migration first but keep every original source
+                    // record until encrypted Diary and voice-note migration succeeds.
+                    await migrateLegacyPrivateWriting(key,{preserveSource:true});
                     await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    cleanupLegacyPlaintextPrivateWriting();
                 }else if(vaultPrimaryKey){
                     writingCryptoKey=vaultPrimaryKey;
                 }else{
