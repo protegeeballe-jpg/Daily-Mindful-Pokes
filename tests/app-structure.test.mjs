@@ -515,22 +515,28 @@ test('Personal Diary notebook organizes written entries, locations, and voice no
   assert.match(appCss,/\.diary-notebook-button\s*\{/);
 });
 
-test('public legal pages accurately describe the encrypted vault and local JSON fallback',()=>{
+test('public pages explain privacy and account use in plain language without internal security details',()=>{
  const home=readFileSync(new URL('../home.html',import.meta.url),'utf8');
  const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
  const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
  assert.match(home,/Application Privacy Policy/);
  assert.match(home,/Terms of Service/);
- assert.match(home,/Automatic encrypted vault sync/);
- assert.match(privacy,/Cloudflare KV/);
- assert.match(privacy,/AES-256-GCM/);
- assert.match(privacy,/12 characters/);
+ assert.match(home,/Encrypted cloud backups/);
+ assert.match(home,/without encryption/i);
+ assert.match(privacy,/Cloudflare/);
+ assert.match(privacy,/encrypted daily backup copies/i);
+ assert.match(privacy,/not encrypted/i);
+ assert.match(privacy,/at least 12 characters/i);
+ assert.match(privacy,/does not delete cloud backups/i);
  assert.match(terms,/not a medical device/);
- assert.match(terms,/username and passphrase/i);
- assert.match(terms,/local JSON/i);
- assert.match(html,/href="\.\/privacy\.html"/);
- assert.match(html,/href="\.\/terms\.html"/);
+ assert.match(terms,/username and a strong passphrase/i);
+ assert.match(terms,/encrypted JSON/i);
+ assert.match(terms,/without encryption/i);
+ assert.ok(html.includes('href="./privacy.html"'));
+ assert.ok(html.includes('href="./terms.html"'));
  assert.match(readme,/Encrypted JSON export and import/);
+ const publicPages=[home,privacy,terms].join('\n');
+ assert.doesNotMatch(publicPages,/PBKDF2|HMAC|RECOVERY_PEPPER|Durable Object|Write Token|AES-256-GCM|Vault ID|KV namespace/i);
 });
 
 test('checklist controls remain compact and backup controls are comfortably sized inside Settings',()=>{
