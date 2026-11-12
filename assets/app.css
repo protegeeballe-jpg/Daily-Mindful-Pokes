@@ -861,3 +861,22 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
 .diary-archive-panel.hidden {
     display:none;
 }
+
+
+/* Make account-creation errors obvious and accessible without exposing technical internals. */
+.vault-account-status {
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.vault-account-status[data-state="error"] {
+    border-color: #fda4af;
+    background: #fff1f2;
+    color: #881337;
+    font-weight: 700;
+}
+.vault-account-status[data-state="success"] {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+    font-weight: 700;
+}
