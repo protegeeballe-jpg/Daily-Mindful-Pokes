@@ -352,10 +352,7 @@ export function savePrivateVoiceNoteForDate(dateStr,blob){
     if(!writingCryptoKey) return Promise.reject(new Error('Unlock your Diary before saving a voice note.'));
     const key=writingCryptoKey;
     const task=()=>saveEncryptedVoiceNote(dateStr,blob,key);
-    voiceNoteSavePromise=voiceNoteSavePromise.then(task,task).then(result=>{
-        window.dispatchEvent(new Event('faith-focus:local-data-changed'));
-        return result;
-    });
+    voiceNoteSavePromise=voiceNoteSavePromise.then(task,task);
     return voiceNoteSavePromise;
 }
 export async function loadPrivateVoiceNotesForDate(dateStr){
