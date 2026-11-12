@@ -218,3 +218,31 @@ export async function restoreEncryptedVoiceNotes(records) {
         database.close();
     }
 }
+
+
+export async function exportEncryptedVoiceNotesForDate(dateString) {
+    if (!isValidDateString(dateString)) throw new TypeError('A valid Diary date is required.');
+    const records = await getStoredRecords(dateString);
+    records.sort((left, right) => Date.parse(left.capturedAt) - Date.parse(right.capturedAt));
+    return records;
+}
+
+export async function restoreEncryptedVoiceNotesForDate(dateString, records) {
+    if (!isValidDateString(dateString)
+        || !validateEncryptedVoiceNoteBackup(records)
+        || records.some(record => record.dateString !== dateString)) {
+        throw new Error('The daily packet contains invalid voice-note records.');
+    }
+    const database = await openVoiceNoteDatabase();
+    try {
+        const transaction = database.transaction(VOICE_NOTE_STORE_NAME, 'readwrite');
+        const completed = waitForTransaction(transaction);
+        const store = transaction.objectStore(VOICE_NOTE_STORE_NAME);
+        const existing = await waitForRequest(store.index('dateString').getAllKeys(dateString));
+        existing.forEach(key => store.delete(key));
+        records.forEach(record => store.put(record));
+        await completed;
+    } finally {
+        database.close();
+    }
+}
