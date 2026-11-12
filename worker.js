@@ -157,6 +157,11 @@ async function unsealRecoveryEnvelope(sealed, vaultId, pepper) {
   return envelope;
 }
 
+function validBase64Length(value, expectedLength) {
+  try { return fromBase64(value).length === expectedLength; }
+  catch { return false; }
+}
+
 function validEnvelope(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
       || value.version !== 1 || value.algorithm !== "AES-256-GCM"
@@ -238,7 +243,7 @@ async function callRegistry(env, path, body, request) {
   const stub = env.ACCOUNT_REGISTRY.get(id);
   const headers = new Headers({ "Content-Type": "application/json" });
   const ip = request.headers.get("CF-Connecting-IP");
-  if (ip) headers.set("CF-Connecting-IP", ip);
+  if (ip) headers.set("X-Recovery-Client-IP", ip);
   return stub.fetch(new Request("https://account-registry.internal" + path, {
     method: "POST",
     headers,
@@ -385,7 +390,7 @@ export class AccountRegistry {
   }
 
   async rateLimitRecovery(request) {
-    const ip = request.headers.get("CF-Connecting-IP") || "unknown-client";
+    const ip = request.headers.get("X-Recovery-Client-IP") || "unknown-client";
     const windowNumber = Math.floor(Date.now() / (15 * 60 * 1000));
     const ipDigest = await hmacHex(this.env.RECOVERY_PEPPER, "recovery-ip|" + ip);
     const key = "recovery-attempts:" + ipDigest + ":" + windowNumber;
@@ -419,9 +424,9 @@ export class AccountRegistry {
       const vaultId = payload.vaultId;
       const answers = payload.questionAnswers;
       if (!username || !VAULT_ID_PATTERN.test(vaultId || "")
-          || typeof payload.passphraseSalt !== "string" || fromBase64(payload.passphraseSalt).length !== 16
+          || !validBase64Length(payload.passphraseSalt, 16)
           || payload.passphraseIterations !== 600000 || !validEnvelope(payload.passphraseEnvelope)
-          || typeof payload.recoverySalt !== "string" || fromBase64(payload.recoverySalt).length !== 16
+          || !validBase64Length(payload.recoverySalt, 16)
           || payload.recoveryIterations !== 1200000 || !validEnvelope(payload.recoveryEnvelope)
           || !validQuestionAnswers(answers) || !TOKEN_PATTERN.test(payload.writeToken || "")) {
         return jsonResponse({ error: "The sign-up information is incomplete or invalid." }, 400);
@@ -554,7 +559,7 @@ export class AccountRegistry {
         || payload.passphraseEnvelope !== undefined || payload.passphraseIterations !== undefined
         || payload.writeToken !== undefined;
       if (passwordFieldsPresent && (
-        typeof payload.passphraseSalt !== "string" || fromBase64(payload.passphraseSalt).length !== 16
+        !validBase64Length(payload.passphraseSalt, 16)
         || payload.passphraseIterations !== 600000 || !validEnvelope(payload.passphraseEnvelope)
         || !TOKEN_PATTERN.test(payload.writeToken || "")
       )) {
