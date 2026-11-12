@@ -20,22 +20,88 @@
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
-    <!-- Unified account gate: account keys are derived locally and never persisted. -->
-    <div id="view-pin" class="fixed inset-0 bg-amber-50/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4">
-        <div class="card-yellow rounded-3xl p-8 max-w-sm w-full text-center">
+    <!-- Faith & Focus account access: sign-in, sign-up, and recovery are separate paths. -->
+    <div id="view-pin" class="fixed inset-0 bg-amber-50/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 overflow-y-auto">
+        <div class="card-yellow rounded-3xl p-6 sm:p-8 max-w-md w-full text-center my-4">
             <span class="text-5xl inline-block" aria-hidden="true">🛡️</span>
             <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">Welcome to Faith &amp; Focus</h2>
-            <p class="text-xs text-amber-800/80 mt-2 mb-5">One account. One passphrase. Your encrypted daily life travels with you across devices.</p>
-            <form id="vault-login-form" novalidate>
-                <label for="vault-username" class="block text-left text-xs font-bold text-amber-950 mb-1">Username</label>
-                <input id="vault-username" type="text" inputmode="text" autocapitalize="none" autocomplete="username" spellcheck="false" maxlength="32" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3 mb-3" placeholder="Choose your username">
-                <label for="vault-passphrase" class="block text-left text-xs font-bold text-amber-950 mb-1">Passphrase</label>
-                <input id="vault-passphrase" type="password" autocomplete="current-password" minlength="12" maxlength="128" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="At least 12 characters">
-                <p id="vault-login-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Sign in or create an account. A new username creates its vault the first time it is used.</p>
-                <button id="vault-login-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">Continue</button>
-            </form>
-            <p class="text-[10px] text-amber-900/70 mt-4">Your passphrase is never sent to Cloudflare. There is no email or phone recovery. Keep your passphrase safe; a forgotten passphrase cannot be reset.</p>
-            <nav class="legal-inline-links" aria-label="Legal information">
+            <p class="text-xs text-amber-800/80 mt-2 mb-5">One account for your Checklist, Diary and Garden.</p>
+
+            <section id="vault-auth-login-panel" aria-labelledby="vault-login-heading">
+                <h3 id="vault-login-heading" class="text-lg font-bold text-amber-950 mb-4">Sign in to your account</h3>
+                <form id="vault-login-form" novalidate class="text-left">
+                    <label for="vault-username" class="block text-xs font-bold text-amber-950 mb-1">Username</label>
+                    <input id="vault-username" type="text" inputmode="text" autocapitalize="none" autocomplete="username" spellcheck="false" maxlength="32" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3 mb-3" placeholder="Your username">
+                    <label for="vault-passphrase" class="block text-xs font-bold text-amber-950 mb-1">Passphrase</label>
+                    <input id="vault-passphrase" type="password" autocomplete="current-password" minlength="12" maxlength="128" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="Your passphrase">
+                    <p id="vault-login-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Sign in once to access your entire account.</p>
+                    <button id="vault-login-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">Sign In</button>
+                </form>
+                <div class="flex items-center justify-center gap-5 mt-4">
+                    <button id="vault-show-signup" type="button" class="text-xs font-bold text-amber-900 underline underline-offset-2">Sign Up</button>
+                    <button id="vault-show-recovery" type="button" class="text-xs font-bold text-amber-900 underline underline-offset-2">Forgot Password / Username?</button>
+                </div>
+            </section>
+
+            <section id="vault-auth-signup-panel" class="hidden text-left" aria-labelledby="vault-signup-heading">
+                <h3 id="vault-signup-heading" class="text-lg font-bold text-amber-950 text-center mb-2">Create your account</h3>
+                <p id="vault-signup-legacy-note" class="hidden text-xs text-amber-900/80 text-center mb-4" role="status">We found your existing vault. Add recovery questions to keep your existing encrypted records and make account recovery available.</p>
+                <form id="vault-signup-form" novalidate>
+                    <div id="vault-signup-identity-fields">
+                        <label for="vault-signup-username" class="block text-xs font-bold text-amber-950 mb-1">Choose a username</label>
+                        <input id="vault-signup-username" type="text" autocapitalize="none" autocomplete="username" spellcheck="false" maxlength="32" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-3" placeholder="3–32 characters">
+                        <label for="vault-signup-passphrase" class="block text-xs font-bold text-amber-950 mb-1">Create a passphrase</label>
+                        <input id="vault-signup-passphrase" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-3" placeholder="At least 12 characters">
+                        <label for="vault-signup-passphrase-confirm" class="block text-xs font-bold text-amber-950 mb-1">Confirm passphrase</label>
+                        <input id="vault-signup-passphrase-confirm" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-4" placeholder="Enter it again">
+                    </div>
+                    <div id="vault-signup-legacy-passphrase" class="hidden">
+                        <label for="vault-legacy-confirm-passphrase" class="block text-xs font-bold text-amber-950 mb-1">Confirm your existing passphrase</label>
+                        <input id="vault-legacy-confirm-passphrase" type="password" autocomplete="current-password" minlength="12" maxlength="128" class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-4" placeholder="Your existing passphrase">
+                    </div>
+                    <div class="border-t border-amber-800/20 pt-4">
+                        <h4 class="text-sm font-bold text-amber-950">Choose 3 security questions</h4>
+                        <p class="text-[11px] text-amber-900/80 mt-1 mb-3">Answer each with one word, no spaces. Capitalization matters. Choose answers that other people cannot easily guess.</p>
+                        <div class="space-y-3">
+                            <div><label for="signup-question-1" class="block text-xs font-bold text-amber-950 mb-1">Question 1</label><select id="signup-question-1" class="w-full bg-white rounded-xl border-2 border-amber-300 px-3 py-2 mb-2" required></select><input id="signup-answer-1" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="64" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3" placeholder="One-word answer"></div>
+                            <div><label for="signup-question-2" class="block text-xs font-bold text-amber-950 mb-1">Question 2</label><select id="signup-question-2" class="w-full bg-white rounded-xl border-2 border-amber-300 px-3 py-2 mb-2" required></select><input id="signup-answer-2" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="64" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3" placeholder="One-word answer"></div>
+                            <div><label for="signup-question-3" class="block text-xs font-bold text-amber-950 mb-1">Question 3</label><select id="signup-question-3" class="w-full bg-white rounded-xl border-2 border-amber-300 px-3 py-2 mb-2" required></select><input id="signup-answer-3" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="64" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3" placeholder="One-word answer"></div>
+                        </div>
+                    </div>
+                    <p id="vault-signup-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Your three answers will be protected and used only for account recovery.</p>
+                    <button id="vault-signup-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">Create Account</button>
+                    <button id="vault-signup-back" type="button" class="w-full py-2 mt-2 text-xs font-bold text-amber-900 underline">Back to Sign In</button>
+                </form>
+            </section>
+
+            <section id="vault-auth-recovery-panel" class="hidden text-left" aria-labelledby="vault-recovery-heading">
+                <h3 id="vault-recovery-heading" class="text-lg font-bold text-amber-950 text-center mb-2">Recover your account</h3>
+                <p class="text-[11px] text-amber-900/80 mb-3">Choose the same three questions and enter the exact answers you saved during sign-up. Answers are case-sensitive and must have no spaces.</p>
+                <form id="vault-recovery-form" novalidate>
+                    <div class="space-y-3">
+                        <div><label for="recovery-question-1" class="block text-xs font-bold text-amber-950 mb-1">Question 1</label><select id="recovery-question-1" class="w-full bg-white rounded-xl border-2 border-amber-300 px-3 py-2 mb-2" required></select><input id="recovery-answer-1" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="64" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3" placeholder="One-word answer"></div>
+                        <div><label for="recovery-question-2" class="block text-xs font-bold text-amber-950 mb-1">Question 2</label><select id="recovery-question-2" class="w-full bg-white rounded-xl border-2 border-amber-300 px-3 py-2 mb-2" required></select><input id="recovery-answer-2" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="64" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3" placeholder="One-word answer"></div>
+                        <div><label for="recovery-question-3" class="block text-xs font-bold text-amber-950 mb-1">Question 3</label><select id="recovery-question-3" class="w-full bg-white rounded-xl border-2 border-amber-300 px-3 py-2 mb-2" required></select><input id="recovery-answer-3" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="64" required class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3" placeholder="One-word answer"></div>
+                    </div>
+                    <p id="vault-recovery-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Your answers can recover your username or let you set a new passphrase.</p>
+                    <button id="vault-recovery-verify" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">Verify Answers</button>
+                </form>
+                <div id="vault-recovery-reset-fields" class="hidden border-t border-amber-800/20 mt-4 pt-4">
+                    <p class="text-xs text-amber-900 mb-3">Account found: <strong id="vault-recovered-username"></strong></p>
+                    <label for="recovery-new-username" class="block text-xs font-bold text-amber-950 mb-1">New username (leave blank to keep it)</label>
+                    <input id="recovery-new-username" type="text" autocapitalize="none" autocomplete="username" spellcheck="false" maxlength="32" class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-3" placeholder="Optional username change">
+                    <label for="recovery-new-passphrase" class="block text-xs font-bold text-amber-950 mb-1">New passphrase (leave blank to keep it)</label>
+                    <input id="recovery-new-passphrase" type="password" autocomplete="new-password" minlength="12" maxlength="128" class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-3" placeholder="Optional passphrase change">
+                    <label for="recovery-new-passphrase-confirm" class="block text-xs font-bold text-amber-950 mb-1">Confirm new passphrase</label>
+                    <input id="recovery-new-passphrase-confirm" type="password" autocomplete="new-password" minlength="12" maxlength="128" class="w-full bg-white rounded-xl border-2 border-amber-300 px-4 py-3 mb-3" placeholder="Repeat new passphrase">
+                    <button id="vault-recovery-save" type="button" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">Save Changes &amp; Sign In</button>
+                    <button id="vault-recovery-continue" type="button" class="w-full py-2 mt-2 text-xs font-bold text-amber-900 underline">Continue with this account</button>
+                </div>
+                <button id="vault-recovery-back" type="button" class="w-full py-2 mt-2 text-xs font-bold text-amber-900 underline">Back to Sign In</button>
+            </section>
+
+            <p class="text-[10px] text-amber-900/70 mt-5">Your passphrase and master key stay on your device. Recovery answers are transmitted only over HTTPS for verification and are not stored as readable answers. Keep your answers private and hard to guess.</p>
+            <nav class="legal-inline-links mt-3" aria-label="Legal information">
                 <a href="./privacy.html">Privacy Policy</a>
                 <span aria-hidden="true">·</span>
                 <a href="./terms.html">Terms of Service</a>
