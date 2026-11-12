@@ -253,14 +253,14 @@ export async function unwrapMasterKeyWithRecovery(envelope, questionIds, answers
   }
 }
 
-export function deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, username = '', cryptoApi = globalThis.crypto) {
+export async function deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, username = '', cryptoApi = globalThis.crypto) {
   if (typeof vaultId !== 'string' || !/^[a-f0-9]{64}$/.test(vaultId)) {
     throw new TypeError('The permanent Vault ID is invalid.');
   }
   if (!(masterKeyBytes instanceof Uint8Array) || masterKeyBytes.length !== 64) {
     throw new TypeError('The account master key must contain 64 bytes.');
   }
-  const encryptionKey = cryptoApi.subtle.importKey(
+  const encryptionKey = await cryptoApi.subtle.importKey(
     'raw', masterKeyBytes.slice(0, 32), { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
   );
   return {
@@ -288,7 +288,7 @@ export async function createNewVaultAccount(username, passphrase, questionIds, a
   const masterKeyBytes = cryptoApi.getRandomValues(new Uint8Array(64));
   const passphraseEnvelope = await wrapMasterKeyWithPassphrase(masterKeyBytes, passphrase, cryptoApi);
   const recoveryEnvelope = await wrapMasterKeyWithRecovery(masterKeyBytes, questionIds, answers, cryptoApi);
-  const credentials = deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, usernameResult.normalized, cryptoApi);
+  const credentials = await deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, usernameResult.normalized, cryptoApi);
   masterKeyBytes.fill(0);
   return { ...credentials, passphraseEnvelope, recoveryEnvelope, questionIds: questionIds.map(Number) };
 }
@@ -314,7 +314,7 @@ export async function deriveLegacyVaultCredentials(username, passphrase, cryptoA
   }, material, 512));
   salt.fill(0);
   const vaultId = bytesToHex(vaultIdBytes);
-  const credentials = deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, usernameResult.normalized, cryptoApi);
+  const credentials = await deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, usernameResult.normalized, cryptoApi);
   masterKeyBytes.fill(0);
   credentials.legacy = true;
   return credentials;
