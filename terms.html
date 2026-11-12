@@ -21,46 +21,41 @@
         <article class="legal-card">
             <p class="legal-meta">Effective date: November 12, 2026 · Last updated: November 12, 2026</p>
             <h1>Terms of Service</h1>
-            <p>These Terms of Service (“Terms”) apply to your use of Faith &amp; Focus: Daily Armor (the “App”), a local-first web application maintained by the owner of the public project repository. By using the App, you agree to these Terms. If you do not agree, do not use the App.</p>
+            <p>These Terms apply when you use Faith &amp; Focus: Daily Armor (the “App”). By using the App, you agree to these Terms. Please do not use the App if you do not agree.</p>
 
-            <h2>1. What the App provides</h2>
-            <p>The App offers a daily health and focus checklist, guided routine activities, a personal garden, progress indicators, a private Diary, voice notes, location check-ins, and an encrypted daily vault that can synchronize across devices.</p>
+            <h2>1. What the App is for</h2>
+            <p>The App provides a daily wellness checklist, guided activities, a personal Diary, voice notes, optional location check-ins, a small garden, and progress tracking. It is designed for personal and family use.</p>
 
-            <h2>2. Not medical or professional advice</h2>
-            <p>The App is not a medical device and does not provide medical diagnosis, treatment, clinical monitoring, or professional healthcare advice. Checklist prompts, breathing activities, hydration reminders, and other wellness content are general informational tools. They are not a substitute for advice from a qualified healthcare professional. Stop any activity that causes discomfort and seek appropriate professional help for health concerns.</p>
+            <h2>2. Not medical advice</h2>
+            <p>The App is not a medical device and does not provide medical diagnosis, treatment, or professional healthcare advice. Its activities and reminders are general wellness tools. They are not a substitute for advice from a qualified healthcare professional. Stop an activity if it causes discomfort and seek professional advice for health concerns.</p>
 
-            <h2>3. Account credentials and responsibility</h2>
-            <p>The App uses one username and passphrase for the Checklist, Diary, Voice Notes, Location History, Garden, and cloud vault. It does not ask for an email address or phone number. You are responsible for choosing a strong, unique passphrase, protecting it, and locking the App on shared devices. Passphrases must be at least 12 characters and no more than 128 characters.</p>
-            <p>During sign-up, you choose three different security questions and provide one-word answers with no spaces. Answers are case-sensitive. You may use the same three questions and exact answers to recover a forgotten username or reset a passphrase. You are responsible for remembering the selected questions, spelling, and letter case. Security questions are not equivalent to a strong passphrase; choose unusual answers that other people cannot easily guess.</p>
-            <p>The browser sends recovery answers to the Cloudflare Worker over HTTPS for verification. The Worker stores a keyed digest and a sealed encrypted recovery envelope, not readable answers. Recovery is rate-limited, and the browser decrypts the master key locally after a valid recovery grant. The maintainer does not receive the plaintext master key or Diary content. If you lose both your passphrase and the ability to answer your selected questions, the maintainer cannot restore your encrypted records.</p>
-            <p>A new account receives a permanent random Vault ID. Changing the username updates the account label but does not change the Vault ID or require re-encrypting the daily packets. A vault is established when a username is first registered. The App has no email, phone, identity provider, or invitation verification. Another person may register an unused username before its intended owner. Choose a distinctive username and claim it before sharing the App publicly.</p>
+            <h2>3. Your account</h2>
+            <p>You are responsible for choosing a username and a strong passphrase, keeping them private, and protecting access to your device. Passphrases must be at least 12 characters long. The App does not use email or phone number recovery.</p>
+            <p>During registration, you choose three security questions and provide answers. Keep the selected questions and exact answers private and remember how you entered them. They may be needed to recover your username or reset your passphrase. If you cannot sign in and cannot provide the required recovery answers, the maintainer cannot restore your account or private records.</p>
+            <p>Do not use an account that belongs to someone else, and do not share your account details with anyone you do not trust with your information.</p>
 
-            <h2>4. Data storage, encryption, and synchronization</h2>
-            <p>The App keeps local application records in your browser and saves a compressed, AES-256-GCM encrypted daily packet in IndexedDB for synchronization and export. Each daily packet includes that date's checklist states (checked and unchecked), Diary and reflection records, encrypted voice-note records, location tags, and relevant Garden/progress state. The browser compresses the daily bundle before encrypting it. The Worker receives ciphertext, a permanent Vault ID, a date, a Write Token header, and request metadata; it does not receive your passphrase, plaintext master key, or plaintext Diary content.</p>
-            <p>The master encryption key and raw Write Token exist in browser memory only. The passphrase-derived key wraps the master key locally; the three-answer recovery key is derived locally and wraps the same master key. The session locks after 15 minutes of inactivity. Automatic synchronization is queued after five seconds without changes and is attempted when the page becomes hidden. A per-vault Durable Object coordinates packet writes and checks versions to reduce cross-device overwrites. An Account Registry Durable Object stores username/account metadata and protected recovery data. When two devices edit the same date independently, the App may pause the update and preserve conflicting copies rather than choosing one automatically.</p>
-            <p>Some underlying checklist, progress, location, and Garden records in localStorage are not encrypted at rest by the App. The encrypted IndexedDB packet protects the synchronization copy and cloud copy, but it does not make every raw browser-storage record ciphertext. Anyone with access to your unlocked device or browser profile may be able to inspect those local records.</p>
-            <p>Location check-ins are included inside the encrypted daily packet. Their cloud copies are encrypted before transmission. The Health Checklist Reset preserves the main Diary, voice notes, and location history; it clears the selected date's checklist progress/reflections and restarts the Garden planting setup.</p>
+            <h2>4. Your information and backups</h2>
+            <p>The App stores information in your browser and may send encrypted daily backup copies to its cloud service when synchronization is available. Diary entries and voice notes receive additional protection. Some checklist, progress, location, and Garden information is stored in the browser without encryption. Use a device and browser profile that you control.</p>
+            <p>Settings offers an optional encrypted JSON backup. Keep exported files private and import them only into the account they belong to. Cloud synchronization is intended to help keep devices up to date, but it may be delayed or interrupted. If the same date is changed on more than one device, the App may ask you to review the copies before continuing.</p>
+            <p>The current App does not provide a control to delete cloud backups by date or remove an entire account. Clearing browser data does not delete cloud backups. The Health Checklist Reset clears checklist progress and reflections for the selected date and restarts the Garden planting setup. It keeps your main Diary entries, voice notes, and location history.</p>
 
-            <h2>5. Local backup file</h2>
-            <p>Settings provides an optional local JSON export/import of encrypted daily packets. Import requires signing in to the same account that created the file. Keep exported files secure because they contain encrypted personal information and date metadata. Export/import is a fallback and is not required for automatic cloud synchronization. Google Drive and GitHub Gist synchronization are not part of the current App.</p>
+            <h2>5. Microphone and location permissions</h2>
+            <p>Voice notes require microphone permission from your browser or device. Location check-ins request your one-time current location only when you choose that feature. You can manage these permissions through your browser or device settings. If you share a recording or location with another service, that service's terms and privacy policy apply.</p>
 
             <h2>6. Acceptable use</h2>
-            <p>You may use the App for lawful personal and family purposes. You agree not to misuse the App, attempt to compromise its security, interfere with its availability, upload malicious code, or use it in a way that violates another person's rights or applicable law.</p>
+            <p>You may use the App for lawful personal and family purposes. You agree not to misuse the App, interfere with its operation, attempt to access another person's information, or use it in a way that violates another person's rights or applicable law.</p>
 
-            <h2>7. Microphone and location permissions</h2>
-            <p>Voice recording requires microphone permission from your browser or operating system. The App encrypts recorded audio in the browser before local storage and includes encrypted voice-note records in daily packets. Location check-ins request a one-time current location when you select a location option. Location records are kept in a read-only local history and included only within the encrypted daily packet for cloud synchronization. Opening a coordinate in an external mapping service or sharing it elsewhere is your choice and is subject to that service's terms and privacy practices.</p>
+            <h2>7. Availability and changes</h2>
+            <p>The App is provided on an “as available” basis. Features may change, be interrupted, or be removed. The maintainer does not promise uninterrupted access or permanent storage. Keep your own backup of information that is important to you.</p>
 
-            <h2>8. Availability, retention, and deletion</h2>
-            <p>The App is provided on an “as available” basis. Features may change, be suspended, or be removed. The maintainer does not promise uninterrupted access or permanent storage. The current interface does not provide a per-account or per-date cloud deletion control. Clearing local browser storage does not delete cloud packets. You are responsible for maintaining an encrypted JSON export or other copy of information that is important to you.</p>
+            <h2>8. Third-party services</h2>
+            <p>The public App pages are hosted by GitHub Pages. Cloud synchronization uses services provided by Cloudflare. Those providers may process technical information under their own terms and privacy policies. The current App does not use Google Drive or GitHub Gist for backup.</p>
 
-            <h2>9. Third-party services</h2>
-            <p>The public App website is hosted by GitHub Pages. Automatic vault synchronization uses the configured Cloudflare Worker, Durable Object, and KV namespace. Your use of those providers is subject to their applicable terms and privacy policies. The App does not load Google Drive OAuth scripts or connect to Google APIs for backup.</p>
+            <h2>9. Disclaimer and responsibility</h2>
+            <p>The App is provided without a promise that it will always be available, error-free, or suitable for every purpose. To the extent permitted by law, the maintainer is not responsible for indirect or consequential loss arising from use of, or inability to use, the App. Nothing in these Terms removes rights that cannot legally be excluded.</p>
 
-            <h2>10. Disclaimer and limitation</h2>
-            <p>To the extent permitted by applicable law, the App is provided without warranties of any kind, whether express or implied. The maintainer does not guarantee that the App will be error-free, continuously available, or suitable for every purpose. Nothing in these Terms excludes a right or remedy that cannot lawfully be excluded. To the extent permitted by law, the maintainer is not responsible for indirect or consequential loss arising from use of, or inability to use, the App.</p>
-
-            <h2>11. Updates and contact</h2>
-            <p>These Terms may be updated when the App changes. The current version and effective date will be published on this page. For questions, contact the project maintainer through the <a href="https://github.com/protegeeballe-jpg/Faith-and-Focus-Daily-Armor/issues">project's GitHub issue page</a>. Do not post passphrases, Write Tokens, Diary content, location coordinates, or other private information in a public issue.</p>
+            <h2>10. Updates and contact</h2>
+            <p>These Terms may be updated when the App changes. The latest version and effective date will be published on this page. For questions, contact the project maintainer through the <a href="https://github.com/protegeeballe-jpg/Faith-and-Focus-Daily-Armor/issues">project's GitHub issue page</a>. Do not post passphrases, recovery answers, Diary entries, location details, or other private information in a public issue.</p>
         </article>
         <footer class="legal-footer">
             <a href="./home.html">Application Home</a>
