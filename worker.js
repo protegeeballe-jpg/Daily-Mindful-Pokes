@@ -186,8 +186,8 @@ export default {
     if (!match || url.search || !VAULT_ID_PATTERN.test(match[1])) {
       return jsonResponse({ error: "Route not found." }, 404, origin);
     }
-    if (!env.VAULT_PACKETS || !env.VAULT_COORDINATOR) {
-      return jsonResponse({ error: "Cloudflare KV and Durable Object bindings are not configured." }, 503, origin);
+    if (!env.VAULT_PACKETS || !env.VAULT_COORDINATOR || !env.ACCOUNT_DIRECTORY) {
+      return jsonResponse({ error: "Cloudflare KV and account Durable Object bindings are not configured." }, 503, origin);
     }
 
     const [, vaultId, resource, dateString] = match;
@@ -221,6 +221,15 @@ export default {
       "X-Write-Token": token,
       "X-Vault-Id": vaultId
     });
+    if (resource === "claim" && request.method === "POST") {
+      const directory = env.ACCOUNT_DIRECTORY.get(env.ACCOUNT_DIRECTORY.idFromName("faith-focus-account-directory-v1"));
+      const existsResponse = await directory.fetch(new Request(
+        new URL("/account/vault-exists", "https://account-directory.internal"),
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ vaultId }) }
+      ));
+      const existsData = await existsResponse.json();
+      headers.set("X-Allow-First-Claim", existsData.exists === true ? "true" : "false");
+    }
     if (request.method === "PUT") {
       headers.set("X-Base-Updated-At", request.headers.get("X-Base-Updated-At") || "none");
     }
@@ -316,7 +325,8 @@ export class VaultCoordinator {
     return this.serialized(async () => {
       const path = new URL(request.url).pathname;
       if (path === "/claim") {
-        if (!(await this.authenticate(request, { allowFirstClaim: true }))) return this.unauthorized();
+        const allowFirstClaim = request.headers.get("X-Allow-First-Claim") === "true";
+        if (!(await this.authenticate(request, { allowFirstClaim }))) return this.unauthorized();
         return jsonResponse({ ok: true, claimed: true }, 200);
       }
 
@@ -444,6 +454,12 @@ export class AccountDirectory {
       catch { return jsonResponse({ error: "Invalid account request." }, 400); }
       if (!body || typeof body !== "object" || Array.isArray(body)) {
         return jsonResponse({ error: "Invalid account request." }, 400);
+      }
+
+      if (path === "/account/vault-exists") {
+        const vaultId = body.vaultId;
+        if (!VAULT_ID_PATTERN.test(vaultId || "")) return jsonResponse({ exists: false }, 200);
+        return jsonResponse({ exists: Boolean(await this.state.storage.get("account:" + vaultId)) }, 200);
       }
 
       if (path === "/account/signup") {
