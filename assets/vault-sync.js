@@ -359,7 +359,7 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
   return false;
 }
 
-async function syfunction synchronizeVault() {
+function synchronizeVault() {
   if (!activeVault) return Promise.resolve();
   const operation = syncQueue.catch(() => {}).then(() => performVaultSync());
   syncQueue = operation.catch(() => {});
@@ -400,7 +400,7 @@ async function performVaultSync() {
     throw error;
   }
 }
-eCloudPush() {
+function scheduleCloudPush() {
   if (!activeVault) return;
   if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
   cloudDebounceTimer = window.setTimeout(() => {
