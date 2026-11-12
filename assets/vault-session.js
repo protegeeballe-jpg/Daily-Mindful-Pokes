@@ -24,6 +24,7 @@ const APP_CLIENT = 'faith-focus-daily-armor-web/1';
 const SESSION_INACTIVITY_MS = 15 * 60 * 1000;
 let activeCredentials = null;
 let pendingLegacyEnrollment = null;
+let pendingLegacyPassphrase = null;
 let pendingRecovery = null;
 let inactivityTimer = null;
 let accountBusy = false;
@@ -149,11 +150,11 @@ function resetSignupState() {
   byId('vault-signup-username').value = '';
   byId('vault-signup-passphrase').value = '';
   byId('vault-signup-passphrase-confirm').value = '';
-  byId('vault-legacy-confirm-passphrase').value = '';
   byId('vault-signup-identity-fields')?.classList.remove('hidden');
   byId('vault-signup-legacy-passphrase')?.classList.add('hidden');
   byId('vault-signup-legacy-note')?.classList.add('hidden');
   pendingLegacyEnrollment = null;
+  pendingLegacyPassphrase = null;
 }
 
 async function finishApplication(credentials, successMessage) {
@@ -193,15 +194,17 @@ async function startLegacyEnrollment(username, passphrase) {
     await startVaultSync(credentials);
     await adoptVaultEncryptionKey(credentials.encryptionKey);
     pendingLegacyEnrollment = credentials;
+    pendingLegacyPassphrase = passphrase;
     byId('vault-signup-identity-fields')?.classList.add('hidden');
     byId('vault-signup-legacy-passphrase')?.classList.remove('hidden');
     byId('vault-signup-legacy-note')?.classList.remove('hidden');
-    setStatus('vault-signup-message', 'Your existing vault has been verified. Add three recovery questions and confirm a passphrase to finish the one-time account upgrade. Your Vault ID and encrypted packets will be preserved.', 'info');
+    setStatus('vault-signup-message', 'Your existing vault has been verified. Choose three recovery questions to finish the one-time upgrade. Your passphrase, Vault ID and encrypted packets will be preserved.', 'info');
     showPanel('signup');
   } catch (error) {
     try { await stopVaultSync(); } catch { /* Keep the first failure. */ }
     clearVaultEncryptionKey();
     wipeVaultCredentials(credentials);
+    pendingLegacyPassphrase = null;
     throw error;
   }
 }
@@ -278,9 +281,9 @@ async function submitVaultSignup(event) {
   try {
     const { questionIds, answers } = readSecurityAnswers('signup');
     if (pendingLegacyEnrollment) {
-      passphrase = byId('vault-legacy-confirm-passphrase')?.value || '';
+      passphrase = pendingLegacyPassphrase || '';
       const passphraseResult = validateVaultPassphrase(passphrase);
-      if (!passphraseResult.valid) throw new Error(passphraseResult.message);
+      if (!passphraseResult.valid) throw new Error('The passphrase used to verify this existing vault could not be retained. Please sign in again.');
       credentials = pendingLegacyEnrollment;
       const passphraseEnvelope = await createPassphraseEnvelope(credentials.masterKeyBytes, passphrase);
       const recoveryEnvelope = await wrapMasterKeyWithRecovery(credentials.masterKeyBytes, questionIds, answers);
@@ -289,8 +292,8 @@ async function submitVaultSignup(event) {
         passphraseEnvelope, recoveryEnvelope, questionIds, answers
       }, { writeToken: credentials.writeToken });
       pendingLegacyEnrollment = null;
+      pendingLegacyPassphrase = null;
       clearSecurityAnswers('signup');
-      byId('vault-legacy-confirm-passphrase').value = '';
       await finishLegacyApplication(credentials);
       credentials = null;
       return;
@@ -481,6 +484,7 @@ function initializeVaultSession() {
       clearVaultEncryptionKey();
       wipeVaultCredentials(pendingLegacyEnrollment);
       pendingLegacyEnrollment = null;
+      pendingLegacyPassphrase = null;
     }
     showLogin();
   });
