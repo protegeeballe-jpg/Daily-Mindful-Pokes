@@ -10,6 +10,7 @@ import {
   exportEncryptedVoiceNotes, exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate
 } from './voice-note-store.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
+import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording } from './writing-security.js';
 
 const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
 const APP_CLIENT = 'faith-focus-daily-armor-web/1';
@@ -484,6 +485,11 @@ export async function stopVaultSync() {
 }
 
 export async function exportEncryptedVaultPackets() {
+  if (!activeVault) throw new Error('Sign in before exporting your encrypted vault.');
+  await stopRegisteredVoiceNoteRecording();
+  await flushAndSaveCurrentPrivateWriting();
+  for (const queue of localCaptureQueues.values()) await queue;
+  await captureExistingLocalDates();
   const packets = await listLocalDailyPackets();
   return packets.map(({ dateString, packet, remoteUpdatedAt }) => ({ dateString, packet, remoteUpdatedAt }));
 }
@@ -494,6 +500,9 @@ export async function importEncryptedVaultPackets(packets) {
       || packets.some(item => !item || !isValidEncryptedPacket(item.packet)
         || item.dateString !== item.packet.dateString)) {
     throw new Error('The selected backup contains an invalid or unsupported encrypted daily packet.');
+  }
+  for (const item of packets) {
+    await decryptDailyBundle(item.packet, activeVault.encryptionKey, decompressData);
   }
   const { importLocalDailyPackets } = await import('./vault-storage.js');
   await importLocalDailyPackets(packets);
