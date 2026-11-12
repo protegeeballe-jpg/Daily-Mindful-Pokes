@@ -1,5 +1,6 @@
 import {
   createVaultAccount, deriveVaultLoginMaterial, finishVaultLogin,
+  deriveLegacyVaultCredentials, createLegacyVaultUpgrade,
   prepareVaultPassphraseReset, recoverVaultMasterKey,
   validateVaultUsername, validateVaultPassphrase, validateRecoveryAnswers,
   encodeBase64Url, wipeWriteToken
@@ -18,6 +19,7 @@ let inactivityTimer = null;
 let loginInProgress = false;
 let locking = false;
 let recoverySession = null;
+let pendingLegacyAccount = null;
 
 const byId = id => document.getElementById(id);
 
@@ -49,7 +51,11 @@ async function accountRequest(route, body, extraHeaders = {}) {
   let result;
   try { result = await response.json(); }
   catch { throw new Error('The account service returned an unreadable response. Please try again.'); }
-  if (!response.ok) throw new Error(result?.error || 'The account request could not be completed.');
+  if (!response.ok) {
+    const error = new Error(result?.error || 'The account request could not be completed.');
+    error.status = response.status;
+    throw error;
+  }
   return result;
 }
 
@@ -61,7 +67,7 @@ function setBusy(buttonId, busy, idleText, busyText) {
 }
 
 function showAccountPanel(panelId, focusId) {
-  ['vault-signin-panel', 'vault-signup-panel', 'vault-recovery-panel'].forEach(id => {
+  ['vault-signin-panel', 'vault-signup-panel', 'vault-recovery-panel', 'vault-legacy-upgrade-panel'].forEach(id => {
     byId(id)?.classList.toggle('hidden', id !== panelId);
   });
   if (focusId) byId(focusId)?.focus();
@@ -72,8 +78,19 @@ function showApplication() {
   window.dispatchEvent(new Event('faith-focus:app-unlocked'));
 }
 
+function clearPendingLegacyAccount() {
+  if (pendingLegacyAccount?.credentials?.masterKeyBytes instanceof Uint8Array) {
+    pendingLegacyAccount.credentials.masterKeyBytes.fill(0);
+  }
+  if (pendingLegacyAccount?.credentials?.writeToken instanceof Uint8Array) {
+    wipeWriteToken(pendingLegacyAccount.credentials.writeToken);
+  }
+  pendingLegacyAccount = null;
+}
+
 function showLogin(message = 'Sign in to open your account and all of its features.') {
   clearRecoverySession();
+  clearPendingLegacyAccount();
   byId('view-pin')?.classList.remove('hidden');
   showAccountPanel('vault-signin-panel', 'vault-username');
   const passphrase = byId('vault-passphrase');
@@ -145,7 +162,44 @@ async function submitVaultLogin(event) {
   let credentials = null;
 
   try {
-    const account = await accountRequest('/account/signin', { username: usernameResult.normalized });
+    let account;
+    try {
+      account = await accountRequest('/account/signin', { username: usernameResult.normalized });
+    } catch (lookupError) {
+      if (lookupError.status !== 401) throw lookupError;
+      setStatus('vault-login-message', 'Checking whether this is an existing vault that needs a one-time security upgrade…');
+      const legacy = await deriveLegacyVaultCredentials(usernameResult.normalized, passphrase);
+      try {
+        const legacyClaim = await fetch(WORKER_ORIGIN + '/vault/' + legacy.vaultId + '/claim', {
+          method: 'POST',
+          cache: 'no-store',
+          credentials: 'omit',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-App-Client': APP_CLIENT,
+            'X-Write-Token': encodeBase64Url(legacy.writeToken)
+          },
+          body: '{}'
+        });
+        if (!legacyClaim.ok) throw new Error('The username or passphrase was not accepted.');
+      } catch (legacyError) {
+        wipeWriteToken(legacy.writeToken);
+        legacy.masterKeyBytes.fill(0);
+        throw legacyError;
+      }
+      pendingLegacyAccount = {
+        username: usernameResult.normalized,
+        passphrase,
+        credentials: legacy
+      };
+      passphrase = '';
+      passphraseField.value = '';
+      byId('legacy-upgrade-username').textContent = usernameResult.normalized;
+      showAccountPanel('vault-legacy-upgrade-panel', 'legacy-question-1');
+      setStatus('vault-legacy-upgrade-message', 'We verified your existing vault. Choose three recovery questions to keep your current encrypted records and complete the account upgrade.', 'success');
+      return;
+    }
+
     setStatus('vault-login-message', 'Checking your passphrase securely on this device…');
     loginMaterial = await deriveVaultLoginMaterial(account, passphrase);
     passphrase = '';
@@ -267,6 +321,64 @@ async function submitVaultSignup(event) {
     clearAnswerFields('signup');
     loginInProgress = false;
     setBusy('vault-signup-submit', false, 'CREATE ACCOUNT', 'Creating your private account…');
+  }
+}
+
+async function submitLegacyUpgrade(event) {
+  event.preventDefault();
+  if (loginInProgress || !pendingLegacyAccount) return;
+  const answers = collectAnswers('legacy');
+  const validation = validateRecoveryAnswers(answers);
+  if (!validation.valid) {
+    setStatus('vault-legacy-upgrade-message', validation.message, 'error');
+    return;
+  }
+
+  loginInProgress = true;
+  setBusy('vault-legacy-upgrade-submit', true, 'SECURE EXISTING ACCOUNT', 'Securing your account…');
+  setStatus('vault-legacy-upgrade-message', 'Wrapping your existing account key with your passphrase and recovery answers…');
+  let credentials = null;
+  try {
+    credentials = await createLegacyVaultUpgrade(
+      pendingLegacyAccount.username,
+      pendingLegacyAccount.passphrase,
+      answers,
+      pendingLegacyAccount.credentials
+    );
+    pendingLegacyAccount.passphrase = '';
+    const payload = {
+      ...credentials.accountRecord,
+      writeToken: encodeBase64Url(credentials.writeToken),
+      legacyWriteToken: encodeBase64Url(credentials.legacyWriteToken)
+    };
+    await accountRequest('/account/migrate-legacy', payload);
+    wipeWriteToken(credentials.legacyWriteToken);
+    delete credentials.legacyWriteToken;
+    credentials.accountRecord.questionAnswers.forEach(item => { item.answer = ''; });
+    clearPendingLegacyAccount();
+
+    setStatus('vault-legacy-upgrade-message', 'Your existing account is now protected by the new recovery system. Opening your original vault…', 'success');
+    await startVaultSync(credentials);
+    const migration = await adoptVaultEncryptionKey(credentials.encryptionKey);
+    activeCredentials = credentials;
+    if (byId('vault-username')) byId('vault-username').value = credentials.username;
+    showApplication();
+    resetInactivityTimer();
+    setStatus('vault-login-message', migration.legacyMigrationRequired
+      ? 'Your account is open. Older local Diary entries need a one-time legacy Diary migration.'
+      : 'Your existing account is open. Your original Checklist, Diary and Garden remain in the same vault.', 'success');
+  } catch (error) {
+    try { await stopVaultSync(); } catch { /* Keep the original migration error. */ }
+    if (credentials) {
+      wipeWriteToken(credentials.writeToken);
+      wipeWriteToken(credentials.legacyWriteToken);
+      credentials.accountRecord?.questionAnswers?.forEach(item => { item.answer = ''; });
+    }
+    setStatus('vault-legacy-upgrade-message', error?.message || 'The existing account could not be upgraded. Your previous vault credentials remain unchanged.', 'error');
+  } finally {
+    clearAnswerFields('legacy');
+    loginInProgress = false;
+    setBusy('vault-legacy-upgrade-submit', false, 'SECURE EXISTING ACCOUNT', 'Securing your account…');
   }
 }
 
@@ -410,6 +522,7 @@ function initializeVaultSession() {
   if (!loginForm) return;
   loginForm.addEventListener('submit', submitVaultLogin);
   byId('vault-signup-form')?.addEventListener('submit', submitVaultSignup);
+  byId('vault-legacy-upgrade-form')?.addEventListener('submit', submitLegacyUpgrade);
   byId('vault-recovery-form')?.addEventListener('submit', submitRecoveryAnswers);
   byId('vault-recovery-update-form')?.addEventListener('submit', completeRecovery);
   byId('vault-show-signup')?.addEventListener('click', () => {
@@ -423,6 +536,7 @@ function initializeVaultSession() {
     showAccountPanel('vault-recovery-panel', 'recovery-question-1');
     setStatus('vault-recovery-message', 'Select the same three questions you chose during sign-up. Answers are case-sensitive and must contain no spaces.');
   });
+  byId('vault-back-to-signin-from-legacy')?.addEventListener('click', () => showLogin());
   byId('vault-back-to-signin-from-signup')?.addEventListener('click', () => {
     showAccountPanel('vault-signin-panel', 'vault-username');
   });
