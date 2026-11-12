@@ -33,7 +33,7 @@
                 </article>
                 <article class="legal-feature">
                     <strong>Personal Diary</strong>
-                    <p>Keep private reflections protected with your account passphrase and browser-based encryption.</p>
+                    <p>Your Diary shares the same encrypted account key as the Health Checklist and Garden. Sign in once to access your private writing.</p>
                 </article>
                 <article class="legal-feature">
                     <strong>Personal Progress</strong>
@@ -41,8 +41,8 @@
                 </article>
             </div>
             <div class="legal-notice">
-                <p><strong>Local-first by design with enhanced privacy.</strong> The app stores its routine, garden, and writing records locally on your device, using local IndexedDB storage for encrypted daily packets. Each daily bundle is compressed and then encrypted with AES-256-GCM using a key derived in your browser from your username and passphrase.</p>
-                <p><strong>Automatic encrypted vault sync.</strong> A Cloudflare Worker stores each account’s encrypted daily packets in isolated Cloudflare KV keys. The Worker never receives your passphrase or encryption key. A Durable Object coordinates account claims and serializes updates to reduce cross-device write collisions.</p>
+                <p><strong>Local-first by design with enhanced privacy.</strong> The app keeps live routine, Garden and writing records locally on your device, and stores encrypted daily packets in IndexedDB. Each daily bundle is compressed and encrypted with AES-256-GCM using a permanent account master key protected by your passphrase and your three selected recovery answers.</p>
+                <p><strong>Automatic encrypted vault sync.</strong> A Cloudflare Worker stores each account’s encrypted daily packets in isolated Cloudflare KV keys. The Worker never receives your passphrase or account master key. A protected Account Directory supports sign-in and three-question recovery, while Durable Objects coordinate account identity and cross-device updates.</p>
                 <p><strong>Optional local JSON backup.</strong> Settings lets you export or import encrypted daily packets as a JSON file. Automatic Cloudflare sync requires no manual backup buttons.</p>
             </div>
             <nav class="legal-nav" aria-label="Application links">
