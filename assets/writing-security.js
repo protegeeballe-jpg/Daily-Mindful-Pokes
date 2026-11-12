@@ -56,6 +56,9 @@ import {
             writingLoadedDate=null;
             localStorage.removeItem(WRITING_CONFIG_KEY);
             await migrateLegacyPrivateWriting(writingCryptoKey);
+            // Initial cloud reconciliation runs before the vault key is adopted.
+            // Load the restored current-day Diary after adopting that key.
+            await loadPrivateWritingForDate(getCurrentWritingDate());
             updatePrivateWritingAccess();
             return {legacyMigrationRequired:false};
         }
