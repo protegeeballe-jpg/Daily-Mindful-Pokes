@@ -83,10 +83,10 @@ test('account setup, sign-in and recovery use a permanent master key and the exa
  assert.match(vaultCrypto,/unwrapMasterKeyWithRecovery/);
  assert.match(vaultCrypto,/deriveVaultCredentialsFromMaster/);
  assert.match(vaultCrypto,/validateSecurityAnswer/);
- assert.match(vaultSession,/account\\/signin/);
- assert.match(vaultSession,/account\\/signup/);
- assert.match(vaultSession,/account\\/recovery\\/lookup/);
- assert.match(vaultSession,/account\\/recovery\\/update/);
+ assert.ok(vaultSession.includes('/account/signin'));
+ assert.ok(vaultSession.includes('/account/signup'));
+ assert.ok(vaultSession.includes('/account/recovery/lookup'));
+ assert.ok(vaultSession.includes('/account/recovery/update'));
  assert.match(vaultSession,/Sign Up/);
  assert.match(vaultSession,/Forgot Password \\/ Username/);
  assert.match(worker,/class AccountDirectory/);
