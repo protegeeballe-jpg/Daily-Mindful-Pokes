@@ -672,14 +672,17 @@ test('encrypted vault sync and JSON backup live in collapsible Settings sections
 
 
 test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question security bank',()=>{
- const questionTexts=[...accountSecurity.matchAll(/text:\\s*(['"])(.*?)\\1/g)].map(match=>match[2]);
+ const questionTexts=[...accountSecurity.matchAll(/text: '([^']+)'|text: "([^"]+)"/g)].map(match=>match[1]||match[2]);
  assert.equal(questionTexts.length,20);
  for(const prefix of ['signup','recovery','legacy']){
   for(let number=1;number<=3;number++){
-   const selector=new RegExp(`<select id="${prefix}-question-${number}"[^>]*>([\\s\\S]*?)<\\/select>`);
-   const match=html.match(selector);
-   assert.ok(match,`Missing ${prefix} question selector ${number}`);
-   const options=[...match[1].matchAll(/<option value="(\\d+)">([^<]+)<\\/option>/g)];
+   const selectorStart=html.indexOf(`<select id="${prefix}-question-${number}"`);
+   assert.notEqual(selectorStart,-1,`Missing ${prefix} question selector ${number}`);
+   const contentStart=html.indexOf('>',selectorStart)+1;
+   const closeIndex=html.indexOf('</select>',contentStart);
+   assert.ok(closeIndex>contentStart,`Unclosed ${prefix} question selector ${number}`);
+   const selectMarkup=html.slice(contentStart,closeIndex);
+   const options=[...selectMarkup.matchAll(/<option value="([0-9]+)">([^<]+)</g)];
    assert.equal(options.length,20,`${prefix} selector ${number} must expose 20 questions`);
    assert.deepEqual(options.map(option=>Number(option[1])),Array.from({length:20},(_,i)=>i+1));
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
