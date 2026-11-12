@@ -76,7 +76,7 @@ test('new Diary access adopts the account encryption key while preserving verifi
 
 test('account setup, sign-in and recovery use a permanent master key and the exact 20 questions',()=>{
  assert.match(vaultCrypto,/const SECURITY_QUESTIONS = Object\.freeze\(/);
- assert.equal((vaultCrypto.match(/^  'What /gm)||[]).length,20);
+ assert.equal((vaultCrypto.match(/^  '(?:What|How) /gm)||[]).length,20);
  assert.match(vaultCrypto,/createNewVaultAccount/);
  assert.match(vaultCrypto,/createVaultId/);
  assert.match(vaultCrypto,/wrapMasterKeyWithRecovery/);
