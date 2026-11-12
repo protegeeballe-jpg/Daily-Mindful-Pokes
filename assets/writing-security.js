@@ -43,7 +43,8 @@ import {
             if(!key)throw new TypeError('A vault encryption key is required.');
             vaultPrimaryKey=key;
             const voiceNotes=await exportEncryptedVoiceNotes();
-            legacyMigrationRequired=hasLegacyEncryptedPrivateRecords()||voiceNotes.length>0;
+            const legacyConfigExists=Boolean(localStorage.getItem(WRITING_CONFIG_KEY));
+            legacyMigrationRequired=legacyConfigExists&&(hasLegacyEncryptedPrivateRecords()||voiceNotes.length>0);
             if(legacyMigrationRequired){
                 writingCryptoKey=null;
                 writingLoadedDate=null;
