@@ -354,28 +354,38 @@ async function submitLegacyUpgrade(event) {
 
   loginInProgress = true;
   setBusy('vault-legacy-upgrade-submit', true, 'SECURE EXISTING ACCOUNT', 'Securing your account…');
-  setStatus('vault-legacy-upgrade-message', 'Wrapping your existing account key with your passphrase and recovery answers…');
+  let migrationStage = 'preparing the secure upgrade on this device';
   let credentials = null;
+  let accountMigrated = false;
   try {
+    setStatus('vault-legacy-upgrade-message', 'Preparing your existing account…');
     credentials = await createLegacyVaultUpgrade(
       pendingLegacyAccount.username,
       pendingLegacyAccount.passphrase,
       answers,
       pendingLegacyAccount.credentials
     );
-    pendingLegacyAccount.passphrase = '';
+
     const payload = {
       ...credentials.accountRecord,
       writeToken: encodeBase64Url(credentials.writeToken),
       legacyWriteToken: encodeBase64Url(credentials.legacyWriteToken)
     };
+    migrationStage = 'upgrading your existing account with the account service';
+    setStatus('vault-legacy-upgrade-message', 'Securing your existing account…');
     await accountRequest('/account/migrate-legacy', payload);
+    accountMigrated = true;
+
+    // The original passphrase and legacy vault credentials are retained in
+    // memory until the server confirms migration. A failed request can retry.
     wipeWriteToken(credentials.legacyWriteToken);
     delete credentials.legacyWriteToken;
     credentials.accountRecord.questionAnswers.forEach(item => { item.answer = ''; });
+    clearAnswerFields('legacy');
     clearPendingLegacyAccount();
 
-    setStatus('vault-legacy-upgrade-message', 'Your existing account is now protected by the new recovery system. Opening your original vault…', 'success');
+    migrationStage = 'opening your upgraded account on this device';
+    setStatus('vault-legacy-upgrade-message', 'Your existing account is secured. Opening your original vault…', 'success');
     await startVaultSync(credentials);
     const migration = await adoptVaultEncryptionKey(credentials.encryptionKey);
     activeCredentials = credentials;
@@ -387,19 +397,31 @@ async function submitLegacyUpgrade(event) {
       : 'Your existing account is open. Your original Checklist, Diary and Garden remain in the same vault.', 'success');
   } catch (error) {
     try { await stopVaultSync(); } catch { /* Keep the original migration error. */ }
+    clearVaultEncryptionKey();
     if (credentials) {
       wipeWriteToken(credentials.writeToken);
       wipeWriteToken(credentials.legacyWriteToken);
       credentials.accountRecord?.questionAnswers?.forEach(item => { item.answer = ''; });
     }
-    setStatus('vault-legacy-upgrade-message', error?.message || 'The existing account could not be upgraded. Your previous vault credentials remain unchanged.', 'error');
+    if (accountMigrated) {
+      showLogin('Your existing account was secured, but this device could not finish opening it. Sign in using your existing username and passphrase.');
+      setStatus('vault-login-message',
+        'Your existing account was secured, but this device could not finish opening it. ' +
+        (error?.message || 'Sign in using your existing username and passphrase.'), 'error');
+    } else {
+      setStatus('vault-legacy-upgrade-message',
+        'We could not finish ' + migrationStage + '. ' +
+        (error?.message || 'The account service did not complete the request.') +
+        ' Your selected questions and answers are still here. Your previous vault credentials remain unchanged. You can safely try again.', 'error');
+      const status = byId('vault-legacy-upgrade-message');
+      status?.scrollIntoView?.({ block: 'nearest', behavior: 'auto' });
+      status?.focus?.({ preventScroll: true });
+    }
   } finally {
-    clearAnswerFields('legacy');
     loginInProgress = false;
     setBusy('vault-legacy-upgrade-submit', false, 'SECURE EXISTING ACCOUNT', 'Securing your account…');
   }
 }
-
 async function submitRecoveryAnswers(event) {
   event.preventDefault();
   if (loginInProgress || activeCredentials) return;
