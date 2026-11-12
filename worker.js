@@ -470,7 +470,7 @@ export class AccountDirectory {
       error: "Too many recovery attempts. Please try again in 15 minutes."
     }, 429);
     attempts.push(Date.now());
-    await this.state.storage.put(key, attempts, { expirationTtl: 3600 });
+    await this.state.storage.put(key, attempts);
     return null;
   }
 
