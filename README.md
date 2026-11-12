@@ -2,21 +2,25 @@
 
 Faith & Focus is a local-first daily routine, reflection, and personal garden app. The Forge Room brings the Health Checklist, Personal Diary, and Little Garden together in one workspace.
 
-## Unified account
+## Unified account and recovery
 
-The app uses one **Username + Passphrase** login. No email address, phone number, API key, Sync Key, App PIN, or separate cloud passphrase is required.
+The app has dedicated **Sign In**, **Sign Up**, and **Forgot Password / Username?** paths. Signing in never silently creates an account. A single successful sign-in opens the Checklist, Diary, Voice Notes, Location History, and Garden.
 
-- Usernames are normalized in the browser and used to derive a deterministic Vault ID.
-- The passphrase is processed locally with PBKDF2-HMAC-SHA-256 (600,000 iterations).
-- The derived material is split into an AES-256-GCM encryption key and a separate Write Token.
-- The AES key and raw Write Token remain in JavaScript memory only. They are not stored in localStorage or sessionStorage.
-- The Worker receives the Write Token in a request header and stores only its SHA-256 verifier in the Vault Coordinator.
-- The session locks after 15 minutes of inactivity. Locking flushes pending local writes, then drops the active encryption key and clears the Write Token from memory.
-- Passphrases are limited to 128 characters and must be at least 12 characters long.
+New accounts use a permanent random Vault ID and a random 256-bit master encryption key. The username is a changeable account label indexed by the Account Registry; it is not used to derive the Vault ID. Existing username-derived vaults have a one-time upgrade path that preserves their original Vault ID, master key, and encrypted daily packets.
 
-**There is no password reset or account recovery.** If you lose the passphrase, the encrypted cloud packets cannot be recovered by the maintainer. Keep a strong, unique passphrase safe.
+- The user chooses a username and a 12–128 character passphrase, then selects three different questions from the twenty-question bank.
+- Each answer must be one word, with no spaces. Answers are case-sensitive and are not automatically lowercased.
+- PBKDF2-HMAC-SHA-256 (600,000 iterations) derives a passphrase wrapping key and a separate Write Token. The passphrase itself is never sent to Cloudflare.
+- The master key is encrypted locally under the passphrase-derived key. A second encrypted copy is wrapped by a key derived from the three security answers using PBKDF2-HMAC-SHA-256 (1,200,000 iterations).
+- The browser sends the selected question IDs and answers over HTTPS during sign-up and recovery. The Worker computes a keyed HMAC using the Cloudflare secret `RECOVERY_PEPPER`; it does not store the answers in readable form. The recovery-wrapped master-key envelope is sealed using that secret before being stored in the Account Registry.
+- On recovery, the Worker rate-limits answer attempts to five per source IP per 15-minute window and issues a single-use, ten-minute recovery grant after a match. The browser derives the recovery key and decrypts the master key locally. The Worker never receives the plaintext master key or Diary contents.
+- A passphrase reset re-wraps the same master key and rotates the vault Write Token. A username change updates the username index. Neither operation changes the permanent Vault ID or requires re-encrypting the daily packets.
+- For forgotten usernames, the user selects the same three questions and enters the same answers; the verified recovery flow displays the current username. Users must remember which three questions they selected as well as the exact answer spelling and case.
+- The three-question process is a recovery convenience, not a substitute for a high-entropy passphrase. Choose unusual answers that other people cannot easily guess. If the three selected questions or exact answers are lost, recovery may not be possible.
 
-**First-claim limitation:** A username is registered when it is first claimed at the Worker. With no email, phone, invitation, or external identity provider, the service cannot independently verify who owns an unused username. Someone else could claim an unregistered username before its intended owner. Choose a distinctive username and claim it before sharing the app publicly.
+The AES master key and raw Write Token remain in browser memory only; they are not stored in localStorage or sessionStorage. The Worker stores only a SHA-256 verifier for the Write Token in the vault Durable Object. The app locks the account after 15 minutes of inactivity, flushes pending local writes, and then clears active key material from memory.
+
+**Legacy Diary records:** Existing devices with entries encrypted under the older, separate Diary passphrase may still require that previous passphrase once. The migration is staged: original plaintext and encrypted source records are preserved until the converted records are committed successfully. New accounts and new devices use the unified account master key without a second Diary password.
 
 ## One encrypted packet per day
 
@@ -59,35 +63,49 @@ Google Drive and GitHub Gist sync have been removed from the active app. No OAut
 
 ## Cloudflare deployment setup
 
-The repository contains the Worker code and a Wrangler configuration template. The namespace ID is intentionally a placeholder and must be configured in your Cloudflare account before deployment.
+The current `wrangler.toml` includes the KV namespace ID supplied for this project and two Durable Object bindings:
 
-1. Create the KV namespace:
-   `npx wrangler kv namespace create VAULT_PACKETS`
-2. Copy the returned namespace ID into `wrangler.toml`, replacing `REPLACE_WITH_VAULT_PACKETS_NAMESPACE_ID`.
-3. Deploy the Worker:
-   `npx wrangler deploy`
-4. Confirm the Worker is deployed at `https://faith-focus-proxy.nine-westhigh.workers.dev` or update the Worker URL in `assets/vault-sync.js` and the CORS origin in `worker.js` if you use another hostname.
+- `VAULT_COORDINATOR` — per-vault authentication and daily-packet write coordination.
+- `ACCOUNT_REGISTRY` — username lookup, account metadata, recovery-answer verification, and recovery grants.
 
-The Durable Object class `VaultCoordinator` uses the SQLite-backed migration configured in `wrangler.toml`. The GitHub Pages app will not be able to create or synchronize accounts until the KV namespace and Durable Object binding are deployed.
+The configuration contains SQLite-backed Durable Object migrations: `v1` for `VaultCoordinator` and `v2` for `AccountRegistry`. When deploying, confirm the namespace ID belongs to the intended Cloudflare account and that the Worker has all three bindings in the dashboard.
+
+The recovery system requires a persistent secret that must **never** be committed to Git:
+
+1. Generate a high-entropy secret in a trusted terminal, for example: `openssl rand -base64 48`.
+2. Set it as a Cloudflare Worker secret: `npx wrangler secret put RECOVERY_PEPPER`.
+3. Keep a secure backup of the secret in an approved password manager or secrets vault. Do not expose it in source code, logs, screenshots, or repository settings.
+4. Deploy the Worker and migrations: `npx wrangler deploy`.
+5. Confirm that the deployed Worker has `VAULT_PACKETS`, `VAULT_COORDINATOR`, `ACCOUNT_REGISTRY`, and the `RECOVERY_PEPPER` secret configured.
+
+The `RECOVERY_PEPPER` must remain stable. Rotating or losing it without a planned migration makes existing recovery-answer indexes and sealed recovery envelopes unusable. Existing passphrase sign-in remains separate from the recovery secret, but sign-up and account recovery require it.
+
+The Worker is configured for the GitHub Pages origin:
+`https://protegeeballe-jpg.github.io`
+
+The browser connects only to:
+`https://faith-focus-proxy.nine-westhigh.workers.dev`
+
+The GitHub Pages app cannot create new accounts, recover accounts, or synchronize vault data until the KV namespace, both Durable Object bindings/migrations, and the Worker secret are deployed.
 
 ## Legacy-device migration
 
-The previous app used a separate Diary passphrase and stored encrypted Diary/voice-note records under a legacy key configuration. When an existing device first signs in to the unified account, it may ask once for that older Diary passphrase so existing encrypted entries and recordings can be re-encrypted under the new account key. New accounts and devices do not need a second passphrase. The original legacy records are left in place unless migration succeeds.
+Existing accounts created by the earlier username-derived account scheme are upgraded by verifying the old Write Token with the existing Vault Coordinator. The upgrade preserves that Vault ID and master encryption key, adds the three-question recovery envelope, and rotates the Write Token to the new passphrase-wrapped account format. It does not create an empty replacement vault.
 
-A device with legacy encrypted records but without its old local encryption configuration may not be able to migrate those records. Keep the original browser profile and any legacy passphrase until migration has completed and the new vault has synchronized.
+Older Diary/voice-note records that were encrypted with the separate legacy Diary passphrase may still prompt for that old passphrase once. Migration keeps original records until Diary and voice-note conversion succeeds. Keep the original browser profile intact until the updated account has opened successfully on all devices and the encrypted daily packets have synchronized.
 
 ## Project structure
 
 - `index.html`: Main application and unified login UI.
 - `assets/app.js`: Checklist logic, Diary UI, recorder, and delegated UI actions.
-- `assets/vault-crypto.js`: Username normalization, PBKDF2 key derivation, and daily AES-GCM packet envelope.
+- `assets/vault-crypto.js`: Permanent Vault ID, master-key wrapping, passphrase/recovery derivation, legacy upgrade, and daily AES-GCM packet envelope.
 - `assets/vault-session.js`: Unified login, 15-minute inactivity lock, and in-memory credentials.
 - `assets/vault-sync.js`: Daily bundle creation, IndexedDB capture, automatic index reconciliation, and Cloudflare requests.
 - `assets/vault-storage.js`: IndexedDB storage for encrypted daily packets.
 - `assets/vault-crypto.js`: Vault identity and cryptographic packet handling.
 - `assets/local-backup.js`: Local encrypted JSON export/import.
-- `worker.js`: Origin/header/payload validation and per-vault Cloudflare Worker routes.
-- `wrangler.toml`: KV and Durable Object binding template.
+- `worker.js`: Origin/header/payload validation, account registry/recovery routes, and per-vault Cloudflare Worker routes.
+- `wrangler.toml`: KV, Vault Coordinator, and Account Registry bindings/migrations.
 - `assets/voice-note-store.js`: Encrypted IndexedDB voice-note storage.
 - `assets/writing-security.js`: Private-writing encryption and one-time legacy migration.
 - `assets/compressor.js`: Native browser Gzip compression with a safe raw-data fallback.
