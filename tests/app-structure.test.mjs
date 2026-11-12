@@ -748,5 +748,17 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v3-account-recovery-questions/);
+ assert.match(serviceWorker,/faith-focus-shell-v4-diary-key-compatibility/);
+});
+
+test('Diary migration recognizes account-key records and converts only legacy-key entries',()=>{
+ const privateMigration=readFileSync(new URL('../assets/private-writing-migration.js',import.meta.url),'utf8');
+ assert.match(writing,/hasEncryptedRecordsOutsideKey\(vaultPrimaryKey,voiceNotes\)/);
+ assert.match(writing,/legacyMigrationRequired=legacyConfigExists&&encryptedRecordsNeedPreviousKey/);
+ assert.match(writing,/legacyKeyUnavailable=!legacyConfigExists&&encryptedRecordsNeedPreviousKey/);
+ assert.match(writing,/await migrateLegacyPrivateWriting\(writingCryptoKey\);[\s\S]*?await loadPrivateWritingForDate\(getCurrentWritingDate\(\)\);[\s\S]*?localStorage\.removeItem\(WRITING_CONFIG_KEY\)/);
+ assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
+ assert.match(privateMigration,/const plaintext = await decryptLegacy\(record\)/);
+ assert.match(privateMigration,/return encryptTarget\(plaintext\)/);
+ assert.match(serviceWorker,/faith-focus-shell-v4-diary-key-compatibility/);
 });
