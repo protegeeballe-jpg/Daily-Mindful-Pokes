@@ -28,6 +28,8 @@ function setStatus(targetId, message, state = 'info') {
   if (element) {
     element.textContent = message;
     element.dataset.state = state;
+    element.setAttribute('role', state === 'error' ? 'alert' : 'status');
+    element.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite');
   }
 }
 
@@ -279,24 +281,30 @@ async function submitVaultSignup(event) {
 
   loginInProgress = true;
   setBusy('vault-signup-submit', true, 'CREATE ACCOUNT', 'Creating your private account…');
-  setStatus('vault-signup-message', 'Creating your permanent encrypted account keys on this device…');
+  let signupStage = 'preparing your account on this device';
+  setStatus('vault-signup-message', 'Creating your account…');
   let credentials = null;
   let accountCreated = false;
   try {
     credentials = await createVaultAccount(usernameResult.normalized, passphrase, answers);
     passphrase = '';
-    passphraseField.value = '';
-    confirmField.value = '';
 
     const payload = {
       ...credentials.accountRecord,
       writeToken: encodeBase64Url(credentials.writeToken)
     };
+    signupStage = 'registering your account with the account service';
     setStatus('vault-signup-message', 'Registering your account and recovery questions…');
     await accountRequest('/account/signup', payload);
     accountCreated = true;
-    credentials.accountRecord.questionAnswers.forEach(item => { item.answer = ''; });
 
+    // Only clear the form after the server confirms that registration succeeded.
+    credentials.accountRecord.questionAnswers.forEach(item => { item.answer = ''; });
+    passphraseField.value = '';
+    confirmField.value = '';
+    clearAnswerFields('signup');
+
+    signupStage = 'opening your new account on this device';
     setStatus('vault-signup-message', 'Opening your new account…');
     await startVaultSync(credentials);
     const migration = await adoptVaultEncryptionKey(credentials.encryptionKey);
@@ -310,20 +318,30 @@ async function submitVaultSignup(event) {
   } catch (error) {
     try { await stopVaultSync(); } catch { /* Keep the original account-creation error. */ }
     clearVaultEncryptionKey();
-    if (credentials) wipeWriteToken(credentials.writeToken);
+    if (credentials) {
+      credentials.accountRecord?.questionAnswers?.forEach(item => { item.answer = ''; });
+      wipeWriteToken(credentials.writeToken);
+    }
     if (accountCreated) {
       showLogin('Your account was created, but this device could not finish opening it. Sign in using the username and passphrase you just created.');
+      setStatus('vault-login-message',
+        'Your account was created, but this device could not finish opening it. ' +
+        (error?.message || 'Sign in using the username and passphrase you just created.'), 'error');
+    } else {
+      const detail = error?.message || 'The account service did not complete the request.';
+      setStatus('vault-signup-message',
+        'We could not finish ' + signupStage + '. ' + detail +
+        ' Your entries are still here; check the message and try again.', 'error');
+      const status = byId('vault-signup-message');
+      status?.scrollIntoView?.({ block: 'nearest', behavior: 'auto' });
+      status?.focus?.({ preventScroll: true });
     }
-    setStatus(accountCreated ? 'vault-login-message' : 'vault-signup-message',
-      error?.message || 'The account could not be created. Please try again.', 'error');
   } finally {
     passphrase = '';
-    clearAnswerFields('signup');
     loginInProgress = false;
     setBusy('vault-signup-submit', false, 'CREATE ACCOUNT', 'Creating your private account…');
   }
 }
-
 async function submitLegacyUpgrade(event) {
   event.preventDefault();
   if (loginInProgress || !pendingLegacyAccount) return;
