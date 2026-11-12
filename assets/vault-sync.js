@@ -375,7 +375,7 @@ async function performVaultSync() {
     let restored = 0;
 
     for (const dateString of remoteDates) {
-      const remoteUpdatedAt = typeof index[dateString]?.updatedAt === 'string' ? index[dateString].updatedAt : null;
+      const remoteUpdatedAt = typeof index[dateString] === 'string' ? index[dateString] : null;
       if (await reconcileDay(dateString, remoteUpdatedAt)) restored += 1;
     }
 
