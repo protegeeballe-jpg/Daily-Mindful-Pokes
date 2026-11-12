@@ -265,6 +265,110 @@
                 <button id="vault-back-to-signin-from-recovery" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Back to Sign In</button>
             </section>
 
+            <section id="vault-legacy-upgrade-panel" class="hidden text-left">
+                <h3 class="text-xl font-bold text-amber-950 handwriting text-center">Secure your existing account</h3>
+                <p class="text-xs text-amber-900/80 text-center mt-1 mb-3">We verified your existing encrypted vault. Its permanent ID and saved records will be kept.</p>
+                <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-3 mb-3">
+                    <p class="text-xs text-emerald-900">Existing username</p>
+                    <p id="legacy-upgrade-username" class="font-bold text-emerald-950 break-all"></p>
+                </div>
+                <p class="text-xs text-amber-900/80 mb-3">Choose three different recovery questions. Use one-word answers with no spaces. Letter case matters. These will let you reset your passphrase or username later.</p>
+                <form id="vault-legacy-upgrade-form" novalidate>
+
+                <div class="rounded-xl border border-amber-200 bg-white/70 p-3">
+                    <label for="legacy-question-1" class="block text-xs font-bold text-amber-950 mb-1">Security question 1</label>
+                    <select id="legacy-question-1" required class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm mb-2">
+                        <option value="">Choose a question…</option>
+                        <option value="1">1. What is the name of your first pet?</option>
+<option value="2">2. What is your favorite food?</option>
+<option value="3">3. What is the nickname of your favorite neighbor?</option>
+<option value="4">4. What is the brand of your favorite shirt?</option>
+<option value="5">5. What is your favorite part of your house?</option>
+<option value="6">6. What was the nickname you hated most in school?</option>
+<option value="7">7. What is the longest amount of time you have ever stayed awake?</option>
+<option value="8">8. What was the first video game or board game you ever beat someone at?</option>
+<option value="9">9. What is a song that instantly reminds you of a specific road trip or vacation?</option>
+<option value="10">10. What was the first name of your very first childhood crush?</option>
+<option value="11">11. What was the color of the first watch you ever owned?</option>
+<option value="12">12. What is the one household chore you despised?</option>
+<option value="13">13. What was the name of your favorite cartoon character?</option>
+<option value="14">14. What was the first foreign language you ever tried to learn?</option>
+<option value="15">15. What is the title of your favorite song?</option>
+<option value="16">16. What is the one food item you cannot eat?</option>
+<option value="17">17. How many times do you take a bath in a week?</option>
+<option value="18">18. What is the Country you love to visit?</option>
+<option value="19">19. What is the title of the first movie you watched?</option>
+<option value="20">20. What is your favorite music intrument?</option>
+                    </select>
+                    <label for="legacy-answer-1" class="block text-xs font-bold text-amber-950 mb-1">Answer (one word, case-sensitive)</label>
+                    <input id="legacy-answer-1" type="text" required maxlength="64" pattern="^\S+$" title="Enter one word only, with no spaces. Letter case matters." autocomplete="off" autocapitalize="none" spellcheck="false" class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm" placeholder="One word only">
+                </div>
+                    <div class="h-2"></div>
+
+                <div class="rounded-xl border border-amber-200 bg-white/70 p-3">
+                    <label for="legacy-question-2" class="block text-xs font-bold text-amber-950 mb-1">Security question 2</label>
+                    <select id="legacy-question-2" required class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm mb-2">
+                        <option value="">Choose a question…</option>
+                        <option value="1">1. What is the name of your first pet?</option>
+<option value="2">2. What is your favorite food?</option>
+<option value="3">3. What is the nickname of your favorite neighbor?</option>
+<option value="4">4. What is the brand of your favorite shirt?</option>
+<option value="5">5. What is your favorite part of your house?</option>
+<option value="6">6. What was the nickname you hated most in school?</option>
+<option value="7">7. What is the longest amount of time you have ever stayed awake?</option>
+<option value="8">8. What was the first video game or board game you ever beat someone at?</option>
+<option value="9">9. What is a song that instantly reminds you of a specific road trip or vacation?</option>
+<option value="10">10. What was the first name of your very first childhood crush?</option>
+<option value="11">11. What was the color of the first watch you ever owned?</option>
+<option value="12">12. What is the one household chore you despised?</option>
+<option value="13">13. What was the name of your favorite cartoon character?</option>
+<option value="14">14. What was the first foreign language you ever tried to learn?</option>
+<option value="15">15. What is the title of your favorite song?</option>
+<option value="16">16. What is the one food item you cannot eat?</option>
+<option value="17">17. How many times do you take a bath in a week?</option>
+<option value="18">18. What is the Country you love to visit?</option>
+<option value="19">19. What is the title of the first movie you watched?</option>
+<option value="20">20. What is your favorite music intrument?</option>
+                    </select>
+                    <label for="legacy-answer-2" class="block text-xs font-bold text-amber-950 mb-1">Answer (one word, case-sensitive)</label>
+                    <input id="legacy-answer-2" type="text" required maxlength="64" pattern="^\S+$" title="Enter one word only, with no spaces. Letter case matters." autocomplete="off" autocapitalize="none" spellcheck="false" class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm" placeholder="One word only">
+                </div>
+                    <div class="h-2"></div>
+
+                <div class="rounded-xl border border-amber-200 bg-white/70 p-3">
+                    <label for="legacy-question-3" class="block text-xs font-bold text-amber-950 mb-1">Security question 3</label>
+                    <select id="legacy-question-3" required class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm mb-2">
+                        <option value="">Choose a question…</option>
+                        <option value="1">1. What is the name of your first pet?</option>
+<option value="2">2. What is your favorite food?</option>
+<option value="3">3. What is the nickname of your favorite neighbor?</option>
+<option value="4">4. What is the brand of your favorite shirt?</option>
+<option value="5">5. What is your favorite part of your house?</option>
+<option value="6">6. What was the nickname you hated most in school?</option>
+<option value="7">7. What is the longest amount of time you have ever stayed awake?</option>
+<option value="8">8. What was the first video game or board game you ever beat someone at?</option>
+<option value="9">9. What is a song that instantly reminds you of a specific road trip or vacation?</option>
+<option value="10">10. What was the first name of your very first childhood crush?</option>
+<option value="11">11. What was the color of the first watch you ever owned?</option>
+<option value="12">12. What is the one household chore you despised?</option>
+<option value="13">13. What was the name of your favorite cartoon character?</option>
+<option value="14">14. What was the first foreign language you ever tried to learn?</option>
+<option value="15">15. What is the title of your favorite song?</option>
+<option value="16">16. What is the one food item you cannot eat?</option>
+<option value="17">17. How many times do you take a bath in a week?</option>
+<option value="18">18. What is the Country you love to visit?</option>
+<option value="19">19. What is the title of the first movie you watched?</option>
+<option value="20">20. What is your favorite music intrument?</option>
+                    </select>
+                    <label for="legacy-answer-3" class="block text-xs font-bold text-amber-950 mb-1">Answer (one word, case-sensitive)</label>
+                    <input id="legacy-answer-3" type="text" required maxlength="64" pattern="^\S+$" title="Enter one word only, with no spaces. Letter case matters." autocomplete="off" autocapitalize="none" spellcheck="false" class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm" placeholder="One word only">
+                </div>
+                    <p id="vault-legacy-upgrade-message" class="text-xs text-amber-900/80 mt-3 mb-3" role="status" aria-live="polite">Your existing vault data will remain under the same master key.</p>
+                    <button id="vault-legacy-upgrade-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">SECURE EXISTING ACCOUNT</button>
+                </form>
+                <button id="vault-back-to-signin-from-legacy" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Back to Sign In</button>
+            </section>
+
             <p class="text-[10px] text-amber-900/70 mt-5">Your passphrase is never sent to Cloudflare. Security answers are sent over HTTPS for protected recovery verification and are not stored as readable answers. Keep your credentials and recovery answers private.</p>
             <nav class="legal-inline-links mt-3" aria-label="Legal information">
                 <a href="./privacy.html">Privacy Policy</a>
