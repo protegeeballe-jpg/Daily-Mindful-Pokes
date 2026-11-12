@@ -118,5 +118,5 @@ test('Vault Coordinator claims once, stores encrypted date packets, and rejects 
   const index = await coordinator.fetch(coordinatorRequest('/index'));
   assert.equal(index.status, 200);
   const indexBody = await responseJson(index);
-  assert.equal(indexBody.index[dateString].updatedAt, saved.updatedAt);
+  assert.equal(indexBody.index[dateString], saved.updatedAt);
 });
