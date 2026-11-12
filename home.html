@@ -6,7 +6,7 @@
     <meta name="description" content="Faith & Focus: Daily Armor is a local-first daily reflection and routine app with a health checklist, personal garden, and encrypted diary.">
     <meta name="theme-color" content="#FBF9F5">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://faith-focus-proxy.nine-westhigh.workers.dev; font-src 'self' data:; object-src 'none'; base-uri 'self';">
     <title>Faith &amp; Focus: Daily Armor | Home</title>
     <link rel="icon" href="./assets/icon.png" type="image/png">
     <link rel="stylesheet" href="./assets/lexend.css">
@@ -21,7 +21,7 @@
         <section class="legal-card">
             <p class="legal-meta">A calm space for daily routines, reflection, and steady growth</p>
             <h1>Build your day with faith and focus.</h1>
-            <p>Faith &amp; Focus: Daily Armor is a personal, local-first wellness and reflection web app. It brings simple daily activities, gentle progress tracking, a growing garden, and a private writing space together in one place.</p>
+            <p>Faith &amp; Focus: Daily Armor is a local-first wellness and reflection web app with a username-based encrypted vault. It brings simple daily activities, gentle progress tracking, a growing garden, and a private writing space together in one place.</p>
             <div class="legal-feature-grid">
                 <article class="legal-feature">
                     <strong>Daily Health Checklist</strong>
@@ -33,7 +33,7 @@
                 </article>
                 <article class="legal-feature">
                     <strong>Personal Diary</strong>
-                    <p>Keep private reflections protected with a separate passphrase and browser-based encryption.</p>
+                    <p>Keep private reflections protected with your account passphrase and browser-based encryption.</p>
                 </article>
                 <article class="legal-feature">
                     <strong>Personal Progress</strong>
@@ -41,9 +41,9 @@
                 </article>
             </div>
             <div class="legal-notice">
-                <p><strong>Local-first by design with enhanced privacy.</strong> The app stores its routine, garden, and writing records locally on your device, utilizing automatic Gzip compression for optimal performance. Private diary and reflection fields are encrypted using your separate private-writing passphrase, protected by an inactivity auto-lock timer and background session security.</p>
-                <p><strong>Encrypted GitHub Gist sync.</strong> You can manually save and restore a client-side encrypted backup through the Faith &amp; Focus Cloudflare Worker. A separate backup passphrase stays in your browser; the GitHub token stays in a Cloudflare Secret. Secret Gists are unlisted, not private, so the entire backup is encrypted before upload.</p>
-                <p><strong>Optional Google Drive backup.</strong> Google Drive remains a separate, independent backup option. It can be used alongside Gist sync and is not replaced or disabled by it. All cloud operations are user-initiated; there are no background uploads.</p>
+                <p><strong>Local-first by design with enhanced privacy.</strong> The app stores its routine, garden, and writing records locally on your device, using local IndexedDB storage for encrypted daily packets. Each daily bundle is compressed and then encrypted with AES-256-GCM using a key derived in your browser from your username and passphrase.</p>
+                <p><strong>Automatic encrypted vault sync.</strong> A Cloudflare Worker stores each account’s encrypted daily packets in isolated Cloudflare KV keys. The Worker never receives your passphrase or encryption key. A Durable Object coordinates account claims and serializes updates to reduce cross-device write collisions.</p>
+                <p><strong>Optional local JSON backup.</strong> Settings lets you export or import encrypted daily packets as a JSON file. Automatic Cloudflare sync requires no manual backup buttons.</p>
             </div>
             <nav class="legal-nav" aria-label="Application links">
                 <a class="legal-button" href="./index.html">Open Faith &amp; Focus</a>
