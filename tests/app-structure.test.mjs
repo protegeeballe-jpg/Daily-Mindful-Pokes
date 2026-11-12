@@ -87,7 +87,7 @@ test('account setup, sign-in and recovery use a permanent master key and the exa
  assert.ok(vaultSession.includes('/account/signup'));
  assert.ok(vaultSession.includes('/account/recovery/lookup'));
  assert.ok(vaultSession.includes('/account/recovery/update'));
- assert.match(vaultSession,/Sign Up/);
+ assert.match(html,/id="vault-show-signup"/);
  assert.ok(vaultSession.includes('Forgot Password / Username'));
  assert.match(worker,/class AccountDirectory/);
  assert.match(worker,/RECOVERY_PEPPER/);
@@ -416,8 +416,9 @@ test('unified vault login derives separate credentials and synchronizes encrypte
  assert.match(cryptoModule,/VAULT_ID_DOMAIN/);
  assert.match(cryptoModule,/writeToken/);
  assert.match(session,/SESSION_INACTIVITY_MS = 15 \* 60 \* 1000/);
- assert.match(session,/deriveVaultCredentials/);
- assert.match(session,/wipeWriteToken/);
+ assert.match(session,/unlockVaultAccount/);
+ assert.match(session,/deriveLegacyVaultCredentials/);
+ assert.match(session,/wipeVaultCredentials/);
  assert.doesNotMatch(session,/sessionStorage/);
  assert.match(sync,/setTimeout\([\s\S]*?5000\)/);
  assert.match(sync,/X-App-Client/);
