@@ -75,12 +75,13 @@ function makeCoordinator() {
   return { coordinator: new VaultCoordinator(state, env), storageMap, kvMap };
 }
 
-function coordinatorRequest(path, { method = 'GET', token = WRITE_TOKEN, body } = {}) {
+function coordinatorRequest(path, { method = 'GET', token = WRITE_TOKEN, legacyToken, body } = {}) {
   return new Request('https://vault-coordinator.internal' + path, {
     method,
     headers: {
       'X-Vault-Id': VAULT_ID,
       'X-Write-Token': token,
+      ...(legacyToken ? { 'X-Legacy-Write-Token': legacyToken } : {}),
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' })
     },
     body: body === undefined ? undefined : JSON.stringify(body)
@@ -90,9 +91,18 @@ function coordinatorRequest(path, { method = 'GET', token = WRITE_TOKEN, body } 
 test('Vault Coordinator claims once, stores encrypted date packets, and rejects stale writes', async () => {
   const { coordinator, storageMap, kvMap } = makeCoordinator();
 
+  const prematureClaim = await coordinator.fetch(coordinatorRequest('/claim', { method: 'POST', body: {} }));
+  assert.equal(prematureClaim.status, 401);
+
+  const initialize = await coordinator.fetch(coordinatorRequest('/admin/initialize', {
+    method: 'POST',
+    body: {}
+  }));
+  assert.equal(initialize.status, 200);
+  assert.equal(storageMap.has('write-token-sha256'), true);
+
   const claim = await coordinator.fetch(coordinatorRequest('/claim', { method: 'POST', body: {} }));
   assert.equal(claim.status, 200);
-  assert.equal(storageMap.has('write-token-sha256'), true);
 
   const firstWrite = await coordinator.fetch(coordinatorRequest('/day/' + dateString, {
     method: 'PUT',
@@ -341,4 +351,47 @@ test('Account Registry rejects duplicate questions, spaces, invalid answers, and
     body: { ...validBody, vaultId: 'e'.repeat(64), writeToken: 'D'.repeat(43), recoverySalt: btoa(String.fromCharCode(...new Uint8Array(16).fill(4))) }
   }), env);
   assert.equal(duplicateUsername.status, 409);
+});
+
+
+test('Vault Coordinator upgrades an existing legacy token only after verifying the old credential', async () => {
+  const { coordinator, storageMap } = makeCoordinator();
+  const oldToken = 'L'.repeat(43);
+  const newToken = 'N'.repeat(43);
+
+  const initialize = await coordinator.fetch(coordinatorRequest('/admin/initialize', {
+    method: 'POST',
+    token: oldToken,
+    body: {}
+  }));
+  assert.equal(initialize.status, 200);
+
+  const rejectedUpgrade = await coordinator.fetch(coordinatorRequest('/admin/migrate-legacy', {
+    method: 'POST',
+    token: newToken,
+    legacyToken: 'X'.repeat(43)
+  }));
+  assert.equal(rejectedUpgrade.status, 401);
+
+  const acceptedUpgrade = await coordinator.fetch(coordinatorRequest('/admin/migrate-legacy', {
+    method: 'POST',
+    token: newToken,
+    legacyToken: oldToken
+  }));
+  assert.equal(acceptedUpgrade.status, 200);
+
+  const oldClaim = await coordinator.fetch(coordinatorRequest('/claim', {
+    method: 'POST',
+    token: oldToken,
+    body: {}
+  }));
+  assert.equal(oldClaim.status, 401);
+
+  const newClaim = await coordinator.fetch(coordinatorRequest('/claim', {
+    method: 'POST',
+    token: newToken,
+    body: {}
+  }));
+  assert.equal(newClaim.status, 200);
+  assert.equal(typeof storageMap.get('upgraded-at'), 'string');
 });
