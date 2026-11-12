@@ -393,3 +393,158 @@ export class VaultCoordinator {
     });
   }
 }
+
+/**
+ * Global account directory. Plaintext answers are evaluated transiently in
+ * this Durable Object and converted to a peppered HMAC lookup. Only the HMAC,
+ * selected question IDs, and encrypted master-key envelopes are persisted.
+ */
+export class AccountDirectory {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+    this.queue = Promise.resolve();
+  }
+
+  serialized(operation) {
+    const next = this.queue.then(operation, operation);
+    this.queue = next.catch(() => {});
+    return next;
+  }
+
+  async rateLimit(request) {
+    const ip = request.headers.get("X-Client-IP") || "unknown";
+    const key = "recovery-rate:" + await sha256Hex(ip);
+    const cutoff = Date.now() - 15 * 60 * 1000;
+    const prior = (await this.state.storage.get(key)) || [];
+    const attempts = Array.isArray(prior) ? prior.filter(time => Number.isFinite(time) && time > cutoff) : [];
+    if (attempts.length >= 5) return jsonResponse({
+      error: "Too many recovery attempts. Please try again in 15 minutes."
+    }, 429);
+    attempts.push(Date.now());
+    await this.state.storage.put(key, attempts, { expirationTtl: 3600 });
+    return null;
+  }
+
+  async getRecoveryRecord(body) {
+    if (!validRecoveryInput(body.questionIds, body.answers)) return null;
+    const lookup = await recoveryLookupHash(body.questionIds, body.answers, this.env.RECOVERY_PEPPER);
+    const vaultId = await this.state.storage.get("recovery:" + lookup);
+    if (typeof vaultId !== "string" || !VAULT_ID_PATTERN.test(vaultId)) return null;
+    const record = await this.state.storage.get("account:" + vaultId);
+    if (!record || record.recoveryLookupHash !== lookup) return null;
+    return { lookup, vaultId, record };
+  }
+
+  async fetch(request) {
+    return this.serialized(async () => {
+      const path = new URL(request.url).pathname;
+      let body;
+      try { body = await request.json(); }
+      catch { return jsonResponse({ error: "Invalid account request." }, 400); }
+      if (!body || typeof body !== "object" || Array.isArray(body)) {
+        return jsonResponse({ error: "Invalid account request." }, 400);
+      }
+
+      if (path === "/account/signup") {
+        const username = normalizeAccountUsername(body.username);
+        const vaultId = body.vaultId;
+        if (!validAccountUsername(username) || !VAULT_ID_PATTERN.test(vaultId || "")
+            || !validAccountEnvelope(body.passphraseEnvelope, ACCOUNT_KDF_ITERATIONS)
+            || !validAccountEnvelope(body.recoveryEnvelope, RECOVERY_KDF_ITERATIONS)
+            || !validRecoveryInput(body.questionIds, body.answers)) {
+          return jsonResponse({ error: "The account details or recovery setup are invalid." }, 400);
+        }
+        const lookup = await recoveryLookupHash(body.questionIds, body.answers, this.env.RECOVERY_PEPPER);
+        const existingUsername = await this.state.storage.get("username:" + username);
+        const existingVault = await this.state.storage.get("account:" + vaultId);
+        const existingRecovery = await this.state.storage.get("recovery:" + lookup);
+        if (existingUsername || existingVault) {
+          return jsonResponse({ error: "That username is already registered. Choose another username or sign in." }, 409);
+        }
+        if (existingRecovery) {
+          return jsonResponse({
+            error: "That three-answer combination is already used by an account. Choose different, less predictable answers."
+          }, 409);
+        }
+
+        const questionIds = body.questionIds.map(Number).sort((a, b) => a - b);
+        const now = new Date().toISOString();
+        const record = {
+          vaultId, username, questionIds,
+          passphraseEnvelope: body.passphraseEnvelope,
+          recoveryEnvelope: body.recoveryEnvelope,
+          recoveryLookupHash: lookup, createdAt: now, updatedAt: now
+        };
+        await this.state.storage.put("account:" + vaultId, record);
+        await this.state.storage.put("username:" + username, vaultId);
+        await this.state.storage.put("recovery:" + lookup, vaultId);
+        return jsonResponse({ ok: true, vaultId, username }, 201);
+      }
+
+      if (path === "/account/signin") {
+        const username = normalizeAccountUsername(body.username);
+        if (!validAccountUsername(username)) {
+          return jsonResponse({ error: "The username or passphrase was not accepted." }, 404);
+        }
+        const vaultId = await this.state.storage.get("username:" + username);
+        const record = typeof vaultId === "string"
+          ? await this.state.storage.get("account:" + vaultId) : null;
+        if (!record) {
+          return jsonResponse({ error: "The username or passphrase was not accepted.", legacyAccount: true }, 404);
+        }
+        return jsonResponse({
+          vaultId: record.vaultId, username: record.username,
+          passphraseEnvelope: record.passphraseEnvelope
+        }, 200);
+      }
+
+      if (path === "/account/recovery/lookup" || path === "/account/recovery/update") {
+        const blocked = await this.rateLimit(request);
+        if (blocked) return blocked;
+        const match = await this.getRecoveryRecord(body);
+        if (!match) return jsonResponse({
+          error: "The selected questions or answers were not accepted. Check all three answers, including capitalization."
+        }, 401);
+
+        if (path === "/account/recovery/lookup") {
+          return jsonResponse({
+            vaultId: match.vaultId, username: match.record.username,
+            questionIds: match.record.questionIds, recoveryEnvelope: match.record.recoveryEnvelope
+          }, 200);
+        }
+
+        if (body.vaultId !== match.vaultId) {
+          return jsonResponse({ error: "The recovery session is invalid. Start again." }, 401);
+        }
+        const requestedUsername = body.newUsername === undefined || body.newUsername === null || body.newUsername === ""
+          ? match.record.username : normalizeAccountUsername(body.newUsername);
+        if (!validAccountUsername(requestedUsername)) {
+          return jsonResponse({ error: "Use a 3–32 character username with letters, numbers, dots, underscores, or hyphens." }, 400);
+        }
+        if (body.passphraseEnvelope !== null && body.passphraseEnvelope !== undefined
+            && !validAccountEnvelope(body.passphraseEnvelope, ACCOUNT_KDF_ITERATIONS)) {
+          return jsonResponse({ error: "The new passphrase envelope is invalid." }, 400);
+        }
+        const owner = await this.state.storage.get("username:" + requestedUsername);
+        if (owner && owner !== match.vaultId) {
+          return jsonResponse({ error: "That username is already in use. Choose another." }, 409);
+        }
+
+        if (requestedUsername !== match.record.username) {
+          await this.state.storage.delete("username:" + match.record.username);
+          await this.state.storage.put("username:" + requestedUsername, match.vaultId);
+        }
+        const updated = {
+          ...match.record, username: requestedUsername,
+          ...(body.passphraseEnvelope ? { passphraseEnvelope: body.passphraseEnvelope } : {}),
+          updatedAt: new Date().toISOString()
+        };
+        await this.state.storage.put("account:" + match.vaultId, updated);
+        return jsonResponse({ ok: true, vaultId: match.vaultId, username: requestedUsername }, 200);
+      }
+
+      return jsonResponse({ error: "Account route not found." }, 404);
+    });
+  }
+}
