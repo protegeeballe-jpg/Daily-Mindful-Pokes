@@ -173,17 +173,7 @@ export class VaultCoordinator {
     this.state = state;
     this.env = env;
     this.queue = Promise.resolve();
-    this.initialized = this.state.blockConcurrencyWhile(async () => {
-      if (!(await this.state.storage.get("vault-index"))) {
-        let index = {};
-        try {
-          index = await this.env.VAULT_PACKETS.get(this.indexKey(), "json") || {};
-        } catch {
-          index = {};
-        }
-        await this.state.storage.put("vault-index", index);
-      }
-    });
+    this.initialized = null;
   }
 
   indexKey() {
@@ -234,6 +224,20 @@ export class VaultCoordinator {
     await this.initialized;
     this.vaultId = request.headers.get("X-Vault-Id") || "";
     if (!VAULT_ID_PATTERN.test(this.vaultId)) return jsonResponse({ error: "Invalid vault identifier." }, 400);
+    if (!this.initialized) {
+      this.initialized = this.state.blockConcurrencyWhile(async () => {
+        if (!(await this.state.storage.get("vault-index"))) {
+          let index = {};
+          try {
+            index = await this.env.VAULT_PACKETS.get(this.indexKey(), "json") || {};
+          } catch {
+            index = {};
+          }
+          await this.state.storage.put("vault-index", index);
+        }
+      });
+    }
+    await this.initialized;
     return this.serialized(async () => {
       const path = new URL(request.url).pathname;
       if (path === "/claim") {
