@@ -3,6 +3,7 @@ import {
     exportEncryptedVoiceNotes, restoreEncryptedVoiceNotes,
     validateEncryptedVoiceNoteBackup, encryptVoiceNoteBlob, decryptVoiceNoteRecord
 } from './voice-note-store.js';
+import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-writing-migration.js';
 
         const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
         const WRITING_DIARY_PREFIX='dmp_diary_cipher_v1_';
@@ -11,15 +12,21 @@ import {
         const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
         const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
         let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
-        let vaultPrimaryKey=null,legacyMigrationRequired=false;
+        let vaultPrimaryKey=null,legacyMigrationRequired=false,legacyKeyUnavailable=false;
         let voiceNoteSavePromise=Promise.resolve();
         let voiceNoteStopHandler=async()=>{};
 
         function hasWritingCrypto(){return !!(window.isSecureContext&&window.crypto&&window.crypto.subtle&&window.crypto.getRandomValues);}
-        function hasLegacyEncryptedPrivateRecords(){
-            for(let i=0;i<localStorage.length;i++){
-                const key=localStorage.key(i);
-                if(/^dmp_(?:diary|notes)_cipher_v1_\d{4}-\d{2}-\d{2}$/.test(key||''))return true;
+        async function hasEncryptedRecordsOutsideKey(accountKey,voiceNotes){
+            for(let index=0;index<localStorage.length;index++){
+                const storageKey=localStorage.key(index);
+                const match=storageKey&&storageKey.match(/^dmp_(diary|notes)_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
+                if(!match)continue;
+                const kind=match[1],dateString=match[2],record=localStorage.getItem(storageKey);
+                if(!await isRecordReadableWithKey(record,value=>decryptPrivatePayload(kind,dateString,value,accountKey)))return true;
+            }
+            for(const record of voiceNotes){
+                if(!await isRecordReadableWithKey(record,value=>decryptVoiceNoteRecord(value,accountKey)))return true;
             }
             return false;
         }
@@ -44,23 +51,33 @@ import {
             vaultPrimaryKey=key;
             const voiceNotes=await exportEncryptedVoiceNotes();
             const legacyConfigExists=Boolean(localStorage.getItem(WRITING_CONFIG_KEY));
-            legacyMigrationRequired=legacyConfigExists&&(hasLegacyEncryptedPrivateRecords()||voiceNotes.length>0);
+            const encryptedRecordsNeedPreviousKey=await hasEncryptedRecordsOutsideKey(vaultPrimaryKey,voiceNotes);
+            legacyMigrationRequired=legacyConfigExists&&encryptedRecordsNeedPreviousKey;
+            legacyKeyUnavailable=!legacyConfigExists&&encryptedRecordsNeedPreviousKey;
             if(legacyMigrationRequired){
                 writingCryptoKey=null;
                 writingLoadedDate=null;
                 updatePrivateWritingAccess();
-                setWritingSecurityStatus('This device has older encrypted Diary data. Enter its previous Diary passphrase once to migrate it to your new account. The original entries are preserved until migration succeeds.','info');
+                setWritingSecurityStatus('Some Diary records still use this device’s previous writing key. Enter the previous Diary passphrase once to migrate only those records. Entries already protected by your account key will be kept as they are.','info');
                 return {legacyMigrationRequired:true};
+            }
+            if(legacyKeyUnavailable){
+                writingCryptoKey=null;
+                writingLoadedDate=null;
+                updatePrivateWritingAccess();
+                setWritingSecurityStatus('Some encrypted Diary records could not be opened with this account key, and this device has no saved previous-key verification record. Your entries were left untouched. Do not create a new Diary key or clear this browser’s site data. Contact the app maintainer for recovery guidance.','error');
+                return {legacyMigrationRequired:false,legacyKeyUnavailable:true};
             }
             writingCryptoKey=vaultPrimaryKey;
             writingLoadedDate=null;
-            localStorage.removeItem(WRITING_CONFIG_KEY);
             await migrateLegacyPrivateWriting(writingCryptoKey);
-            // Initial cloud reconciliation runs before the vault key is adopted.
-            // Load the restored current-day Diary after adopting that key.
             await loadPrivateWritingForDate(getCurrentWritingDate());
+            // Remove the obsolete verifier only after current-key records and
+            // legacy plaintext have both been loaded successfully.
+            localStorage.removeItem(WRITING_CONFIG_KEY);
+            legacyKeyUnavailable=false;
             updatePrivateWritingAccess();
-            return {legacyMigrationRequired:false};
+            return {legacyMigrationRequired:false,legacyKeyUnavailable:false};
         }
 
         export function clearVaultEncryptionKey(){
@@ -68,6 +85,7 @@ import {
             writingCryptoKey=null;
             writingLoadedDate=null;
             legacyMigrationRequired=false;
+            legacyKeyUnavailable=false;
             updatePrivateWritingAccess();
         }
 
@@ -86,8 +104,16 @@ import {
                 const notesKey=getSecureWritingStorageKey('notes',dateStr);
                 const diaryRecord=localStorage.getItem(diaryKey);
                 const notesRecord=localStorage.getItem(notesKey);
-                const nextDiary=diaryRecord===null?null:await encryptPrivatePayload('diary',dateStr,await decryptPrivatePayload('diary',dateStr,diaryRecord,sourceKey),targetKey);
-                const nextNotes=notesRecord===null?null:await encryptPrivatePayload('notes',dateStr,await decryptPrivatePayload('notes',dateStr,notesRecord,sourceKey),targetKey);
+                const nextDiary=diaryRecord===null?null:await migrateRecordToTargetKey(diaryRecord,{
+                    decryptTarget:value=>decryptPrivatePayload('diary',dateStr,value,targetKey),
+                    decryptLegacy:value=>decryptPrivatePayload('diary',dateStr,value,sourceKey),
+                    encryptTarget:value=>encryptPrivatePayload('diary',dateStr,value,targetKey)
+                });
+                const nextNotes=notesRecord===null?null:await migrateRecordToTargetKey(notesRecord,{
+                    decryptTarget:value=>decryptPrivatePayload('notes',dateStr,value,targetKey),
+                    decryptLegacy:value=>decryptPrivatePayload('notes',dateStr,value,sourceKey),
+                    encryptTarget:value=>encryptPrivatePayload('notes',dateStr,value,targetKey)
+                });
                 migrated.push({
                     diaryKey,notesKey,nextDiary,nextNotes,
                     originalDiary:diaryRecord,originalNotes:notesRecord
@@ -97,8 +123,11 @@ import {
             const voiceRecords=await exportEncryptedVoiceNotes();
             const nextVoiceRecords=[];
             for(const record of voiceRecords){
-                const blob=await decryptVoiceNoteRecord(record,sourceKey);
-                nextVoiceRecords.push(await encryptVoiceNoteBlob(blob,targetKey,record.dateString,record.id,record.capturedAt));
+                nextVoiceRecords.push(await migrateRecordToTargetKey(record,{
+                    decryptTarget:value=>decryptVoiceNoteRecord(value,targetKey),
+                    decryptLegacy:value=>decryptVoiceNoteRecord(value,sourceKey),
+                    encryptTarget:blob=>encryptVoiceNoteBlob(blob,targetKey,record.dateString,record.id,record.capturedAt)
+                }));
             }
 
             const affectedDates=new Set([
@@ -181,12 +210,19 @@ import {
             if(writingCryptoKey){document.getElementById('diary-lock-panel')?.classList.add('hidden');document.getElementById('diary-editor-panel')?.classList.remove('hidden');return;}
             document.getElementById('diary-lock-panel')?.classList.remove('hidden');
             document.getElementById('diary-editor-panel')?.classList.add('hidden');
+            if(legacyKeyUnavailable){
+                if(heading)heading.textContent='Diary key recovery required';
+                if(intro)intro.textContent='Some encrypted entries could not be opened with this account key, and the previous Diary key verifier is missing on this device. Your encrypted entries remain untouched. Do not create a new Diary key or clear site data.';
+                confirmWrap?.classList.add('hidden');
+                if(button){button.disabled=true;button.textContent='Recovery guidance required';}
+                return;
+            }
             if(heading)heading.textContent=legacyMigrationRequired?'One-time Diary migration':configured?'Unlock your private writing':'Create your private writing key';
             if(intro)intro.textContent=legacyMigrationRequired
-                ?'This device contains Diary entries encrypted before your unified account was created. Enter the old Diary passphrase once to migrate them to your account key. Your old records will remain untouched unless migration succeeds.'
-                :configured?'Enter your passphrase to decrypt your diary and checklist reflections on this device.':'Private writing is protected by your unified account passphrase.';
+                ?'Some entries still use your previous Diary key. Enter its passphrase once to migrate those entries. Entries already protected by your account key will remain unchanged.'
+                :configured?'Enter your passphrase to decrypt your diary and checklist reflections on this device.':'Private writing is protected by your unified account key.';
             confirmWrap?.classList.toggle('hidden',configured||legacyMigrationRequired||!!vaultPrimaryKey);
-            if(button)button.textContent=legacyMigrationRequired?'Migrate existing Diary':configured?'Unlock private writing':'Continue';
+            if(button){button.disabled=false;button.textContent=legacyMigrationRequired?'Migrate existing Diary':configured?'Unlock private writing':'Continue';}
             const pass=document.getElementById('diary-passphrase');
             if(pass){pass.autocomplete='current-password';pass.placeholder=legacyMigrationRequired?'Enter your previous Diary passphrase':'Diary is protected by your account login';}
         }
@@ -311,7 +347,12 @@ import {
         }
         async function handleDiaryKeyAction(){
             const passInput=document.getElementById('diary-passphrase'),confirmInput=document.getElementById('diary-passphrase-confirm'),button=document.getElementById('diary-key-action');
+            if(legacyKeyUnavailable){
+                setWritingSecurityStatus('The saved previous Diary key verifier is missing. Your existing encrypted entries were not changed. Do not create a replacement key or clear site data.','error');
+                return;
+            }
             const passphrase=passInput.value,configText=localStorage.getItem(WRITING_CONFIG_KEY);
+            let previousPassphraseVerified=false;
             if(!hasWritingCrypto()){setWritingSecurityStatus('Secure browser encryption is unavailable. Open this app over HTTPS in a modern browser.','error');return;}
             if(!passphrase||passphrase.length<16){setWritingSecurityStatus('Please use a passphrase with at least 16 characters. Several unrelated words work well.','error');return;}
             button.disabled=true;button.textContent='Securing private writing…';
@@ -332,6 +373,7 @@ import {
                     try{verified=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(config.verifierIv),additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,base64ToBytes(config.verifierCiphertext));}
                     catch(error){throw new Error('The passphrase did not match.');}
                     if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
+                    previousPassphraseVerified=true;
                 }
                 if(vaultPrimaryKey&&legacyMigrationRequired){
                     // Stage plaintext migration first but keep every original source
@@ -339,6 +381,8 @@ import {
                     await migrateLegacyPrivateWriting(key,{preserveSource:true});
                     await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
                     cleanupLegacyPlaintextPrivateWriting();
+                    legacyMigrationRequired=false;
+                    legacyKeyUnavailable=false;
                 }else if(vaultPrimaryKey){
                     writingCryptoKey=vaultPrimaryKey;
                 }else{
@@ -351,11 +395,13 @@ import {
                 if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
             }catch(error){
                 writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
-                const message=error?.message==='The passphrase did not match.'
-                    ?'That passphrase did not unlock this writing. Please check it and try again.'
-                    :error?.message==='The two passphrases do not match.'
-                        ?error.message
-                        :'Could not unlock or migrate private writing. Existing entries were left in place. '+(error?.message||'');
+                const message=previousPassphraseVerified
+                    ?'Your previous Diary passphrase was accepted, but at least one saved entry could not be converted. The original encrypted entries remain in place. Please keep this browser profile unchanged and contact support with this message.'
+                    :error?.message==='The passphrase did not match.'
+                        ?'That passphrase did not match the saved previous Diary key. No encrypted entries were changed.'
+                        :error?.message==='The two passphrases do not match.'
+                            ?error.message
+                            :'Could not unlock or migrate private writing. Existing entries were left in place. '+(error?.message||'');
                 setWritingSecurityStatus(message,'error');
             }finally{passInput.value='';confirmInput.value='';button.disabled=false;renderDiarySecurityUI();}
         }
