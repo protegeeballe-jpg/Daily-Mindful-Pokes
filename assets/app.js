@@ -1981,11 +1981,10 @@ import {
         });
         document.addEventListener('visibilitychange',()=>{
             if(document.visibilityState==='hidden'){
-                flushAndSaveCurrentPrivateWriting()
-                    .then(() => lockPrivateWriting())
-                    .catch(error => {
-                        lockPrivateWriting();
-                        setWritingSecurityStatus('Encrypted save failed on hide. '+(error?.message||''),'error');
-                    });
+                // Save local Diary edits on hide. Account locking is controlled
+                // only by the 15-minute inactivity timer or an explicit lock action.
+                flushAndSaveCurrentPrivateWriting().catch(error => {
+                    setWritingSecurityStatus('Encrypted save failed on hide. '+(error?.message||''),'error');
+                });
             }
         });
