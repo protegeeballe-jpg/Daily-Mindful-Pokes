@@ -271,14 +271,16 @@ export default {
 
     if (accountRoute) {
       if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, origin);
-      if (!env.ACCOUNT_REGISTRY || !env.VAULT_COORDINATOR || !env.RECOVERY_PEPPER
-          || String(env.RECOVERY_PEPPER).length < 32) {
-        return jsonResponse({ error: "Account recovery services are not configured. Please contact the app maintainer." }, 503, origin);
+      if (!env.ACCOUNT_REGISTRY || !env.VAULT_COORDINATOR) {
+        return jsonResponse({ error: "The account registry services are not configured. Please contact the app maintainer." }, 503, origin);
+      }
+      const route = accountRoute[1];
+      if (["signup", "migrate-legacy", "recover"].includes(route)
+          && (!env.RECOVERY_PEPPER || String(env.RECOVERY_PEPPER).length < 32)) {
+        return jsonResponse({ error: "Account recovery is not configured. Please contact the app maintainer." }, 503, origin);
       }
       const payload = await parseJsonBody(bodyText);
       if (!payload) return jsonResponse({ error: "Invalid JSON request body." }, 400, origin);
-
-      const route = accountRoute[1];
       if (route === "unlock") {
         const vaultId = payload.vaultId;
         const token = request.headers.get("X-Write-Token") || "";
