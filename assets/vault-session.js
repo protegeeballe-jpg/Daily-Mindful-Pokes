@@ -57,9 +57,7 @@ function installSessionActivityListeners() {
     document.addEventListener(eventName, resetInactivityTimer, { passive: true });
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && activeCredentials) {
-      window.dispatchEvent(new Event('faith-focus:vault-flush-request'));
-    }
+    // vault-sync.js listens for the same event and performs the hidden-page flush.
   });
   window.addEventListener('faith-focus:lock-account', () => {
     lockAccount('Your account is locked.');
@@ -116,6 +114,8 @@ async function submitVaultLogin(event) {
       setLoginStatus('Your account is open. Daily packets are saved locally and synchronized automatically.', 'success');
     }
   } catch (error) {
+    try { await stopVaultSync(); } catch { /* Preserve the original login error. */ }
+    clearVaultEncryptionKey();
     if (credentials) wipeWriteToken(credentials.writeToken);
     setLoginStatus(error?.message || 'The account could not be opened. Your local records were not changed.', 'error');
     passphraseField?.focus();
