@@ -7,7 +7,7 @@ import {
   getLocalDailyPacket, listLocalDailyPackets, putLocalDailyPacket, markLocalDailyPacketSynced
 } from './vault-storage.js';
 import {
-  exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate
+  exportEncryptedVoiceNotes, exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate
 } from './voice-note-store.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
 
@@ -170,22 +170,36 @@ async function captureDailyPacket(dateString) {
 
   const previous = localCaptureQueues.get(dateString) || Promise.resolve();
   const next = previous.catch(() => {}).then(async () => {
-    const snapshotVersion = localChangeVersions.get(dateString);
-    const bundle = await buildDailyBundle(dateString);
-    const packet = await encryptDailyBundle(bundle, activeVault.encryptionKey, compressData);
-    const prior = await getLocalDailyPacket(dateString);
-    await putLocalDailyPacket({
-      dateString,
-      packet,
-      localUpdatedAt: Date.now(),
-      remoteUpdatedAt: prior?.remoteUpdatedAt || null,
-      dirty: true
-    });
-    if (localChangeVersions.get(dateString) !== snapshotVersion) {
-      return captureDailyPacket(dateString);
+    let repeat = true;
+    while (repeat && activeVault) {
+      const snapshotVersion = localChangeVersions.get(dateString);
+      const bundle = await buildDailyBundle(dateString);
+      const prior = await getLocalDailyPacket(dateString);
+      if (prior) {
+        try {
+          const priorBundle = await decryptDailyBundle(prior.packet, activeVault.encryptionKey, decompressData);
+          if (canonicalBundle(priorBundle) === canonicalBundle(bundle)) {
+            if (prior.dirty) scheduleCloudPush();
+            return;
+          }
+        } catch {
+          // A packet from a future version is replaced only after the current data is safely encrypted.
+        }
+      }
+      const packet = await encryptDailyBundle(bundle, activeVault.encryptionKey, compressData);
+      await putLocalDailyPacket({
+        dateString,
+        packet,
+        localUpdatedAt: Date.now(),
+        remoteUpdatedAt: prior?.remoteUpdatedAt || null,
+        dirty: true
+      });
+      repeat = localChangeVersions.get(dateString) !== snapshotVersion;
+      if (!repeat) {
+        status('Saved and encrypted locally. Automatic cloud sync is queued.', 'success');
+        scheduleCloudPush();
+      }
     }
-    status('Saved and encrypted locally. Automatic cloud sync is queued.', 'success');
-    scheduleCloudPush();
   });
   localCaptureQueues.set(dateString, next);
   try {
@@ -403,7 +417,9 @@ function scheduleCloudPush() {
 
 async function captureExistingLocalDates() {
   const dates = new Set(listLocalStorageDates());
-  for (const dateString of dates) await captureDailyPacket(dateString);
+  const voiceNotes = await exportEncryptedVoiceNotes();
+  voiceNotes.forEach(record => dates.add(record.dateString));
+  for (const dateString of [...dates].sort()) await captureDailyPacket(dateString);
 }
 
 export async function startVaultSync(credentials) {
