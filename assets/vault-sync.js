@@ -525,12 +525,26 @@ export async function importEncryptedVaultPackets(packets) {
         || item.dateString !== item.packet.dateString)) {
     throw new Error('The selected backup contains an invalid or unsupported encrypted daily packet.');
   }
+  const prepared = [];
   for (const item of packets) {
-    await decryptDailyBundle(item.packet, activeVault.encryptionKey, decompressData);
+    const bundle = await decryptDailyBundle(item.packet, activeVault.encryptionKey, decompressData);
+    const existing = await getLocalDailyPacket(item.dateString);
+    if (existing) {
+      const existingBundle = await decryptDailyBundle(existing.packet, activeVault.encryptionKey, decompressData);
+      if (canonicalBundle(existingBundle) !== canonicalBundle(bundle)) {
+        throw new Error('This device already has different data for ' + item.dateString + '. Export the current copy before importing this packet; no local data was overwritten.');
+      }
+    }
+    prepared.push({ item, bundle });
   }
+
+  // Restore source records only after every imported packet is authenticated and
+  // checked against the existing local version, so a partially invalid file
+  // cannot replace some dates while leaving others untouched.
+  for (const { bundle } of prepared) await restoreDailyBundle(bundle);
   const { importLocalDailyPackets } = await import('./vault-storage.js');
   await importLocalDailyPackets(packets);
-  status('Encrypted daily packets imported locally. Automatic cloud sync is queued.', 'success');
+  status('Restored ' + packets.length + ' validated encrypted daily packet' + (packets.length === 1 ? '' : 's') + '. Automatic cloud sync is queued.', 'success');
   scheduleCloudPush();
 }
 
