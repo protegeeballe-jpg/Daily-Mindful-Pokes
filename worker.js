@@ -187,11 +187,11 @@ export class VaultCoordinator {
   }
 
   indexKey() {
-    return this.state.id.name + ":index";
+    return this.vaultId + ":index";
   }
 
   packetKey(dateString) {
-    return this.state.id.name + ":" + dateString;
+    return this.vaultId + ":" + dateString;
   }
 
   serialized(operation) {
@@ -232,6 +232,8 @@ export class VaultCoordinator {
 
   async fetch(request) {
     await this.initialized;
+    this.vaultId = request.headers.get("X-Vault-Id") || "";
+    if (!VAULT_ID_PATTERN.test(this.vaultId)) return jsonResponse({ error: "Invalid vault identifier." }, 400);
     return this.serialized(async () => {
       const path = new URL(request.url).pathname;
       if (path === "/claim") {
