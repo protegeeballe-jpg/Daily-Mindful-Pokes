@@ -11,6 +11,8 @@ const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
 const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
 const appIcon=readFileSync(new URL('../assets/icon.png',import.meta.url));
+const serviceWorker=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
+const accountSecurity=readFileSync(new URL('../assets/account-security.js',import.meta.url),'utf8');
 test('Faith & Focus branding, PWA metadata, and unified account copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
@@ -667,3 +669,24 @@ test('encrypted vault sync and JSON backup live in collapsible Settings sections
  assert.doesNotMatch(roomMarkup,/vault-sync-settings|local-backup-settings/);
 });
 
+
+
+test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question security bank',()=>{
+ const questionTexts=[...accountSecurity.matchAll(/text: '([^']+)'|text: "([^"]+)"/g)].map(match=>match[1]||match[2]);
+ assert.equal(questionTexts.length,20);
+ for(const prefix of ['signup','recovery','legacy']){
+  for(let number=1;number<=3;number++){
+   const selectorStart=html.indexOf(`<select id="${prefix}-question-${number}"`);
+   assert.notEqual(selectorStart,-1,`Missing ${prefix} question selector ${number}`);
+   const contentStart=html.indexOf('>',selectorStart)+1;
+   const closeIndex=html.indexOf('</select>',contentStart);
+   assert.ok(closeIndex>contentStart,`Unclosed ${prefix} question selector ${number}`);
+   const selectMarkup=html.slice(contentStart,closeIndex);
+   const options=[...selectMarkup.matchAll(/<option value="([0-9]+)">([^<]+)</g)];
+   assert.equal(options.length,20,`${prefix} selector ${number} must expose 20 questions`);
+   assert.deepEqual(options.map(option=>Number(option[1])),Array.from({length:20},(_,i)=>i+1));
+   assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
+  }
+ }
+ assert.match(serviceWorker,/faith-focus-shell-v3-account-recovery-questions/);
+});
