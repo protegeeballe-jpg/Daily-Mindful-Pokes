@@ -18,9 +18,15 @@ Keep your sign-in details private. For the best privacy, use a device and browse
 
 ## Privacy
 
-The app uses browser storage and may use configured cloud services for backup or synchronization. Some information remains on the device, so protect your device account and avoid shared or public browser profiles.
+The app uses browser storage and may use configured cloud services for backup or synchronization. It also applies a Content Security Policy to restrict browser-loaded resources.
+
+Some Checklist checkboxes and progress information are stored in the browser and are not encrypted at rest by the app. Encrypted vault data protects supported backup and sync copies, but this does not mean every item stored by the browser is encrypted. Use a private device and browser profile, and avoid shared or public computers.
 
 Please review the [Privacy Policy](./privacy.html) and [Terms of Service](./terms.html) before using the app.
+
+## Encrypted JSON export and import
+
+Settings provides an optional encrypted JSON export and import for supported daily data. Keep exported files private, and import a backup only into the account it belongs to.
 
 ## Development
 
