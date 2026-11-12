@@ -430,6 +430,33 @@ test('failed sign-up preserves user input and clearly reports the failure',()=>{
  assert.match(session,/let signupStage =/);
 });
 
+test('legacy account upgrade retries safely without discarding recovery answers or passphrase',()=>{
+ const session=readFileSync(new URL('../assets/vault-session.js',import.meta.url),'utf8');
+ const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const worker=readFileSync(new URL('../worker.js',import.meta.url),'utf8');
+ const start=session.indexOf('async function submitLegacyUpgrade(event)');
+ const end=session.indexOf('async function submitRecoveryAnswers(event)',start);
+ assert.ok(start>=0 && end>start);
+ const handler=session.slice(start,end);
+ const migrationCall=handler.indexOf("await accountRequest('/account/migrate-legacy', payload)");
+ const confirmed=handler.indexOf('accountMigrated = true');
+ const clearPending=handler.indexOf('clearPendingLegacyAccount()');
+ const clearAnswers=handler.indexOf("clearAnswerFields('legacy')");
+ const catchStart=handler.indexOf('} catch (error) {');
+ const finallyStart=handler.indexOf('} finally {',catchStart);
+ const catchBlock=handler.slice(catchStart,finallyStart);
+ assert.ok(migrationCall>=0 && confirmed>migrationCall);
+ assert.ok(clearPending>confirmed && clearAnswers>confirmed);
+ assert.equal(/pendingLegacyAccount[.]passphrase[ ]*=/.test(handler),false);
+ assert.equal(/clearAnswerFields|pendingLegacyAccount[.]passphrase/.test(catchBlock),false);
+ assert.match(catchBlock,/Your selected questions and answers are still here/);
+ assert.match(catchBlock,/scrollIntoView/);
+ assert.match(catchBlock,/focus/);
+ assert.match(index,/id="vault-legacy-upgrade-message" class="vault-account-status/);
+ assert.match(worker,/Account Registry legacy migration failed/);
+ assert.match(worker,/error instanceof Error \? error[.]name : "UnknownError"/);
+});
+
 test('Google Drive APIs and Gist credentials are removed from the active app; JSON export is local-only',()=>{
  const backup=readFileSync(new URL('../assets/local-backup.js',import.meta.url),'utf8');
  assert.match(html,/id="vault-export-button"/);
