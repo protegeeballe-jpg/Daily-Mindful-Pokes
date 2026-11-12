@@ -525,7 +525,7 @@ test('public pages explain privacy and account use in plain language without int
  assert.match(home,/without encryption/i);
  assert.match(privacy,/Cloudflare/);
  assert.match(privacy,/encrypted daily backup copies/i);
- assert.match(privacy,/not encrypted/i);
+ assert.match(privacy,/without encryption/i);
  assert.match(privacy,/at least 12 characters/i);
  assert.match(privacy,/does not delete cloud backups/i);
  assert.match(terms,/not a medical device/);
