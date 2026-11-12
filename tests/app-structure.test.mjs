@@ -88,7 +88,7 @@ test('account setup, sign-in and recovery use a permanent master key and the exa
  assert.ok(vaultSession.includes('/account/recovery/lookup'));
  assert.ok(vaultSession.includes('/account/recovery/update'));
  assert.match(vaultSession,/Sign Up/);
- assert.match(vaultSession,/Forgot Password \\/ Username/);
+ assert.ok(vaultSession.includes('Forgot Password / Username'));
  assert.match(worker,/class AccountDirectory/);
  assert.match(worker,/RECOVERY_PEPPER/);
  assert.match(worker,/recoveryLookupHash/);
