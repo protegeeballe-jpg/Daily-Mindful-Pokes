@@ -230,6 +230,7 @@ async function callCoordinator(env, vaultId, path, { token, body } = {}) {
   const stub = env.VAULT_COORDINATOR.get(id);
   const headers = new Headers({ "X-Vault-Id": vaultId });
   if (token) headers.set("X-Write-Token", token);
+  if (oldToken) headers.set("X-Legacy-Write-Token", oldToken);
   if (body !== undefined) headers.set("Content-Type", "application/json");
   return stub.fetch(new Request("https://vault-coordinator.internal" + path, {
     method: body === undefined ? "POST" : "POST",
@@ -261,7 +262,7 @@ export default {
     }
 
     const url = new URL(request.url);
-    const accountRoute = /^\/account\/(signup|signin|unlock|recover|complete-recovery)$/.exec(url.pathname);
+    const accountRoute = /^\/account\/(signup|migrate-legacy|signin|unlock|recover|complete-recovery)$/.exec(url.pathname);
     let bodyText = "";
     if (request.method === "POST") {
       bodyText = await readBodyLimited(request, MAX_REQUEST_BYTES);
@@ -466,6 +467,62 @@ export class AccountRegistry {
         return jsonResponse({ ok: true, username, vaultId }, 201);
       } catch {
         return jsonResponse({ error: "The account could not be created. Please try again." }, 503);
+      }
+    }
+
+    if (path === "/migrate-legacy") {
+      const username = validUsername(payload.username);
+      const vaultId = payload.vaultId;
+      const answers = payload.questionAnswers;
+      if (!username || !VAULT_ID_PATTERN.test(vaultId || "")
+          || !validBase64Length(payload.passphraseSalt, 16)
+          || payload.passphraseIterations !== 600000 || !validEnvelope(payload.passphraseEnvelope)
+          || !validBase64Length(payload.recoverySalt, 16)
+          || payload.recoveryIterations !== 1200000 || !validEnvelope(payload.recoveryEnvelope)
+          || !validQuestionAnswers(answers)
+          || !TOKEN_PATTERN.test(payload.writeToken || "")
+          || !TOKEN_PATTERN.test(payload.legacyWriteToken || "")) {
+        return jsonResponse({ error: "The legacy account upgrade information is incomplete or invalid." }, 400);
+      }
+      if (await this.state.storage.get(this.usernameKey(username))) {
+        return jsonResponse({ error: "This username already has a registered account." }, 409);
+      }
+      const recoveryDigest = await this.recoveryDigest(answers);
+      if (await this.state.storage.get("recovery:" + recoveryDigest)) {
+        return jsonResponse({
+          error: "That exact security-question combination is already in use. Choose different questions or less predictable answers."
+        }, 409);
+      }
+      try {
+        const sealedRecoveryEnvelope = await sealRecoveryEnvelope(
+          payload.recoveryEnvelope, vaultId, this.env.RECOVERY_PEPPER
+        );
+        const record = {
+          username,
+          vaultId,
+          passphraseSalt: payload.passphraseSalt,
+          passphraseIterations: payload.passphraseIterations,
+          passphraseEnvelope: payload.passphraseEnvelope,
+          recoverySalt: payload.recoverySalt,
+          recoveryIterations: payload.recoveryIterations,
+          sealedRecoveryEnvelope,
+          recoveryDigest,
+          createdAt: new Date().toISOString(),
+          upgradedFromLegacyVault: true
+        };
+        const migrated = await callCoordinator(this.env, vaultId, "/admin/migrate-legacy", {
+          token: payload.writeToken,
+          oldToken: payload.legacyWriteToken
+        });
+        if (!migrated.ok) {
+          return jsonResponse({ error: "The existing vault credentials could not be verified. No account changes were made." }, 401);
+        }
+        await this.state.storage.put(this.accountKey(vaultId), record);
+        await this.state.storage.put(this.usernameKey(username), vaultId);
+        await this.state.storage.put("recovery:" + recoveryDigest, vaultId);
+        return jsonResponse({ ok: true, username, vaultId, upgraded: true }, 200);
+      } catch {
+        return jsonResponse({ error: "The existing account could not be upgraded. Keep your previous account credentials and try again." }, 503);
       }
     }
 
@@ -688,6 +745,21 @@ export class VaultCoordinator {
         return jsonResponse({ ok: true }, 200);
       }
 
+      if (path === "/admin/migrate-legacy") {
+        const oldToken = request.headers.get("X-Legacy-Write-Token") || "";
+        const newToken = request.headers.get("X-Write-Token") || "";
+        if (!TOKEN_PATTERN.test(oldToken) || !TOKEN_PATTERN.test(newToken)) {
+          return jsonResponse({ error: "The legacy upgrade credentials are invalid." }, 400);
+        }
+        const storedHash = await this.state.storage.get("write-token-sha256");
+        if (!storedHash || !constantTimeEqual(storedHash, await sha256Hex(oldToken))) {
+          return this.unauthorized();
+        }
+        await this.state.storage.put("write-token-sha256", await sha256Hex(newToken));
+        await this.state.storage.put("upgraded-at", new Date().toISOString());
+        return jsonResponse({ ok: true }, 200);
+      }
+
       if (path === "/admin/rotate-token") {
         const token = request.headers.get("X-Write-Token") || "";
         if (!TOKEN_PATTERN.test(token)) return jsonResponse({ error: "Invalid replacement token." }, 400);
@@ -699,7 +771,7 @@ export class VaultCoordinator {
       }
 
       if (path === "/claim") {
-        if (!(await this.authenticate(request, { allowFirstClaim: true }))) return this.unauthorized();
+        if (!(await this.authenticate(request))) return this.unauthorized();
         return jsonResponse({ ok: true, claimed: true }, 200);
       }
 
