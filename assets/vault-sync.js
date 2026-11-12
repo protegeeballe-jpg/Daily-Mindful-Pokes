@@ -489,9 +489,15 @@ export async function exportEncryptedVaultPackets() {
 }
 
 export async function importEncryptedVaultPackets(packets) {
+  if (!activeVault) throw new Error('Sign in to the same account that created this backup before importing it.');
+  if (!Array.isArray(packets) || packets.length > 5000
+      || packets.some(item => !item || !isValidEncryptedPacket(item.packet)
+        || item.dateString !== item.packet.dateString)) {
+    throw new Error('The selected backup contains an invalid or unsupported encrypted daily packet.');
+  }
   const { importLocalDailyPackets } = await import('./vault-storage.js');
   await importLocalDailyPackets(packets);
-  for (const packet of packets) scheduleCapture(packet.dateString);
+  status('Encrypted daily packets imported locally. Automatic cloud sync is queued.', 'success');
   scheduleCloudPush();
 }
 
