@@ -51,7 +51,7 @@ The browser connects only to:
 
 The exact Content Security Policy on `index.html` and `home.html` allows same-origin scripts, inline styles, local/data/blob images, local/blob media, local fonts, and connections to that Worker. The bundled watercolor background and recorded-audio Blob playback remain allowed. Google scripts and Google API connections are not loaded.
 
-## Optional local JSON export/import
+## Encrypted JSON export and import
 
 Settings includes an optional local JSON export/import of already encrypted daily packets. Import requires signing in to the same account that created the file. This is a fallback file copy, not a prerequisite for automatic sync.
 
