@@ -6,6 +6,7 @@ import {
   VAULT_KDF_ITERATIONS, RECOVERY_KDF_ITERATIONS,
   MIN_PASSPHRASE_LENGTH, MAX_PASSPHRASE_LENGTH,
   createVaultAccount, unlockVaultAccount, recoverVaultMasterKey,
+  deriveLegacyVaultCredentials, createLegacyVaultUpgrade,
   prepareVaultPassphraseReset, validateVaultUsername,
   validateVaultPassphrase, validateRecoveryAnswers,
   encryptDailyBundle, decryptDailyBundle, isValidEncryptedPacket,
@@ -177,4 +178,46 @@ test('packet validation rejects wrong dates, algorithms, and malformed IVs', asy
   assert.equal(isValidEncryptedPacket({ ...packet, dateString: '2026-02-30' }), false);
   assert.equal(isValidEncryptedPacket({ ...packet, iv: 'bad' }), false);
   wipeWriteToken(created.writeToken);
+});
+
+
+test('legacy account upgrade keeps the old Vault ID and master key while adding recovery', async () => {
+  const legacy = await deriveLegacyVaultCredentials('older.family', 'legacy-account-passphrase-2026', webcrypto);
+  const legacyVaultId = legacy.vaultId;
+  const dailyBundle = {
+    format: 'faith-focus-daily-bundle',
+    version: 1,
+    dateString: '2026-11-12',
+    records: { 'mindful_pokes_data_2026-11-12': JSON.stringify({ prayer: true }) },
+    voiceNotes: [],
+    appState: { garden: null, confidenceScore: null, legacyWritingConfig: null }
+  };
+  const packet = await encryptDailyBundle(dailyBundle, legacy.encryptionKey, async value => value, webcrypto);
+
+  const upgraded = await createLegacyVaultUpgrade(
+    'older.family',
+    'legacy-account-passphrase-2026',
+    answers,
+    legacy,
+    webcrypto
+  );
+  assert.equal(upgraded.vaultId, legacyVaultId);
+  assert.notDeepEqual(upgraded.writeToken, legacy.writeToken);
+  const preserved = await decryptDailyBundle(packet, upgraded.encryptionKey, async value => value, webcrypto);
+  assert.deepEqual(preserved, dailyBundle);
+
+  const signedIn = await unlockVaultAccount(upgraded.accountRecord, 'legacy-account-passphrase-2026', webcrypto);
+  assert.equal(signedIn.vaultId, legacyVaultId);
+  const recovered = await recoverVaultMasterKey(upgraded.accountRecord, answers, webcrypto);
+  const recoveredKey = await webcrypto.subtle.importKey(
+    'raw', recovered, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+  assert.deepEqual(await decryptDailyBundle(packet, recoveredKey, async value => value, webcrypto), dailyBundle);
+
+  recovered.fill(0);
+  legacy.masterKeyBytes.fill(0);
+  wipeWriteToken(legacy.writeToken);
+  wipeWriteToken(upgraded.writeToken);
+  wipeWriteToken(upgraded.legacyWriteToken);
+  wipeWriteToken(signedIn.writeToken);
 });
