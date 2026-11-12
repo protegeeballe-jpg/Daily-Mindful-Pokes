@@ -420,13 +420,13 @@ test('failed sign-up preserves user input and clearly reports the failure',()=>{
  const catchBlock=handler.slice(catchStart,finallyStart);
  assert.ok(registration>=0 && confirmed>registration);
  assert.ok(clearPassphrase>confirmed && clearAnswers>confirmed);
- assert.doesNotMatch(catchBlock,/passphraseField\\.value\\s*=|confirmField\\.value\\s*=|clearAnswerFields/);
+ assert.equal(/passphraseField[.]value[ ]*=|confirmField[.]value[ ]*=|clearAnswerFields/.test(catchBlock), false);
  assert.match(catchBlock,/Your entries are still here/);
  assert.match(catchBlock,/scrollIntoView/);
  assert.match(catchBlock,/focus/);
- assert.match(session,/setAttribute\\('aria-live', state === 'error' \\? 'assertive' : 'polite'\\)/);
+ assert.ok(session.includes("element.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite')"));
  assert.match(index,/id="vault-signup-message" class="vault-account-status/);
- assert.match(style,/\\.vault-account-status\\[data-state="error"\\]/);
+ assert.ok(style.includes('.vault-account-status[data-state="error"]'));
  assert.match(session,/let signupStage =/);
 });
 
