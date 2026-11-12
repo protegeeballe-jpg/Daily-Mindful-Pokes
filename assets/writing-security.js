@@ -85,7 +85,10 @@ import {
                 const notesRecord=localStorage.getItem(notesKey);
                 const nextDiary=diaryRecord===null?null:await encryptPrivatePayload('diary',dateStr,await decryptPrivatePayload('diary',dateStr,diaryRecord,sourceKey),targetKey);
                 const nextNotes=notesRecord===null?null:await encryptPrivatePayload('notes',dateStr,await decryptPrivatePayload('notes',dateStr,notesRecord,sourceKey),targetKey);
-                migrated.push({diaryKey,notesKey,nextDiary,nextNotes});
+                migrated.push({
+                    diaryKey,notesKey,nextDiary,nextNotes,
+                    originalDiary:diaryRecord,originalNotes:notesRecord
+                });
             }
 
             const voiceRecords=await exportEncryptedVoiceNotes();
@@ -95,15 +98,44 @@ import {
                 nextVoiceRecords.push(await encryptVoiceNoteBlob(blob,targetKey,record.dateString,record.id,record.capturedAt));
             }
 
-            migrated.forEach(item=>{
-                if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
-                if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
+            const affectedDates=new Set([
+                ...dates,
+                ...voiceRecords.map(record=>record.dateString)
+            ]);
+            let voiceRecordsReplaced=false;
+            window.__faithFocusVaultMigration=true;
+            try{
+                if(voiceRecords.length){
+                    await restoreEncryptedVoiceNotes(nextVoiceRecords);
+                    voiceRecordsReplaced=true;
+                }
+                migrated.forEach(item=>{
+                    if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
+                    if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
+                });
+                localStorage.removeItem(WRITING_CONFIG_KEY);
+                writingCryptoKey=targetKey;
+                writingLoadedDate=null;
+                legacyMigrationRequired=false;
+            }catch(error){
+                migrated.forEach(item=>{
+                    if(item.originalDiary===null)localStorage.removeItem(item.diaryKey);
+                    else localStorage.setItem(item.diaryKey,item.originalDiary);
+                    if(item.originalNotes===null)localStorage.removeItem(item.notesKey);
+                    else localStorage.setItem(item.notesKey,item.originalNotes);
+                });
+                if(voiceRecordsReplaced){
+                    try{await restoreEncryptedVoiceNotes(voiceRecords);}catch(rollbackError){
+                        throw new Error('Diary migration failed and the voice-note rollback also failed. Keep this browser profile unchanged and contact support before trying again.');
+                    }
+                }
+                throw error;
+            }finally{
+                window.__faithFocusVaultMigration=false;
+            }
+            affectedDates.forEach(dateString=>{
+                window.dispatchEvent(new CustomEvent('faith-focus:local-data-changed',{detail:{dateString}}));
             });
-            if(voiceRecords.length)await restoreEncryptedVoiceNotes(nextVoiceRecords);
-            localStorage.removeItem(WRITING_CONFIG_KEY);
-            writingCryptoKey=targetKey;
-            writingLoadedDate=null;
-            legacyMigrationRequired=false;
         }
 
         function bytesToBase64(bytes){let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
