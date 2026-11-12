@@ -116,10 +116,8 @@ import {
                     if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
                     if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
                 });
-                localStorage.removeItem(WRITING_CONFIG_KEY);
                 writingCryptoKey=targetKey;
                 writingLoadedDate=null;
-                legacyMigrationRequired=false;
             }catch(error){
                 migrated.forEach(item=>{
                     if(item.originalDiary===null)localStorage.removeItem(item.diaryKey);
@@ -200,31 +198,115 @@ import {
             if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing and voice notes are encrypted on this device.';}
             else document.dispatchEvent(new CustomEvent('private-writing:locked'));
         }
-        async function migrateLegacyPrivateWriting(key){
+        async function migrateLegacyPrivateWriting(key,{preserveOriginals=false}={}){
             const dates=new Set();
             for(let i=0;i<localStorage.length;i++){
                 const storageKey=localStorage.key(i);
-                let match=storageKey&&storageKey.match(/^private_diary_(\d{4}-\d{2}-\d{2})$/);
+                let match=storageKey&&storageKey.match(/^private_diary_(\\d{4}-\\d{2}-\\d{2})$/);
                 if(match)dates.add(match[1]);
-                match=storageKey&&storageKey.match(/^mindful_pokes_data_(\d{4}-\d{2}-\d{2})$/);
+                match=storageKey&&storageKey.match(/^mindful_pokes_data_(\\d{4}-\\d{2}-\\d{2})$/);
+                if(match)dates.add(match[1]);
+            }
+            const staged=[];
+            for(const dateStr of dates){
+                const oldDiaryKey='private_diary_'+dateStr;
+                const oldDiary=localStorage.getItem(oldDiaryKey);
+                const appDataKey='mindful_pokes_data_'+dateStr;
+                const rawAppData=localStorage.getItem(appDataKey);
+                let appData={},valid=true;
+                if(rawAppData){try{appData=JSON.parse(rawAppData)||{};}catch(error){valid=false;}}
+                const privateNotes={};let hasNoteContent=false,hasNoteFields=false;
+                if(valid&&rawAppData){
+                    PRIVATE_NOTE_IDS.forEach(id=>{
+                        if(Object.prototype.hasOwnProperty.call(appData,id))hasNoteFields=true;
+                        if(typeof appData[id]==='string'){
+                            privateNotes[id]=appData[id];
+                            hasNoteContent=hasNoteContent||appData[id].length>0;
+                        }
+                    });
+                }
+                const diaryKey=getSecureWritingStorageKey('diary',dateStr);
+                const notesKey=getSecureWritingStorageKey('notes',dateStr);
+                const originalDiary=localStorage.getItem(diaryKey);
+                const originalNotes=localStorage.getItem(notesKey);
+                let nextDiary=null,nextNotes=null;
+                if(oldDiary!==null&&!originalDiary){
+                    nextDiary=await encryptPrivatePayload('diary',dateStr,oldDiary,key);
+                }
+                if(valid&&hasNoteContent&&!originalNotes){
+                    nextNotes=await encryptPrivatePayload('notes',dateStr,privateNotes,key);
+                }
+                staged.push({
+                    dateStr,oldDiaryKey,oldDiary,appDataKey,rawAppData,appData,valid,
+                    hasNoteFields,privateNotes,hasNoteContent,diaryKey,notesKey,
+                    originalDiary,originalNotes,nextDiary,nextNotes
+                });
+            }
+
+            const written=[];
+            try{
+                for(const item of staged){
+                    if(item.nextDiary!==null){
+                        localStorage.setItem(item.diaryKey,item.nextDiary);
+                        written.push({key:item.diaryKey,original:item.originalDiary});
+                        const verified=await decryptPrivatePayload('diary',item.dateStr,item.nextDiary,key);
+                        if(verified!==item.oldDiary)throw new Error('A legacy Diary entry failed its post-encryption verification.');
+                    }
+                    if(item.nextNotes!==null){
+                        localStorage.setItem(item.notesKey,item.nextNotes);
+                        written.push({key:item.notesKey,original:item.originalNotes});
+                        const verified=await decryptPrivatePayload('notes',item.dateStr,item.nextNotes,key);
+                        if(JSON.stringify(verified)!==JSON.stringify(item.privateNotes)){
+                            throw new Error('A legacy reflection failed its post-encryption verification.');
+                        }
+                    }
+                }
+                if(!preserveOriginals)await cleanupLegacyPrivateWriting(staged);
+            }catch(error){
+                for(const item of written.reverse()){
+                    if(item.original===null)localStorage.removeItem(item.key);
+                    else localStorage.setItem(item.key,item.original);
+                }
+                throw error;
+            }
+        }
+
+        async function cleanupLegacyPrivateWriting(stagedDates=null){
+            const dateSet=stagedDates
+                ?new Set(stagedDates.map(item=>item.dateStr))
+                :null;
+            const dates=new Set();
+            for(let i=0;i<localStorage.length;i++){
+                const key=localStorage.key(i);
+                let match=key&&key.match(/^private_diary_(\\d{4}-\\d{2}-\\d{2})$/);
+                if(match)dates.add(match[1]);
+                match=key&&key.match(/^mindful_pokes_data_(\\d{4}-\\d{2}-\\d{2})$/);
                 if(match)dates.add(match[1]);
             }
             for(const dateStr of dates){
-                const oldDiaryKey='private_diary_'+dateStr,oldDiary=localStorage.getItem(oldDiaryKey);
-                const appDataKey='mindful_pokes_data_'+dateStr,rawAppData=localStorage.getItem(appDataKey);
-                let appData={},valid=true;
-                if(rawAppData){try{appData=JSON.parse(rawAppData)||{};}catch(error){valid=false;}}
-                const secureDiaryKey=getSecureWritingStorageKey('diary',dateStr);
-                if(oldDiary!==null&&!localStorage.getItem(secureDiaryKey))localStorage.setItem(secureDiaryKey,await encryptPrivatePayload('diary',dateStr,oldDiary,key));
-                if(oldDiary!==null)localStorage.removeItem(oldDiaryKey);
-                if(valid&&rawAppData){
-                    const hadFields=PRIVATE_NOTE_IDS.some(id=>Object.prototype.hasOwnProperty.call(appData,id));
-                    const legacyNotes={};let hasContent=false;
-                    PRIVATE_NOTE_IDS.forEach(id=>{if(typeof appData[id]==='string'){legacyNotes[id]=appData[id];hasContent=hasContent||appData[id].length>0;}delete appData[id];});
-                    const secureNotesKey=getSecureWritingStorageKey('notes',dateStr);
-                    if(hasContent&&!localStorage.getItem(secureNotesKey))localStorage.setItem(secureNotesKey,await encryptPrivatePayload('notes',dateStr,legacyNotes,key));
-                    if(hadFields)localStorage.setItem(appDataKey,JSON.stringify(appData));
+                if(dateSet&&!dateSet.has(dateStr))continue;
+                const privateDiaryKey='private_diary_'+dateStr;
+                if(localStorage.getItem(privateDiaryKey)!==null
+                    &&localStorage.getItem(getSecureWritingStorageKey('diary',dateStr))!==null){
+                    localStorage.removeItem(privateDiaryKey);
                 }
+                const appDataKey='mindful_pokes_data_'+dateStr;
+                const raw=localStorage.getItem(appDataKey);
+                if(!raw)continue;
+                let data;
+                try{data=JSON.parse(raw)||{};}catch(error){continue;}
+                const hasFields=PRIVATE_NOTE_IDS.some(id=>Object.prototype.hasOwnProperty.call(data,id));
+                if(!hasFields)continue;
+                const secureNotes=localStorage.getItem(getSecureWritingStorageKey('notes',dateStr));
+                if(!secureNotes)continue;
+                let verified;
+                try{verified=await decryptPrivatePayload('notes',dateStr,secureNotes,writingCryptoKey||vaultPrimaryKey);}
+                catch(error){continue;}
+                const originalsMatch=PRIVATE_NOTE_IDS.every(id=>
+                    typeof data[id]!=='string'||data[id]===''||verified[id]===data[id]);
+                if(!originalsMatch)continue;
+                PRIVATE_NOTE_IDS.forEach(id=>delete data[id]);
+                localStorage.setItem(appDataKey,JSON.stringify(data));
             }
         }
         async function handleDiaryKeyAction(){
@@ -252,8 +334,13 @@ import {
                     if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
                 }
                 if(vaultPrimaryKey&&legacyMigrationRequired){
-                    await migrateLegacyPrivateWriting(key);
+                    await migrateLegacyPrivateWriting(key,{preserveOriginals:true});
                     await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    writingCryptoKey=vaultPrimaryKey;
+                    await cleanupLegacyPrivateWriting();
+                    localStorage.removeItem(WRITING_CONFIG_KEY);
+                    writingLoadedDate=null;
+                    legacyMigrationRequired=false;
                 }else if(vaultPrimaryKey){
                     writingCryptoKey=vaultPrimaryKey;
                 }else{
