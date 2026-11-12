@@ -566,7 +566,7 @@ test('Settings modal and backup disclosures adapt to narrow phone screens',()=>{
  assert.match(settingsRules,/width:\s*calc\(100% - \.8rem\)/);
  assert.match(settingsRules,/max-height:\s*min\(92dvh,\s*48rem\)/);
  assert.match(settingsRules,/settings-disclosure > \.drive-sync-panel/);
- assert.match(html,/id="drive-connect-button"/);
+ assert.match(html,/id="vault-export-button"/);
 });
 
 
