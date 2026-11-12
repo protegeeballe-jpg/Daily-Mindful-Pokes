@@ -145,7 +145,6 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
                     if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
                 });
-                localStorage.removeItem(WRITING_CONFIG_KEY);
                 writingCryptoKey=targetKey;
                 writingLoadedDate=null;
                 legacyMigrationRequired=false;
@@ -390,6 +389,9 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     await migrateLegacyPrivateWriting(key);
                 }
                 await loadPrivateWritingForDate(getCurrentWritingDate());
+                if(vaultPrimaryKey) localStorage.removeItem(WRITING_CONFIG_KEY);
+                legacyMigrationRequired=false;
+                legacyKeyUnavailable=false;
                 updatePrivateWritingAccess();
                 const saveStatus=document.getElementById('writing-save-status');
                 if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
