@@ -525,7 +525,9 @@ export class AccountRegistry {
         await this.state.storage.put(this.usernameKey(username), vaultId);
         await this.state.storage.put("recovery:" + recoveryDigest, vaultId);
         return jsonResponse({ ok: true, username, vaultId, upgraded: true }, 200);
-      } catch {
+      } catch (error) {
+        // Log only the error category, never account data or recovery answers.
+        console.error("Account Registry legacy migration failed:", error instanceof Error ? error.name : "UnknownError");
         return jsonResponse({ error: "The existing account could not be upgraded. Keep your previous account credentials and try again." }, 503);
       }
     }
