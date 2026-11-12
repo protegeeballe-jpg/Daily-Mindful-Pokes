@@ -377,7 +377,9 @@ test('unified vault login derives separate credentials and synchronizes encrypte
  assert.match(cryptoModule,/VAULT_ID_DOMAIN/);
  assert.match(cryptoModule,/writeToken/);
  assert.match(session,/SESSION_INACTIVITY_MS = 15 \* 60 \* 1000/);
- assert.match(session,/deriveVaultCredentials/);
+ assert.match(session,/deriveVaultLoginMaterial/);
+ assert.match(session,/finishVaultLogin/);
+ assert.match(session,/recoverVaultMasterKey/);
  assert.match(session,/wipeWriteToken/);
  assert.doesNotMatch(session,/sessionStorage/);
  assert.match(sync,/setTimeout\([\s\S]*?5000\)/);
