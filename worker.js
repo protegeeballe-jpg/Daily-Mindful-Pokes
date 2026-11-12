@@ -164,6 +164,44 @@ export default {
       const bodyText = await readBodyLimited(request, 64 * 1024);
       if (bodyText === null) return jsonResponse({ error: "Account request is too large." }, 413, origin);
       const directory = env.ACCOUNT_DIRECTORY.get(env.ACCOUNT_DIRECTORY.idFromName("faith-focus-account-directory-v1"));
+      if (url.pathname === "/account/signup") {
+        if (!env.VAULT_COORDINATOR) {
+          return jsonResponse({ error: "The vault coordinator is not configured." }, 503, origin);
+        }
+        let signupBody;
+        try { signupBody = JSON.parse(bodyText); }
+        catch { return jsonResponse({ error: "Invalid account signup request." }, 400, origin); }
+        const signupVaultId = signupBody?.vaultId || "";
+        const signupToken = request.headers.get("X-Write-Token") || "";
+        if (!VAULT_ID_PATTERN.test(signupVaultId) || !TOKEN_PATTERN.test(signupToken)) {
+          return jsonResponse({ error: "Account enrollment requires a valid vault credential." }, 401, origin);
+        }
+        const coordinator = env.VAULT_COORDINATOR.get(env.VAULT_COORDINATOR.idFromName(signupVaultId));
+        const claimResponse = await coordinator.fetch(new Request(
+          new URL("/claim", "https://vault-coordinator.internal"),
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Write-Token": signupToken,
+              "X-Vault-Id": signupVaultId,
+              "X-Allow-First-Claim": "true"
+            },
+            body: "{}"
+          }
+        ));
+        if (!claimResponse.ok) {
+          return new Response(await claimResponse.text(), {
+            status: claimResponse.status,
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control": "no-store",
+              "Access-Control-Allow-Origin": APP_ORIGIN,
+              "Vary": "Origin"
+            }
+          });
+        }
+      }
       const internalUrl = new URL(url.pathname, "https://account-directory.internal");
       const headers = new Headers({
         "Content-Type": "application/json",
