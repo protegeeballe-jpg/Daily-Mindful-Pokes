@@ -282,8 +282,8 @@ export async function deriveLegacyVaultCredentials(username, passphrase, cryptoA
   if (!usernameResult.valid) throw new Error('The username is not valid.');
   if (!passphraseResult.valid) throw new Error(passphraseResult.message);
   const usernameBytes = encoder.encode(usernameResult.normalized);
-  const vaultIdBytes = await sha256(encoder.encode(LEGACY_VAULT_ID_DOMAIN + usernameResult.normalized), cryptoApi);
-  const salt = await sha256(concatBytes(encoder.encode(LEGACY_VAULT_SALT_DOMAIN), usernameBytes), cryptoApi);
+  const vaultIdBytes = await sha256Bytes(encoder.encode(LEGACY_VAULT_ID_DOMAIN + usernameResult.normalized), cryptoApi);
+  const salt = await sha256Bytes(concatBytes(encoder.encode(LEGACY_VAULT_SALT_DOMAIN), usernameBytes), cryptoApi);
   const material = await cryptoApi.subtle.importKey(
     'raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveBits']
   );
