@@ -243,9 +243,14 @@ export async function restoreEncryptedVoiceNotesForDate(dateString, records) {
         const transaction = database.transaction(VOICE_NOTE_STORE_NAME, 'readwrite');
         const completed = waitForTransaction(transaction);
         const store = transaction.objectStore(VOICE_NOTE_STORE_NAME);
-        const existing = await waitForRequest(store.index('dateString').getAllKeys(dateString));
-        existing.forEach(key => store.delete(key));
-        records.forEach(record => store.put(record));
+        const request = store.index('dateString').getAllKeys(dateString);
+        request.onsuccess = () => {
+            for (const key of request.result) store.delete(key);
+            records.forEach(record => store.put(record));
+        };
+        request.onerror = () => {
+            try { transaction.abort(); } catch { /* The transaction may already be closed. */ }
+        };
         await completed;
     } finally {
         database.close();
