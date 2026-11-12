@@ -256,7 +256,7 @@ function installLocalStorageHooks() {
 
   const wrappedSetItem = function (key, value) {
     const result = originalSetItem.call(this, key, value);
-    if (this === window.localStorage && !applyingRemotePacket) {
+    if (this === window.localStorage && !applyingRemotePacket && !window.__faithFocusVaultMigration) {
       const dateString = dateFromDailyKey(String(key));
       if (dateString) scheduleCapture(dateString);
       else if (key === GARDEN_STORAGE_KEY || key === 'user_confidence_score') scheduleCapture();
@@ -471,8 +471,8 @@ export async function startVaultSync(credentials) {
   window.addEventListener('pagehide', flushVaultSync);
 }
 
-function handleLocalDataChanged() {
-  if (activeVault) scheduleCapture();
+function handleLocalDataChanged(event) {
+  if (activeVault) scheduleCapture(event?.detail?.dateString || getCurrentDateString());
 }
 
 function handleOnline() {
