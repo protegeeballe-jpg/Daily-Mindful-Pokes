@@ -1,7 +1,7 @@
 import {
     saveEncryptedVoiceNote, loadEncryptedVoiceNotes,
     exportEncryptedVoiceNotes, restoreEncryptedVoiceNotes,
-    validateEncryptedVoiceNoteBackup
+    validateEncryptedVoiceNoteBackup, encryptVoiceNoteBlob, decryptVoiceNoteRecord
 } from './voice-note-store.js';
 
         const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
@@ -11,10 +11,136 @@ import {
         const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
         const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
         let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
+        let vaultPrimaryKey=null,legacyMigrationRequired=false;
         let voiceNoteSavePromise=Promise.resolve();
         let voiceNoteStopHandler=async()=>{};
 
         function hasWritingCrypto(){return !!(window.isSecureContext&&window.crypto&&window.crypto.subtle&&window.crypto.getRandomValues);}
+        function hasLegacyEncryptedPrivateRecords(){
+            for(let i=0;i<localStorage.length;i++){
+                const key=localStorage.key(i);
+                if(/^dmp_(?:diary|notes)_cipher_v1_\d{4}-\d{2}-\d{2}$/.test(key||''))return true;
+            }
+            return false;
+        }
+
+        function hasLegacyPrivateRecords(){
+            for(let i=0;i<localStorage.length;i++){
+                const key=localStorage.key(i);
+                if(/^dmp_(?:diary|notes)_cipher_v1_\d{4}-\d{2}-\d{2}$/.test(key||''))return true;
+                if(/^private_diary_\d{4}-\d{2}-\d{2}$/.test(key||''))return true;
+                if(/^mindful_pokes_data_\d{4}-\d{2}-\d{2}$/.test(key||'')){
+                    try{
+                        const data=JSON.parse(localStorage.getItem(key)||'{}');
+                        if(PRIVATE_NOTE_IDS.some(id=>typeof data?.[id]==='string'&&data[id].length>0))return true;
+                    }catch(error){return true;}
+                }
+            }
+            return false;
+        }
+
+        export async function adoptVaultEncryptionKey(key){
+            if(!key)throw new TypeError('A vault encryption key is required.');
+            vaultPrimaryKey=key;
+            const voiceNotes=await exportEncryptedVoiceNotes();
+            const legacyConfigExists=Boolean(localStorage.getItem(WRITING_CONFIG_KEY));
+            legacyMigrationRequired=legacyConfigExists&&(hasLegacyEncryptedPrivateRecords()||voiceNotes.length>0);
+            if(legacyMigrationRequired){
+                writingCryptoKey=null;
+                writingLoadedDate=null;
+                updatePrivateWritingAccess();
+                setWritingSecurityStatus('This device has older encrypted Diary data. Enter its previous Diary passphrase once to migrate it to your new account. The original entries are preserved until migration succeeds.','info');
+                return {legacyMigrationRequired:true};
+            }
+            writingCryptoKey=vaultPrimaryKey;
+            writingLoadedDate=null;
+            localStorage.removeItem(WRITING_CONFIG_KEY);
+            await migrateLegacyPrivateWriting(writingCryptoKey);
+            // Initial cloud reconciliation runs before the vault key is adopted.
+            // Load the restored current-day Diary after adopting that key.
+            await loadPrivateWritingForDate(getCurrentWritingDate());
+            updatePrivateWritingAccess();
+            return {legacyMigrationRequired:false};
+        }
+
+        export function clearVaultEncryptionKey(){
+            vaultPrimaryKey=null;
+            writingCryptoKey=null;
+            writingLoadedDate=null;
+            legacyMigrationRequired=false;
+            updatePrivateWritingAccess();
+        }
+
+        async function migrateEncryptedPrivateRecords(sourceKey,targetKey){
+            const dates=new Set();
+            for(let i=0;i<localStorage.length;i++){
+                const key=localStorage.key(i);
+                let match=key&&key.match(/^dmp_diary_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
+                if(match)dates.add(match[1]);
+                match=key&&key.match(/^dmp_notes_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
+                if(match)dates.add(match[1]);
+            }
+            const migrated=[];
+            for(const dateStr of dates){
+                const diaryKey=getSecureWritingStorageKey('diary',dateStr);
+                const notesKey=getSecureWritingStorageKey('notes',dateStr);
+                const diaryRecord=localStorage.getItem(diaryKey);
+                const notesRecord=localStorage.getItem(notesKey);
+                const nextDiary=diaryRecord===null?null:await encryptPrivatePayload('diary',dateStr,await decryptPrivatePayload('diary',dateStr,diaryRecord,sourceKey),targetKey);
+                const nextNotes=notesRecord===null?null:await encryptPrivatePayload('notes',dateStr,await decryptPrivatePayload('notes',dateStr,notesRecord,sourceKey),targetKey);
+                migrated.push({
+                    diaryKey,notesKey,nextDiary,nextNotes,
+                    originalDiary:diaryRecord,originalNotes:notesRecord
+                });
+            }
+
+            const voiceRecords=await exportEncryptedVoiceNotes();
+            const nextVoiceRecords=[];
+            for(const record of voiceRecords){
+                const blob=await decryptVoiceNoteRecord(record,sourceKey);
+                nextVoiceRecords.push(await encryptVoiceNoteBlob(blob,targetKey,record.dateString,record.id,record.capturedAt));
+            }
+
+            const affectedDates=new Set([
+                ...dates,
+                ...voiceRecords.map(record=>record.dateString)
+            ]);
+            let voiceRecordsReplaced=false;
+            window.__faithFocusVaultMigration=true;
+            try{
+                if(voiceRecords.length){
+                    await restoreEncryptedVoiceNotes(nextVoiceRecords);
+                    voiceRecordsReplaced=true;
+                }
+                migrated.forEach(item=>{
+                    if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
+                    if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
+                });
+                localStorage.removeItem(WRITING_CONFIG_KEY);
+                writingCryptoKey=targetKey;
+                writingLoadedDate=null;
+                legacyMigrationRequired=false;
+            }catch(error){
+                migrated.forEach(item=>{
+                    if(item.originalDiary===null)localStorage.removeItem(item.diaryKey);
+                    else localStorage.setItem(item.diaryKey,item.originalDiary);
+                    if(item.originalNotes===null)localStorage.removeItem(item.notesKey);
+                    else localStorage.setItem(item.notesKey,item.originalNotes);
+                });
+                if(voiceRecordsReplaced){
+                    try{await restoreEncryptedVoiceNotes(voiceRecords);}catch(rollbackError){
+                        throw new Error('Diary migration failed and the voice-note rollback also failed. Keep this browser profile unchanged and contact support before trying again.');
+                    }
+                }
+                throw error;
+            }finally{
+                window.__faithFocusVaultMigration=false;
+            }
+            affectedDates.forEach(dateString=>{
+                window.dispatchEvent(new CustomEvent('faith-focus:local-data-changed',{detail:{dateString}}));
+            });
+        }
+
         function bytesToBase64(bytes){let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
         function base64ToBytes(value){const binary=atob(value),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;}
         async function derivePrivateWritingKey(passphrase,salt,iterations=WRITING_KDF_ITERATIONS){
@@ -55,12 +181,14 @@ import {
             if(writingCryptoKey){document.getElementById('diary-lock-panel')?.classList.add('hidden');document.getElementById('diary-editor-panel')?.classList.remove('hidden');return;}
             document.getElementById('diary-lock-panel')?.classList.remove('hidden');
             document.getElementById('diary-editor-panel')?.classList.add('hidden');
-            if(heading)heading.textContent=configured?'Unlock your private writing':'Create your private writing key';
-            if(intro)intro.textContent=configured?'Enter your passphrase to decrypt your diary and checklist reflections on this device.':'Create a separate passphrase. Existing plain-text diary and checklist reflections will be encrypted during setup.';
-            confirmWrap?.classList.toggle('hidden',configured);
-            if(button)button.textContent=configured?'Unlock private writing':'Create encryption key';
+            if(heading)heading.textContent=legacyMigrationRequired?'One-time Diary migration':configured?'Unlock your private writing':'Create your private writing key';
+            if(intro)intro.textContent=legacyMigrationRequired
+                ?'This device contains Diary entries encrypted before your unified account was created. Enter the old Diary passphrase once to migrate them to your account key. Your old records will remain untouched unless migration succeeds.'
+                :configured?'Enter your passphrase to decrypt your diary and checklist reflections on this device.':'Private writing is protected by your unified account passphrase.';
+            confirmWrap?.classList.toggle('hidden',configured||legacyMigrationRequired||!!vaultPrimaryKey);
+            if(button)button.textContent=legacyMigrationRequired?'Migrate existing Diary':configured?'Unlock private writing':'Continue';
             const pass=document.getElementById('diary-passphrase');
-            if(pass){pass.autocomplete=configured?'current-password':'new-password';pass.placeholder=configured?'Enter your private writing passphrase':'Use 16+ characters or several words';}
+            if(pass){pass.autocomplete='current-password';pass.placeholder=legacyMigrationRequired?'Enter your previous Diary passphrase':'Diary is protected by your account login';}
         }
         function updatePrivateWritingAccess(){
             const unlocked=!!writingCryptoKey;
@@ -123,8 +251,15 @@ import {
                     catch(error){throw new Error('The passphrase did not match.');}
                     if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
                 }
-                writingCryptoKey=key;
-                await migrateLegacyPrivateWriting(key);
+                if(vaultPrimaryKey&&legacyMigrationRequired){
+                    await migrateLegacyPrivateWriting(key);
+                    await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                }else if(vaultPrimaryKey){
+                    writingCryptoKey=vaultPrimaryKey;
+                }else{
+                    writingCryptoKey=key;
+                    await migrateLegacyPrivateWriting(key);
+                }
                 await loadPrivateWritingForDate(getCurrentWritingDate());
                 updatePrivateWritingAccess();
                 const saveStatus=document.getElementById('writing-save-status');
@@ -189,6 +324,10 @@ import {
             writingLoadedDate=dateStr;
         }
         async function lockPrivateWriting(){
+            if(vaultPrimaryKey){
+                window.dispatchEvent(new Event('faith-focus:lock-account'));
+                return;
+            }
             if(!writingCryptoKey)return;
             if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
             try{
@@ -213,10 +352,7 @@ export function savePrivateVoiceNoteForDate(dateStr,blob){
     if(!writingCryptoKey) return Promise.reject(new Error('Unlock your Diary before saving a voice note.'));
     const key=writingCryptoKey;
     const task=()=>saveEncryptedVoiceNote(dateStr,blob,key);
-    voiceNoteSavePromise=voiceNoteSavePromise.then(task,task).then(result=>{
-        window.dispatchEvent(new Event('faith-focus:local-data-changed'));
-        return result;
-    });
+    voiceNoteSavePromise=voiceNoteSavePromise.then(task,task);
     return voiceNoteSavePromise;
 }
 export async function loadPrivateVoiceNotesForDate(dateStr){

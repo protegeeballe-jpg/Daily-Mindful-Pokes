@@ -11,14 +11,17 @@ const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));
 const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
 const appIcon=readFileSync(new URL('../assets/icon.png',import.meta.url));
-test('Faith & Focus branding, PWA metadata, and PIN copy stay aligned',()=>{
+test('Faith & Focus branding, PWA metadata, and unified account copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
  assert.match(html,/The Forge Room/);
  assert.match(garden,/room: 'The Forge Room'/);
  assert.match(garden,/outdoors: 'The Garden'/);
- assert.match(html,/6–12 digit app PIN/);
- assert.doesNotMatch(html,/4-digit app PIN/);
+ assert.match(html,/id="vault-login-form"/);
+ assert.match(html,/id="vault-username"/);
+ assert.match(html,/id="vault-passphrase"/);
+ assert.match(html,/at least 12 characters/i);
+ assert.doesNotMatch(html,/6–12 digit app PIN|Create your app PIN/);
  assert.equal(manifest.name,'Faith & Focus: Daily Armor');
  assert.equal(manifest.short_name,'Faith & Focus');
  assert.equal(packageMetadata.name,'faith-focus-daily-armor');
@@ -34,7 +37,9 @@ test('HTML uses a local app module and no inline handlers or scripts',()=>{
  assert.match(html,/type="module" src="\.\/assets\/app\.js"/);
  assert.doesNotMatch(html,/\son(?:click|change|input|submit)\s*=/i);
  assert.doesNotMatch(html,/<script\s*>/i);
- assert.match(html,/id="app-pin-form"/);
+ assert.match(html,/id="vault-login-form"/);
+ assert.doesNotMatch(html,/id="app-pin-form"/);
+ assert.doesNotMatch(html,/id="gist-sync-key"|id="gist-backup-passphrase"/);
  assert.doesNotMatch(app,/defaultPin\s*=\s*["']1234["']/);
 });
 test('CSP limits script execution to same-origin files and blocks objects',()=>{
@@ -358,51 +363,71 @@ test('Lexend is self-hosted and applied consistently across every app scene',()=
 });
 
 
-test('Google Drive remains optional and manually user-controlled',()=>{
- const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
- assert.match(html,/script-src 'self' https:\/\/accounts\.google\.com/);
- assert.match(html,/connect-src[^"]*https:\/\/www\.googleapis\.com/);
- assert.match(html,/id="drive-sync-panel"/);
- assert.match(html,/id="drive-connect-button"[^>]*>Google Drive Backup/);
- assert.match(drive,/https:\/\/accounts\.google\.com\/gsi\/client/);
- assert.match(drive,/requestAccessToken/);
- assert.match(drive,/https:\/\/www\.googleapis\.com\/auth\/drive\.appdata/);
- assert.match(html,/Back Up This Device/);
- assert.match(html,/Restore From Drive/);
- assert.doesNotMatch(drive,/DRIVE_BACKUP_ENABLED\s*=\s*false/);
+test('unified vault login derives separate credentials and synchronizes encrypted daily packets',()=>{
+ const cryptoModule=readFileSync(new URL('../assets/vault-crypto.js',import.meta.url),'utf8');
+ const sync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
+ const session=readFileSync(new URL('../assets/vault-session.js',import.meta.url),'utf8');
+ const worker=readFileSync(new URL('../worker.js',import.meta.url),'utf8');
+ const wrangler=readFileSync(new URL('../wrangler.toml',import.meta.url),'utf8');
+ assert.match(cryptoModule,/VAULT_KDF_ITERATIONS = 600000/);
+ assert.match(cryptoModule,/MIN_PASSPHRASE_LENGTH = 12/);
+ assert.match(cryptoModule,/MAX_PASSPHRASE_LENGTH = 128/);
+ assert.match(cryptoModule,/deriveBits/);
+ assert.match(cryptoModule,/AES-GCM/);
+ assert.match(cryptoModule,/VAULT_ID_DOMAIN/);
+ assert.match(cryptoModule,/writeToken/);
+ assert.match(session,/SESSION_INACTIVITY_MS = 15 \* 60 \* 1000/);
+ assert.match(session,/deriveVaultCredentials/);
+ assert.match(session,/wipeWriteToken/);
+ assert.doesNotMatch(session,/sessionStorage/);
+ assert.match(sync,/setTimeout\([\s\S]*?5000\)/);
+ assert.match(sync,/X-App-Client/);
+ assert.match(sync,/X-Write-Token/);
+ assert.match(sync,/encryptDailyBundle/);
+ assert.match(sync,/decryptDailyBundle/);
+ assert.match(sync,/putLocalDailyPacket/);
+ assert.match(sync,/faith_focus_location_checkins_v1_/);
+ assert.match(worker,/MAX_REQUEST_BYTES = 1024 \* 1024/);
+ assert.match(worker,/APP_ORIGIN = "https:\/\/protegeeballe-jpg\.github\.io"/);
+ assert.match(worker,/X-App-Client/);
+ assert.match(worker,/write-token-sha256/);
+ assert.match(worker,/constantTimeEqual/);
+ assert.match(worker,/VaultCoordinator/);
+ assert.match(worker,/409/);
+ assert.match(wrangler,/binding = "VAULT_PACKETS"/);
+ assert.match(wrangler,/class_name = "VaultCoordinator"/);
+ assert.match(wrangler,/new_sqlite_classes = \["VaultCoordinator"\]/);
 });
 
-test('Google Drive backup uses a strict allowlist and excludes the app PIN',()=>{
- const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
- assert.match(drive,/const GOOGLE_CLIENT_ID = '717523562646-lht84sbcpfnn6q330nd5683pjc59dhdh\.apps\.googleusercontent\.com'/);
- assert.match(drive,/parents: \['appDataFolder'\]/);
- assert.match(drive,/spaces: 'appDataFolder'/);
- assert.match(drive,/WRITING_CONFIG_KEY/);
- assert.match(drive,/dmp_diary_cipher_v1_/);
- assert.match(drive,/dmp_notes_cipher_v1_/);
- assert.match(drive,/AES-256-GCM/);
- assert.match(drive,/legacyPrivateContent\.length/);
- assert.match(drive,/PRIVATE_NOTE_IDS/);
- assert.doesNotMatch(drive,/APP_PIN_CONFIG_KEY|LEGACY_APP_PIN_KEY|user_pin/);
- assert.doesNotMatch(drive,/localStorage\.(?:setItem|getItem)\([^\n]*(?:accessToken|tokenExpiresAt|tokenClient)/);
- assert.match(drive,/window\.confirm\('Restore this backup/);
- assert.match(drive,/window\.confirm\('This will/);
- assert.match(drive,/validateBackup\(downloaded\)/);
- assert.match(drive,/const previous = new Map/);
- assert.match(drive,/const allowed = key => key === GARDEN_STORAGE_KEY/);
- assert.match(drive,/PRIVATE_NOTE_IDS\.some\(id => Object\.hasOwn\(data, id\)\)/);
- assert.match(drive,/ENCRYPTED_RECORD_PATTERN/);
- assert.match(drive,/score_awarded_/);
- assert.match(drive,/validatePrivateVoiceNoteBackup/);
- assert.match(drive,/const voiceNotes = await exportPrivateVoiceNotes\(\)/);
- assert.match(drive,/if \(includesVoiceNotes\) await restorePrivateVoiceNotes\(downloaded\.voiceNotes\)/);
- assert.match(readme,/The device's app PIN verifier is deliberately excluded/);
+test('Google Drive APIs and Gist credentials are removed from the active app; JSON export is local-only',()=>{
+ const backup=readFileSync(new URL('../assets/local-backup.js',import.meta.url),'utf8');
+ assert.match(html,/id="vault-export-button"/);
+ assert.match(html,/id="vault-import-button"/);
+ assert.match(html,/id="vault-import-file"/);
+ assert.match(backup,/application\/json/);
+ assert.match(backup,/createObjectURL/);
+ assert.match(backup,/exportEncryptedVaultPackets/);
+ assert.match(backup,/importEncryptedVaultPackets/);
+ assert.doesNotMatch(html,/drive-sync\.js|gist-sync\.js|drive-sync-button|gist-sync-key/);
+ assert.doesNotMatch(html,/https:\/\/accounts\.google\.com|https:\/\/www\.googleapis\.com/);
+});
+
+test('the exact restrictive CSP preserves watercolor image, CSS, and blob audio sources',()=>{
+ const exact="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://faith-focus-proxy.nine-westhigh.workers.dev; font-src 'self' data:; object-src 'none'; base-uri 'self';";
+ const home=readFileSync(new URL('../home.html',import.meta.url),'utf8');
+ const match=html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/);
+ const homeMatch=home.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/);
+ assert.equal(match?.[1],exact);
+ assert.equal(homeMatch?.[1],exact);
+ assert.match(readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8'),/url\("\.\/garden-room-background\.jpg"\)/);
+ assert.match(html,/id="record-btn"/);
+ assert.match(html,/voice notes/i);
 });
 
 test('Diary voice notes are saved persistently, encrypted, and preserved by checklist reset',()=>{
   assert.match(html,/id="diary-voice-notes"/);
   assert.match(html,/id="diary-voice-note-list"/);
-  assert.match(html,/Voice notes are encrypted with your private-writing passphrase/);
+  assert.match(html,/Voice notes are encrypted with your account key/);
   assert.doesNotMatch(html,/audio-container|diary-audio|temporary playback in this session/);
   assert.match(app,/savePrivateVoiceNoteForDate\(dateString, blob\)/);
   assert.match(app,/loadPrivateVoiceNotesForDate\(dateString\)/);
@@ -422,10 +447,10 @@ test('Diary voice notes are saved persistently, encrypted, and preserved by chec
   const dailyReset=app.slice(resetStart,resetEnd);
   assert.doesNotMatch(dailyReset,/removeItem\([^)]*(?:voice|diary|location)/i);
   assert.doesNotMatch(dailyReset,/restoreEncryptedVoiceNotes|clearDiaryVoiceNotePlayback/);
-  const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
-  assert.match(drive,/exportPrivateVoiceNotes/);
-  assert.match(drive,/restorePrivateVoiceNotes/);
-  assert.match(drive,/voiceNotes/);
+  const vaultSync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
+  assert.match(vaultSync,/exportEncryptedVoiceNotesForDate/);
+  assert.match(vaultSync,/restoreEncryptedVoiceNotesForDate/);
+  assert.match(vaultSync,/voiceNotes/);
 });
 
 test('Diary editor scrolls within its fixed viewport so the Record Voice Note button remains reachable',()=>{
@@ -486,23 +511,23 @@ test('Personal Diary notebook organizes written entries, locations, and voice no
   assert.match(appCss,/\.diary-notebook-button\s*\{/);
 });
 
-test('public legal pages accurately describe optional manual Google Drive backup',()=>{
+test('public legal pages accurately describe the encrypted vault and local JSON fallback',()=>{
  const home=readFileSync(new URL('../home.html',import.meta.url),'utf8');
  const privacy=readFileSync(new URL('../privacy.html',import.meta.url),'utf8');
  const terms=readFileSync(new URL('../terms.html',import.meta.url),'utf8');
  assert.match(home,/Application Privacy Policy/);
  assert.match(home,/Terms of Service/);
- assert.match(home,/Optional Google Drive backup/);
- assert.match(privacy,/Optional Google Drive Backup &amp; Restore/);
+ assert.match(home,/Automatic encrypted vault sync/);
+ assert.match(privacy,/Cloudflare KV/);
  assert.match(privacy,/AES-256-GCM/);
- assert.match(privacy,/not encrypted/);
+ assert.match(privacy,/12 characters/);
  assert.match(terms,/not a medical device/);
- assert.match(terms,/Optional Google Drive backup and restore/);
+ assert.match(terms,/username and passphrase/i);
+ assert.match(terms,/local JSON/i);
  assert.match(html,/href="\.\/privacy\.html"/);
  assert.match(html,/href="\.\/terms\.html"/);
- assert.match(readme,/Optional Google Drive Backup & Restore/);
+ assert.match(readme,/Encrypted JSON export and import/);
 });
-
 
 test('checklist controls remain compact and backup controls are comfortably sized inside Settings',()=>{
  const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
@@ -514,7 +539,8 @@ test('checklist controls remain compact and backup controls are comfortably size
  assert.match(appCss,/checklist-reset-button/);
  assert.match(gardenCss,/\.settings-modal \.drive-sync-panel \.garden-action-button/);
  assert.match(gardenCss,/min-height:\s*38px/);
- assert.match(html,/id="drive-connect-button"/);
+ assert.match(html,/id="vault-export-button"/);
+ assert.match(html,/id="vault-lock-button"/);
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
 });
@@ -540,7 +566,7 @@ test('Settings modal and backup disclosures adapt to narrow phone screens',()=>{
  assert.match(settingsRules,/width:\s*calc\(100% - \.8rem\)/);
  assert.match(settingsRules,/max-height:\s*min\(92dvh,\s*48rem\)/);
  assert.match(settingsRules,/settings-disclosure > \.drive-sync-panel/);
- assert.match(html,/id="drive-connect-button"/);
+ assert.match(html,/id="vault-export-button"/);
 });
 
 
@@ -581,11 +607,11 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  assert.doesNotMatch(app,/navigator\.geolocation\.watchPosition/);
  assert.match(html,/Only you can view these details in the App/);
  const locationModule=readFileSync(new URL('../assets/location-checkin.js',import.meta.url),'utf8');
- const drive=readFileSync(new URL('../assets/drive-sync.js',import.meta.url),'utf8');
+ const vaultSync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
  assert.match(locationModule,/faith_focus_location_checkins_v1_/);
- assert.doesNotMatch(drive,/faith_focus_location_checkins_v1_/);
+ assert.match(vaultSync,/faith_focus_location_checkins_v1_/);
  const locationChangeStart=app.indexOf("if (!checkbox?.matches?.('#card-step-1 .app-chk.sec-1')) return;");
- const locationChangeEnd=app.indexOf("document.getElementById('app-pin-form')",locationChangeStart);
+ const locationChangeEnd=app.indexOf("window.addEventListener('faith-focus:app-unlocked'",locationChangeStart);
  assert.ok(locationChangeStart>=0 && locationChangeEnd>locationChangeStart);
  const locationChangeHandler=app.slice(locationChangeStart,locationChangeEnd);
  assert.match(locationChangeHandler,/if \(checkbox.checked\) requestLocationCheckin\(checkbox\);/);
@@ -617,7 +643,7 @@ test('the four Card 1 checkboxes capture one-time local coordinates without chan
  assert.match(terms,/one-time current location/);
 });
 
-test('Gist and Google Drive backups live in separate collapsible Settings sections',()=>{
+test('encrypted vault sync and JSON backup live in collapsible Settings sections',()=>{
  const settingsStart=html.indexOf('<dialog id="settings-modal"');
  const settingsEnd=html.indexOf('</dialog>',settingsStart);
  assert.ok(settingsStart>=0 && settingsEnd>settingsStart,'Settings must be a native modal dialog');
@@ -625,23 +651,17 @@ test('Gist and Google Drive backups live in separate collapsible Settings sectio
  assert.match(html,/id="settings-close-button"/);
  assert.match(html,/src="\.\/assets\/settings-modal\.js"/);
  const settings=html.slice(settingsStart,settingsEnd);
- assert.match(settings,/<details id="gist-sync-settings"/);
- assert.match(settings,/<details id="drive-sync-settings"/);
- assert.match(settings,/id="gist-sync-panel"/);
- assert.match(settings,/id="gist-sync-key"/);
- assert.match(settings,/id="gist-backup-passphrase"/);
- assert.match(settings,/id="gist-restore-button"/);
- assert.match(settings,/id="gist-backup-button"/);
- assert.match(settings,/Do not use your Diary passphrase here/);
- assert.match(settings,/Google Drive Backup \(optional\)/);
- assert.match(settings,/id="drive-sync-panel"/);
- assert.match(settings,/id="drive-connect-button"/);
- assert.match(settings,/id="drive-backup-button"/);
- assert.match(settings,/id="drive-restore-button"/);
- assert.match(settings,/id="drive-sync-status"/);
+ assert.match(settings,/<details id="vault-sync-settings"/);
+ assert.match(settings,/<details id="local-backup-settings"/);
+ assert.match(settings,/id="vault-sync-status"/);
+ assert.match(settings,/id="vault-lock-button"/);
+ assert.match(settings,/id="vault-export-button"/);
+ assert.match(settings,/id="vault-import-button"/);
+ assert.match(settings,/id="vault-import-file"/);
+ assert.doesNotMatch(settings,/gist-sync|drive-connect|Google Drive|GitHub Gist|Sync Key/);
  const roomStart=html.indexOf('<section data-garden-scene="room"');
  const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',roomStart);
  const roomMarkup=html.slice(roomStart,outdoorStart);
- assert.doesNotMatch(roomMarkup,/gist-sync-panel|drive-sync-panel/);
- assert.match(settings,/Daily progress is saved on this device first/);
+ assert.doesNotMatch(roomMarkup,/vault-sync-settings|local-backup-settings/);
 });
+

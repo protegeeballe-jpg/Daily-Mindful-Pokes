@@ -305,6 +305,14 @@ function initializeGarden(root) {
         showStatus('Your Garden setup is ready again. Plant your two seeds to begin a new checklist journey.', 'success');
     });
 
+    // The Garden module keeps an in-memory model. Refresh it when a newer
+    // encrypted daily packet restores the saved Garden state from another device.
+    window.addEventListener('faith-focus:vault-data-restored', () => {
+        garden = loadSavedGarden();
+        renderRoom();
+        renderGarden();
+    });
+
     document.addEventListener('keydown', event => {
         if ((event.key !== 'Enter' && event.key !== ' ') || !event.target.matches('[data-garden-action][role="button"]')) return;
         event.preventDefault();

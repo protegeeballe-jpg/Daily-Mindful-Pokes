@@ -40,9 +40,6 @@ let celebrationCanvas=null,celebrationContext=null,celebrationParticles=[],celeb
         }
 
 import {
-    APP_PIN_CONFIG_KEY,createAppPinRecord,isValidAppPin,migrateLegacyAppPin,verifyAppPin
-} from './app-gate.js';
-import {
     LOCATION_CHECKIN_OPTIONS, LOCATION_CHECKIN_STORAGE_PREFIX,
     loadLocationCheckinEntries, saveLocationCheckin
 } from './location-checkin.js';
@@ -73,30 +70,6 @@ import {
         let diaryArchiveDateSummaries = [];
         let diaryViewingHistoricalDate = null;
 
-        // Inactivity auto-lock timer (5 minutes = 300,000 ms)
-        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
-        let inactivityTimer = null;
-
-        function resetInactivityTimer() {
-            if (inactivityTimer) clearTimeout(inactivityTimer);
-            if (writingCryptoKey) {
-                inactivityTimer = setTimeout(() => {
-                    flushAndSaveCurrentPrivateWriting()
-                        .then(() => lockPrivateWriting())
-                        .catch(error => {
-                            lockPrivateWriting();
-                            setWritingSecurityStatus('Auto-locked due to inactivity. ' + (error?.message || ''), 'info');
-                        });
-                }, INACTIVITY_LIMIT_MS);
-            }
-        }
-
-        function setupInactivityListeners() {
-            ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(eventType => {
-                document.addEventListener(eventType, resetInactivityTimer, { passive: true });
-            });
-        }
-
         // Request Persistent Storage to prevent automatic browser data clearing
         async function requestPersistentStorage() {
             if (navigator.storage && navigator.storage.persist) {
@@ -111,118 +84,6 @@ import {
                     console.warn("Persistent storage request failed:", err);
                 }
             }
-        }
-
-        // The four-digit PIN is only an app gate; private writing uses a separate encryption key.
-
-        let appPinRecord=null,appPinMode='setup',appPinFailures=0,appPinLockedUntil=0,appPinSubmitting=false;
-
-        function setAppPinMessage(message,state='info'){
-            const el=document.getElementById('app-pin-message');
-            if(el){el.textContent=message;el.dataset.state=state;}
-        }
-        function setAppPinMode(mode,message=''){
-            appPinMode=mode;
-            const heading=document.getElementById('app-pin-heading');
-            const intro=document.getElementById('app-pin-intro');
-            const confirmWrap=document.getElementById('app-pin-confirm-wrap');
-            const input=document.getElementById('app-pin-input');
-            const button=document.getElementById('app-pin-submit');
-            if(!heading||!intro||!confirmWrap||!input||!button)return;
-            const setup=mode==='setup'||mode==='upgrade';
-            heading.textContent=mode==='setup'?'Create your app PIN':mode==='upgrade'?'Update your app PIN':'Mindful Safe Gate';
-            intro.textContent=mode==='setup'?'Create a personal 6–12 digit PIN to open this app on this device.':
-                mode==='upgrade'?'Your previous PIN was verified. Replace it with a 6–12 digit PIN.':'Enter your personal app PIN to continue.';
-            confirmWrap.classList.toggle('hidden',!setup);
-            input.autocomplete=setup?'new-password':'current-password';
-            input.minLength=setup?6:4;
-            input.placeholder=setup?'6–12 digits':'Enter your PIN';
-            button.textContent=mode==='setup'?'Set PIN & Continue':mode==='upgrade'?'Save New PIN & Continue':'Unlock App';
-            input.value='';
-            const confirm=document.getElementById('app-pin-confirm');
-            if(confirm)confirm.value='';
-            setAppPinMessage(message||(mode==='setup'?'Choose a personal PIN. It is separate from your private-writing passphrase.':
-                mode==='upgrade'?'Please choose a stronger PIN to finish signing in.':'Your checklist progress remains stored on this device.'),'info');
-            input.focus();
-        }
-        async function initializeAppGate(){
-            if(!document.getElementById('app-pin-form'))return;
-            try{
-                if(!window.isSecureContext||!window.crypto?.subtle||!window.crypto?.getRandomValues){
-                    setAppPinMessage('Secure browser cryptography is unavailable. Open the app over HTTPS in a modern browser.','error');
-                    const button=document.getElementById('app-pin-submit');
-                    if(button)button.disabled=true;
-                    return;
-                }
-                appPinRecord=await migrateLegacyAppPin(localStorage,window.crypto);
-                setAppPinMode(appPinRecord?'unlock':'setup');
-            }catch(error){
-                setAppPinMessage('The saved app-gate settings could not be read. Nothing was reset. '+(error?.message||''),'error');
-                const button=document.getElementById('app-pin-submit');
-                if(button)button.disabled=true;
-            }
-        }
-        async function submitAppPin(){
-            if(appPinSubmitting)return;
-            const input=document.getElementById('app-pin-input');
-            const confirm=document.getElementById('app-pin-confirm');
-            const button=document.getElementById('app-pin-submit');
-            if(!input||!button)return;
-            appPinSubmitting=true;
-            button.disabled=true;
-            const pin=input.value;
-            try{
-                if(appPinMode==='unlock'){
-                    if(Date.now()<appPinLockedUntil){
-                        setAppPinMessage('Too many attempts. Please wait a little before trying again.','error');
-                        return;
-                    }
-                    const valid=await verifyAppPin(pin,appPinRecord,window.crypto);
-                    input.value='';
-                    if(!valid){
-                        appPinFailures++;
-                        if(appPinFailures>=5){
-                            appPinFailures=0;
-                            appPinLockedUntil=Date.now()+15000;
-                            setAppPinMessage('Too many incorrect attempts. Please wait 15 seconds before trying again.','error');
-                        }else{
-                            setAppPinMessage('That PIN did not match. Please try again.','error');
-                        }
-                        return;
-                    }
-                    appPinFailures=0;
-                    if(appPinRecord.requiresUpgrade){
-                        setAppPinMode('upgrade','Your previous PIN was verified. Choose a 6–12 digit replacement.');
-                        return;
-                    }
-                    finishAppGateUnlock();
-                    return;
-                }
-                if(!isValidAppPin(pin)){
-                    setAppPinMessage('Choose a PIN containing 6–12 digits.','error');
-                    return;
-                }
-                if(pin!==confirm?.value){
-                    setAppPinMessage('The two PIN entries do not match. Please try again.','error');
-                    if(confirm)confirm.value='';
-                    return;
-                }
-                appPinRecord=await createAppPinRecord(pin,window.crypto);
-                localStorage.setItem(APP_PIN_CONFIG_KEY,JSON.stringify(appPinRecord));
-                finishAppGateUnlock();
-            }catch(error){
-                setAppPinMessage('The app PIN could not be saved or checked. Your other app data was not changed. '+(error?.message||''),'error');
-            }finally{
-                appPinSubmitting=false;
-                button.disabled=false;
-                if(input)input.focus();
-            }
-        }
-        function finishAppGateUnlock(){
-            document.getElementById('app-pin-form')?.reset();
-            document.getElementById('view-pin')?.classList.add('hidden');
-            showPage('garden');
-            window.dispatchEvent(new Event('faith-focus:app-unlocked'));
         }
 
         function getDeviceLocalDateString(now = new Date()) {
@@ -2036,8 +1897,6 @@ import {
 
         window.addEventListener('load',async function() {
             requestPersistentStorage();
-            setupInactivityListeners();
-            resetInactivityTimer();
 
             const now=new Date();
             const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
@@ -2047,7 +1906,6 @@ import {
             attachChecklistCartoons();
             loadData();
             updatePrivateWritingAccess();
-            await initializeAppGate();
         });
 
 
@@ -2096,14 +1954,22 @@ import {
             if (!checkbox?.matches?.('#card-step-1 .app-chk.sec-1')) return;
             if (checkbox.checked) requestLocationCheckin(checkbox);
         });
-        document.getElementById('app-pin-form')?.addEventListener('submit',event=>{
-            event.preventDefault();
-            submitAppPin();
+        window.addEventListener('faith-focus:app-unlocked', () => {
+            showPage('garden');
         });
-        ['app-pin-input','app-pin-confirm'].forEach(id=>{
-            document.getElementById(id)?.addEventListener('input',event=>{
-                event.target.value=event.target.value.replace(/[^0-9]/g,'').slice(0,12);
-            });
+        window.addEventListener('faith-focus:vault-data-restored', async event => {
+            const dateString = event.detail?.dateString;
+            if (!dateString || dateString !== document.getElementById('currentDate')?.value) return;
+            loadData();
+            if (writingCryptoKey) {
+                try {
+                    await loadPrivateWritingForDate(dateString);
+                    renderDiaryLocationLogs(dateString);
+                    await renderDiaryVoiceNotes(dateString);
+                } catch (error) {
+                    setWritingSecurityStatus('The restored Diary data could not be opened. The encrypted local packet remains available. ' + (error?.message || ''), 'error');
+                }
+            }
         });
 
         window.addEventListener('resize',resizeEcosystemCanvas,{passive:true});
@@ -2115,11 +1981,10 @@ import {
         });
         document.addEventListener('visibilitychange',()=>{
             if(document.visibilityState==='hidden'){
-                flushAndSaveCurrentPrivateWriting()
-                    .then(() => lockPrivateWriting())
-                    .catch(error => {
-                        lockPrivateWriting();
-                        setWritingSecurityStatus('Encrypted save failed on hide. '+(error?.message||''),'error');
-                    });
+                // Save local Diary edits on hide. Account locking is controlled
+                // only by the 15-minute inactivity timer or an explicit lock action.
+                flushAndSaveCurrentPrivateWriting().catch(error => {
+                    setWritingSecurityStatus('Encrypted save failed on hide. '+(error?.message||''),'error');
+                });
             }
         });

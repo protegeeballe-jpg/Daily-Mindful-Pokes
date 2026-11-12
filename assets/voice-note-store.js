@@ -152,6 +152,11 @@ export async function saveEncryptedVoiceNote(dateString, blob, key) {
         const completed = waitForTransaction(transaction);
         transaction.objectStore(VOICE_NOTE_STORE_NAME).add(record);
         await completed;
+        if (globalThis.window?.dispatchEvent && globalThis.CustomEvent) {
+            globalThis.window.dispatchEvent(new CustomEvent('faith-focus:local-data-changed', {
+                detail: { dateString: record.dateString }
+            }));
+        }
         return { id: record.id, dateString: record.dateString, capturedAt: record.capturedAt };
     } finally {
         database.close();
@@ -213,6 +218,39 @@ export async function restoreEncryptedVoiceNotes(records) {
         const store = transaction.objectStore(VOICE_NOTE_STORE_NAME);
         store.clear();
         records.forEach(record => store.put(record));
+        await completed;
+    } finally {
+        database.close();
+    }
+}
+
+
+export async function exportEncryptedVoiceNotesForDate(dateString) {
+    if (!isValidDateString(dateString)) throw new TypeError('A valid Diary date is required.');
+    const records = await getStoredRecords(dateString);
+    records.sort((left, right) => Date.parse(left.capturedAt) - Date.parse(right.capturedAt));
+    return records;
+}
+
+export async function restoreEncryptedVoiceNotesForDate(dateString, records) {
+    if (!isValidDateString(dateString)
+        || !validateEncryptedVoiceNoteBackup(records)
+        || records.some(record => record.dateString !== dateString)) {
+        throw new Error('The daily packet contains invalid voice-note records.');
+    }
+    const database = await openVoiceNoteDatabase();
+    try {
+        const transaction = database.transaction(VOICE_NOTE_STORE_NAME, 'readwrite');
+        const completed = waitForTransaction(transaction);
+        const store = transaction.objectStore(VOICE_NOTE_STORE_NAME);
+        const request = store.index('dateString').getAllKeys(dateString);
+        request.onsuccess = () => {
+            for (const key of request.result) store.delete(key);
+            records.forEach(record => store.put(record));
+        };
+        request.onerror = () => {
+            try { transaction.abort(); } catch { /* The transaction may already be closed. */ }
+        };
         await completed;
     } finally {
         database.close();

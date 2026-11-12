@@ -1,5 +1,15 @@
-# ...
+name = "faith-focus-proxy"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
 [[kv_namespaces]]
 binding = "VAULT_PACKETS"
 id = "ea1ec0c70eb945f3bb51ba982021c1a2"
-# ...
+
+[[durable_objects.bindings]]
+name = "VAULT_COORDINATOR"
+class_name = "VaultCoordinator"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VaultCoordinator"]
