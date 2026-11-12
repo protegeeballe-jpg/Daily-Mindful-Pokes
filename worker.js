@@ -467,7 +467,9 @@ export class AccountRegistry {
         await this.state.storage.put(usernameIndexKey, vaultId);
         await this.state.storage.put("recovery:" + recoveryDigest, vaultId);
         return jsonResponse({ ok: true, username, vaultId }, 201);
-      } catch {
+      } catch (error) {
+        // Log only the error category. Never log account data or recovery answers.
+        console.error("Account Registry sign-up failed:", error instanceof Error ? error.name : "UnknownError");
         return jsonResponse({ error: "The account could not be created. Please try again." }, 503);
       }
     }
