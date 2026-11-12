@@ -8,7 +8,7 @@
  * When the cache list or its behavior changes, increment CACHE_NAME so the
  * old shell is retired cleanly after the new worker activates.
  */
-const CACHE_NAME = 'faith-focus-shell-v3-account-recovery-questions';
+const CACHE_NAME = 'faith-focus-shell-v4-diary-key-compatibility';
 const CACHE_PREFIX = 'faith-focus-';
 const NETWORK_TIMEOUT_MS = 4000;
 
@@ -38,6 +38,7 @@ const PRECACHE_URLS = [
     './assets/location-checkin.js',
     './assets/garden-model.js',
     './assets/writing-security.js',
+    './assets/private-writing-migration.js',
     './assets/voice-note-store.js',
     './assets/compressor.js',
 
