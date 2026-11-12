@@ -1,5 +1,6 @@
 import {
   SECURITY_QUESTIONS,
+  encodeBase64Url,
   createNewVaultAccount,
   deriveLegacyVaultCredentials,
   deriveVaultCredentialsFromMaster,
@@ -37,18 +38,20 @@ function setStatus(elementId, message, state = 'info') {
   element.dataset.state = state;
 }
 
-async function accountRequest(path, payload) {
+async function accountRequest(path, payload, { writeToken = null } = {}) {
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'X-App-Client': APP_CLIENT
+  };
+  if (writeToken instanceof Uint8Array) headers['X-Write-Token'] = encodeBase64Url(writeToken);
   const response = await fetch(WORKER_ORIGIN + path, {
     method: 'POST',
     mode: 'cors',
     credentials: 'omit',
     cache: 'no-store',
     redirect: 'error',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-App-Client': APP_CLIENT
-    },
+    headers,
     body: JSON.stringify(payload)
   });
   let data = {};
@@ -284,7 +287,7 @@ async function submitVaultSignup(event) {
       await accountRequest('/account/signup', {
         username: credentials.username, vaultId: credentials.vaultId,
         passphraseEnvelope, recoveryEnvelope, questionIds, answers
-      });
+      }, { writeToken: credentials.writeToken });
       pendingLegacyEnrollment = null;
       clearSecurityAnswers('signup');
       byId('vault-legacy-confirm-passphrase').value = '';
@@ -311,7 +314,7 @@ async function submitVaultSignup(event) {
       recoveryEnvelope: credentials.recoveryEnvelope,
       questionIds,
       answers
-    });
+    }, { writeToken: credentials.writeToken });
     passphrase = '';
     if (passphraseField) passphraseField.value = '';
     if (confirmField) confirmField.value = '';
