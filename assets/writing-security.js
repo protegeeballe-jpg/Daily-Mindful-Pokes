@@ -16,6 +16,14 @@ import {
         let voiceNoteStopHandler=async()=>{};
 
         function hasWritingCrypto(){return !!(window.isSecureContext&&window.crypto&&window.crypto.subtle&&window.crypto.getRandomValues);}
+        function hasLegacyEncryptedPrivateRecords(){
+            for(let i=0;i<localStorage.length;i++){
+                const key=localStorage.key(i);
+                if(/^dmp_(?:diary|notes)_cipher_v1_\d{4}-\d{2}-\d{2}$/.test(key||''))return true;
+            }
+            return false;
+        }
+
         function hasLegacyPrivateRecords(){
             for(let i=0;i<localStorage.length;i++){
                 const key=localStorage.key(i);
@@ -35,12 +43,12 @@ import {
             if(!key)throw new TypeError('A vault encryption key is required.');
             vaultPrimaryKey=key;
             const voiceNotes=await exportEncryptedVoiceNotes();
-            legacyMigrationRequired=hasLegacyPrivateRecords()||voiceNotes.length>0;
+            legacyMigrationRequired=hasLegacyEncryptedPrivateRecords()||voiceNotes.length>0;
             if(legacyMigrationRequired){
                 writingCryptoKey=null;
                 writingLoadedDate=null;
                 updatePrivateWritingAccess();
-                setWritingSecurityStatus('This device has older encrypted Diary data. Enter its previous Diary passphrase once to migrate it to your new account. The original entries are preserved until migration completes.','info');
+                setWritingSecurityStatus('This device has older encrypted Diary data. Enter its previous Diary passphrase once to migrate it to your new account. The original entries are preserved until migration succeeds.','info');
                 return {legacyMigrationRequired:true};
             }
             writingCryptoKey=vaultPrimaryKey;
