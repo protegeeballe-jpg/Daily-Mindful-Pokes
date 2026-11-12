@@ -65,8 +65,8 @@ Google Drive and GitHub Gist sync have been removed from the active app. No OAut
 
 The current `wrangler.toml` includes the KV namespace ID supplied for this project and two Durable Object bindings:
 
-- `VAULT_COORDINATOR` — per-vault authentication and daily-packet write coordination.
-- `ACCOUNT_REGISTRY` — username lookup, account metadata, recovery-answer verification, and recovery grants.
+- `VAULT_COORDINATOR`: per-vault authentication and daily-packet write coordination.
+- `ACCOUNT_REGISTRY`: username lookup, account metadata, recovery-answer verification, and recovery grants.
 
 The configuration contains SQLite-backed Durable Object migrations: `v1` for `VaultCoordinator` and `v2` for `AccountRegistry`. When deploying, confirm the namespace ID belongs to the intended Cloudflare account and that the Worker has all three bindings in the dashboard.
 
