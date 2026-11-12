@@ -320,6 +320,10 @@ export async function deriveLegacyVaultCredentials(username, passphrase, cryptoA
   return credentials;
 }
 
+export async function deriveVaultCredentials(username, passphrase, cryptoApi = globalThis.crypto) {
+  return deriveLegacyVaultCredentials(username, passphrase, cryptoApi);
+}
+
 export async function unlockVaultAccount(username, passphrase, vaultId, passphraseEnvelope, cryptoApi = globalThis.crypto) {
   const masterKeyBytes = await unwrapMasterKeyWithPassphrase(passphraseEnvelope, passphrase, cryptoApi);
   return deriveVaultCredentialsFromMaster(vaultId, masterKeyBytes, username, cryptoApi);
