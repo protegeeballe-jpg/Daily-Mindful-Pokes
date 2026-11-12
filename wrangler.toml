@@ -10,6 +10,14 @@ id = "ea1ec0c70eb945f3bb51ba982021c1a2"
 name = "VAULT_COORDINATOR"
 class_name = "VaultCoordinator"
 
+[[durable_objects.bindings]]
+name = "ACCOUNT_REGISTRY"
+class_name = "AccountRegistry"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["VaultCoordinator"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["AccountRegistry"]
