@@ -4,8 +4,6 @@ import { webcrypto } from 'node:crypto';
 
 import worker, { VaultCoordinator } from '../worker.js';
 
-globalThis.crypto = webcrypto;
-
 const ORIGIN = 'https://protegeeballe-jpg.github.io';
 const CLIENT = 'faith-focus-daily-armor-web/1';
 const VAULT_ID = 'a'.repeat(64);
