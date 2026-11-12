@@ -5,7 +5,53 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const VAULT_ID_PATTERN = /^[a-f0-9]{64}$/;
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const PACKET_FORMAT = "faith-focus-encrypted-daily-packet";
+const ACCOUNT_KDF_ITERATIONS = 600000;
+const RECOVERY_KDF_ITERATIONS = 900000;
 const encoder = new TextEncoder();
+
+function normalizeAccountUsername(value) {
+  return typeof value === "string" ? value.normalize("NFKC").trim().toLowerCase() : "";
+}
+
+function validAccountUsername(value) {
+  return /^[a-z0-9](?:[a-z0-9._-]{1,30}[a-z0-9])$/.test(normalizeAccountUsername(value));
+}
+
+function decodeBase64(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return null;
+  try { return Uint8Array.from(atob(value), character => character.charCodeAt(0)); }
+  catch { return null; }
+}
+
+function validAccountEnvelope(envelope, iterations) {
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)
+      || envelope.version !== 1 || envelope.algorithm !== "AES-256-GCM"
+      || envelope.kdf !== "PBKDF2-HMAC-SHA-256" || envelope.iterations !== iterations) return false;
+  const salt = decodeBase64(envelope.salt);
+  const iv = decodeBase64(envelope.iv);
+  const ciphertext = decodeBase64(envelope.ciphertext);
+  return Boolean(salt?.length === 16 && iv?.length === 12 && ciphertext?.length === 80);
+}
+
+function validRecoveryInput(questionIds, answers) {
+  if (!Array.isArray(questionIds) || !Array.isArray(answers)
+      || questionIds.length !== 3 || answers.length !== 3) return false;
+  const ids = questionIds.map(Number);
+  return ids.every(id => Number.isInteger(id) && id >= 1 && id <= 20)
+    && new Set(ids).size === 3
+    && answers.every(answer => typeof answer === "string"
+      && answer.length >= 1 && answer.length <= 64
+      && answer.trim() === answer && !/\\s/u.test(answer));
+}
+
+async function recoveryLookupHash(questionIds, answers, pepper) {
+  const pairs = questionIds.map((id, index) => ({ id: Number(id), answer: answers[index] }))
+    .sort((left, right) => left.id - right.id);
+  const key = await crypto.subtle.importKey("raw", encoder.encode(pepper),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const digest = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(JSON.stringify(pairs))));
+  return Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
+}
 
 function jsonResponse(body, status, origin = null) {
   const headers = new Headers({
@@ -107,6 +153,35 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.search) return jsonResponse({ error: "Query parameters are not supported." }, 400, origin);
+
+    if (url.pathname.startsWith("/account/")) {
+      if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, origin);
+      if (!env.ACCOUNT_DIRECTORY || typeof env.RECOVERY_PEPPER !== "string"
+          || encoder.encode(env.RECOVERY_PEPPER).length < 32) {
+        return jsonResponse({ error: "Account recovery services are not configured. Contact the app administrator." }, 503, origin);
+      }
+      const bodyText = await readBodyLimited(request, 64 * 1024);
+      if (bodyText === null) return jsonResponse({ error: "Account request is too large." }, 413, origin);
+      const directory = env.ACCOUNT_DIRECTORY.get(env.ACCOUNT_DIRECTORY.idFromName("faith-focus-account-directory-v1"));
+      const internalUrl = new URL(url.pathname, "https://account-directory.internal");
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        "X-Client-IP": request.headers.get("CF-Connecting-IP") || "unknown"
+      });
+      const response = await directory.fetch(new Request(internalUrl, { method: "POST", headers, body: bodyText || "{}" }));
+      return new Response(await response.text(), {
+        status: response.status,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store",
+          "Access-Control-Allow-Origin": APP_ORIGIN,
+          "Vary": "Origin",
+          "X-Content-Type-Options": "nosniff"
+        }
+      });
+    }
+
     const match = /^\/vault\/([a-f0-9]{64})\/(claim|index|day\/(\d{4}-\d{2}-\d{2}))$/.exec(url.pathname);
     if (!match || url.search || !VAULT_ID_PATTERN.test(match[1])) {
       return jsonResponse({ error: "Route not found." }, 404, origin);
