@@ -270,7 +270,7 @@ export class VaultCoordinator {
         const index = (await this.state.storage.get("vault-index")) || {};
         return jsonResponse({
           packet: packet || null,
-          updatedAt: index[dateString]?.updatedAt || null
+          updatedAt: index[dateString] || null
         }, 200);
       }
 
@@ -285,7 +285,7 @@ export class VaultCoordinator {
       }
 
       const index = (await this.state.storage.get("vault-index")) || {};
-      const currentVersion = index[dateString]?.updatedAt || null;
+      const currentVersion = index[dateString] || null;
       const suppliedBase = update.baseUpdatedAt === "none" ? null : update.baseUpdatedAt;
       if (suppliedBase !== currentVersion) {
         return jsonResponse({
@@ -302,7 +302,7 @@ export class VaultCoordinator {
 
       const nextIndex = {
         ...index,
-        [dateString]: { updatedAt }
+        [dateString]: updatedAt
       };
       await this.state.storage.put(packetStorageKey, update.packet);
       await this.state.storage.put("vault-index", nextIndex);
