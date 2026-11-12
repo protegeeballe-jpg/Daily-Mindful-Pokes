@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://faith-focus-proxy.nine-westhigh.workers.dev; frame-src https://accounts.google.com; media-src 'self' blob:; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://faith-focus-proxy.nine-westhigh.workers.dev; font-src 'self' data:; object-src 'none'; base-uri 'self';">
     <meta name="referrer" content="no-referrer">
     <meta name="theme-color" content="#FBF9F5">
     <title>Faith & Focus | Your Daily Armor</title>
@@ -20,23 +20,21 @@
 </head>
 <body class="text-slate-800 min-h-screen pb-20 select-none">
 
-    <!-- Local app gate; private writing uses a separate encryption passphrase. -->
+    <!-- Unified account gate: account keys are derived locally and never persisted. -->
     <div id="view-pin" class="fixed inset-0 bg-amber-50/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4">
         <div class="card-yellow rounded-3xl p-8 max-w-sm w-full text-center">
-            <span class="text-5xl animate-bounce inline-block" aria-hidden="true">✨</span>
-            <h2 id="app-pin-heading" class="text-3xl font-bold text-amber-900 handwriting mt-2">Create your app PIN</h2>
-            <p id="app-pin-intro" class="text-xs text-amber-800/80 mt-2 mb-5">Create a personal 6–12 digit PIN to open this app on this device.</p>
-            <form id="app-pin-form" novalidate>
-                <label for="app-pin-input" class="sr-only">App PIN</label>
-                <input id="app-pin-input" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="new-password" required class="w-full text-center text-xl tracking-[.3em] font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="6–12 digits" aria-describedby="app-pin-message">
-                <div id="app-pin-confirm-wrap" class="mt-3">
-                    <label for="app-pin-confirm" class="sr-only">Confirm app PIN</label>
-                    <input id="app-pin-confirm" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="new-password" class="w-full text-center text-xl tracking-[.3em] font-bold bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="Confirm PIN">
-                </div>
-                <p id="app-pin-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">This PIN is separate from your private-writing passphrase.</p>
-                <button id="app-pin-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition transform active:scale-95">Set PIN &amp; Continue</button>
+            <span class="text-5xl inline-block" aria-hidden="true">🛡️</span>
+            <h2 class="text-3xl font-bold text-amber-900 handwriting mt-2">Welcome to Faith &amp; Focus</h2>
+            <p class="text-xs text-amber-800/80 mt-2 mb-5">One account. One passphrase. Your encrypted daily life travels with you across devices.</p>
+            <form id="vault-login-form" novalidate>
+                <label for="vault-username" class="block text-left text-xs font-bold text-amber-950 mb-1">Username</label>
+                <input id="vault-username" type="text" inputmode="text" autocapitalize="none" autocomplete="username" spellcheck="false" maxlength="32" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3 mb-3" placeholder="Choose your username">
+                <label for="vault-passphrase" class="block text-left text-xs font-bold text-amber-950 mb-1">Passphrase</label>
+                <input id="vault-passphrase" type="password" autocomplete="current-password" minlength="12" maxlength="128" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="At least 12 characters">
+                <p id="vault-login-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Sign in or create an account. A new username creates its vault the first time it is used.</p>
+                <button id="vault-login-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">Continue</button>
             </form>
-            <p class="text-[10px] text-amber-900/70 mt-4">This is a local app screen gate. It does not encrypt checklist progress. Use your separate private-writing passphrase for diary protection.</p>
+            <p class="text-[10px] text-amber-900/70 mt-4">Your passphrase is never sent to Cloudflare. There is no email or phone recovery. Keep your passphrase safe; a forgotten passphrase cannot be reset.</p>
             <nav class="legal-inline-links" aria-label="Legal information">
                 <a href="./privacy.html">Privacy Policy</a>
                 <span aria-hidden="true">·</span>
@@ -178,18 +176,18 @@
         <div class="card-lavender rounded-3xl p-6 shadow-sm">
             <section id="diary-lock-panel" class="writing-lock-card rounded-2xl p-5 mb-4">
                 <div class="flex items-center gap-3 mb-2"><span class="text-3xl" aria-hidden="true">🔐</span><div>
-                    <h3 id="diary-lock-heading" class="font-bold text-purple-950 text-lg handwriting">Create your private writing key</h3>
-                    <p class="text-xs text-purple-800">Your personal diary and private checklist reflections are encrypted on this device.</p>
+                    <h3 id="diary-lock-heading" class="font-bold text-purple-950 text-lg handwriting">One-time Diary migration</h3>
+                    <p class="text-xs text-purple-800">New Diary entries use the same account key as your Health Checklist and daily vault.</p>
                 </div></div>
-                <p id="diary-lock-intro" class="text-xs text-purple-900/80 mb-4">Create a separate passphrase. This is different from your 6–12 digit app PIN.</p>
-                <label for="diary-passphrase" class="block text-xs font-bold text-purple-950 mb-1">Private writing passphrase</label>
-                <input id="diary-passphrase" class="writing-input mb-3" type="password" autocomplete="new-password" minlength="16" maxlength="256" placeholder="Use 16+ characters or several words">
-                <div id="diary-confirm-wrap"><label for="diary-passphrase-confirm" class="block text-xs font-bold text-purple-950 mb-1">Confirm passphrase</label>
-                    <input id="diary-passphrase-confirm" class="writing-input mb-3" type="password" autocomplete="new-password" minlength="16" maxlength="256" placeholder="Type the same passphrase again">
+                <p id="diary-lock-intro" class="text-xs text-purple-900/80 mb-4">This device may contain entries encrypted with your previous Diary passphrase. Enter it once to migrate those entries to your unified account.</p>
+                <label for="diary-passphrase" class="block text-xs font-bold text-purple-950 mb-1">Previous Diary passphrase (legacy devices only)</label>
+                <input id="diary-passphrase" class="writing-input mb-3" type="password" autocomplete="current-password" maxlength="128" placeholder="Only needed to migrate older encrypted entries">
+                <div id="diary-confirm-wrap" class="hidden"><label for="diary-passphrase-confirm" class="block text-xs font-bold text-purple-950 mb-1">Confirm passphrase</label>
+                    <input id="diary-passphrase-confirm" class="writing-input mb-3" type="password" autocomplete="new-password" maxlength="128" placeholder="Confirm the previous passphrase">
                 </div>
-                <button id="diary-key-action" type="button" data-action="handleDiaryKeyAction" class="w-full sm:w-auto px-5 py-2.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-bold text-sm rounded-xl shadow-sm">Create encryption key</button>
-                <p id="diary-security-status" class="writing-security-status mt-3" role="status" aria-live="polite">Your private writing stays locked until you create or enter this passphrase.</p>
-                <p class="text-[11px] text-purple-900/75 mt-2">Forgotten passphrases cannot be reset by this app. Keep yours somewhere safe. Clearing this browser's site data can also delete encrypted entries. Encryption protects stored text while locked, not an unlocked or compromised device.</p>
+                <button id="diary-key-action" type="button" data-action="handleDiaryKeyAction" class="w-full sm:w-auto px-5 py-2.5 bg-purple-300 hover:bg-purple-400 text-purple-950 font-bold text-sm rounded-xl shadow-sm">Migrate existing Diary</button>
+                <p id="diary-security-status" class="writing-security-status mt-3" role="status" aria-live="polite">Your Diary is protected by your unified account passphrase.</p>
+                <p class="text-[11px] text-purple-900/75 mt-2">This migration is needed only for records encrypted by an older app version. Original encrypted entries remain in place until the migration succeeds.</p>
             </section>
             <div id="diary-editor-panel" class="hidden">
             <div class="diary-current-toolbar">
@@ -213,7 +211,7 @@
             </section>
             <section id="diary-voice-notes" class="mt-5 rounded-2xl border border-purple-200 bg-purple-50/70 p-4" aria-labelledby="diary-voice-notes-heading">
                 <h3 id="diary-voice-notes-heading" class="font-bold text-sm text-purple-950">Saved Voice Notes</h3>
-                <p class="mt-2 text-xs text-purple-800">Voice notes are encrypted with your private-writing passphrase and saved on this device. They remain part of your Diary when you reset the Health Checklist.</p>
+                <p class="mt-2 text-xs text-purple-800">Voice notes are encrypted with your account key and saved locally. They remain part of your Diary when you reset the Health Checklist.</p>
                 <ol id="diary-voice-note-list" class="mt-3 space-y-2" aria-live="polite">
                     <li class="rounded-xl bg-white/70 px-3 py-3 text-xs text-purple-800">Unlock your Diary to listen to saved voice notes.</li>
                 </ol>
@@ -224,7 +222,7 @@
                 </button>
                 <div class="flex items-center gap-3"><p id="writing-save-status" class="text-xs text-purple-700 italic" role="status" aria-live="polite">Encrypted autosave is active.</p><button type="button" data-action="lockPrivateWriting" class="px-3 py-2 bg-purple-100 border border-purple-300 text-purple-900 text-xs font-bold rounded-xl">Lock writing</button></div>
             </div>
-            <p class="text-[11px] text-purple-800/75 mt-3">Saved voice notes are encrypted before storage and are included in manual Google Drive backups when you choose to back up this device.</p>
+            <p class="text-[11px] text-purple-800/75 mt-3">Saved voice notes are encrypted before local storage and included in encrypted daily vault packets.</p>
             </div>
             <section id="diary-archive-panel" class="diary-archive-panel hidden" role="dialog" aria-modal="true" aria-labelledby="diary-archive-heading">
                 <div class="diary-archive-dialog">
@@ -485,65 +483,48 @@
                 <button id="settings-close-button" type="button" class="settings-close-button" aria-label="Close Settings" title="Close Settings">×</button>
             </header>
             <div class="settings-modal-content">
-                <details id="gist-sync-settings" class="settings-disclosure">
+                <details id="vault-sync-settings" class="settings-disclosure" open>
                     <summary>
                         <span class="settings-disclosure-icon" aria-hidden="true">☁</span>
                         <span class="settings-disclosure-copy">
-                            <strong>GitHub Gist Backup</strong>
-                            <small>Encrypted backup through your Cloudflare Worker</small>
+                            <strong>Encrypted Vault Sync</strong>
+                            <small>Automatic daily sync across your devices</small>
                         </span>
                     </summary>
-                <section id="gist-sync-panel" class="drive-sync-panel gist-sync-panel" aria-label="Encrypted GitHub Gist synchronization">
-                    <div class="drive-sync-copy">
-                        <h3>Encrypted GitHub Gist Sync</h3>
-                        <p>Automatic background sync keeps this device's encrypted backup up to date. Your checklist, Garden, and Diary are always saved locally first. Use the manual controls below only when needed.</p>
-                    </div>
-                    <div class="gist-sync-fields">
-                        <label for="gist-sync-key">Cloudflare Sync Key
-                            <input id="gist-sync-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Your Cloudflare SYNC_KEY">
-                        </label>
-                        <label for="gist-backup-passphrase">Gist backup encryption passphrase
-                            <input id="gist-backup-passphrase" type="password" autocomplete="off" placeholder="Separate passphrase, 16+ characters">
-                        </label>
-                    </div>
-                    <p class="gist-sync-help">Enter both keys once on each device, then save them to this browser to enable automatic sync. They are stored in this browser's localStorage for convenience. Anyone who can execute script in this app's origin or access this browser profile may be able to read them. The Gist backup passphrase is never sent to the Worker.</p>
-                    <div class="drive-sync-controls">
-                        <button id="gist-enable-auto-sync" type="button" class="garden-action-button primary">Save keys &amp; enable automatic sync</button>
-                        <button id="gist-forget-credentials" type="button" class="garden-action-button hidden">Forget saved keys on this device</button>
-                    </div>
-                    <p id="gist-auto-sync-status" class="drive-sync-status gist-sync-status" role="status" aria-live="polite">Automatic Gist sync is not enabled on this device yet.</p>
-                    <p class="gist-sync-help">The Cloudflare Sync Key authorizes the Worker. The separate backup passphrase encrypts the complete backup in this browser and is never sent to the Worker. Do not use your Diary passphrase here.</p>
-                    <div class="drive-sync-controls">
-                        <button id="gist-restore-button" type="button" class="garden-action-button">Restore From Gist</button>
-                        <button id="gist-backup-button" type="button" class="garden-action-button primary">Save This Device to Gist</button>
-                    </div>
-                    <p id="gist-sync-status" class="drive-sync-status gist-sync-status" role="status" aria-live="polite"></p>
-                </section>
-                </details>
-                <details id="drive-sync-settings" class="settings-disclosure">
-                    <summary>
-                        <span class="settings-disclosure-icon" aria-hidden="true">↗</span>
-                        <span class="settings-disclosure-copy">
-                            <strong>Google Drive Backup</strong>
-                            <small>Independent optional backup and restore</small>
-                        </span>
-                    </summary>
-                <section id="drive-sync-panel" class="drive-sync-panel" aria-label="Optional Google Drive backup and restore">
-                    <div class="drive-sync-copy">
-                        <h3>Google Drive Backup (optional)</h3>
-                        <p>Independent backup option. It works separately from GitHub Gist.</p>
-                    </div>
-                    <div class="drive-sync-controls">
-                        <button id="drive-connect-button" type="button" class="garden-action-button primary">Google Drive Backup</button>
-                        <div id="drive-sync-actions" class="drive-sync-actions hidden">
-                            <button id="drive-backup-button" type="button" class="garden-action-button primary">Back Up This Device</button>
-                            <button id="drive-restore-button" type="button" class="garden-action-button">Restore From Drive</button>
+                    <section class="drive-sync-panel" aria-label="Automatic encrypted vault synchronization">
+                        <div class="drive-sync-copy">
+                            <h3>Your daily vault</h3>
+                            <p>Your checklist, Diary, voice notes, location tags, and Garden data are compressed and encrypted on this device. Cloud sync runs automatically after changes.</p>
                         </div>
-                    </div>
-                    <p id="drive-sync-status" class="drive-sync-status" role="status" aria-live="polite"></p>
-                </section>
+                        <p id="vault-sync-status" class="drive-sync-status" role="status" aria-live="polite">Sign in to connect your encrypted vault.</p>
+                        <div class="drive-sync-controls">
+                            <button id="vault-lock-button" type="button" class="garden-action-button">Lock Account</button>
+                        </div>
+                    </section>
                 </details>
-                <p class="settings-modal-note">Your local checklist, Garden, and Diary remain available on this device. Choose either backup option only when you are ready to save or restore a copy.</p>
+                <details id="local-backup-settings" class="settings-disclosure">
+                    <summary>
+                        <span class="settings-disclosure-icon" aria-hidden="true">⇅</span>
+                        <span class="settings-disclosure-copy">
+                            <strong>Local Backup File</strong>
+                            <small>Optional encrypted JSON export and import</small>
+                        </span>
+                    </summary>
+                    <section class="drive-sync-panel" aria-label="Encrypted local vault file backup">
+                        <div class="drive-sync-copy">
+                            <h3>Encrypted JSON backup</h3>
+                            <p>Export or restore your encrypted daily packets as a local JSON file. Import a file while signed into the same account that created it. This is a fallback, not a sync requirement.</p>
+                        </div>
+                        <div class="drive-sync-controls">
+                            <button id="vault-export-button" type="button" class="garden-action-button primary">Export Encrypted JSON</button>
+                            <button id="vault-import-button" type="button" class="garden-action-button">Import Encrypted JSON</button>
+                            <input id="vault-import-file" type="file" accept="application/json,.json" class="sr-only" aria-label="Choose encrypted vault JSON backup">
+                        </div>
+                        <p id="vault-backup-status" class="drive-sync-status" role="status" aria-live="polite"></p>
+                    </section>
+                </details>
+                <p class="settings-modal-note">Your local encrypted packets remain available on this device. Locking clears the in-memory account key and write credential.</p>
+
             </div>
         </div>
     </dialog>
@@ -695,8 +676,8 @@
     <script type="module" src="./assets/app.js"></script>
     <script type="module" src="./assets/garden.js"></script>
     <script type="module" src="./assets/settings-modal.js"></script>
-    <script type="module" src="./assets/drive-sync.js"></script>
-    <script type="module" src="./assets/gist-sync.js"></script>
+    <script type="module" src="./assets/vault-session.js"></script>
+    <script type="module" src="./assets/local-backup.js"></script>
     <script type="module" src="./assets/service-worker-registration.js"></script>
 <canvas id="celebration-canvas" aria-hidden="true"></canvas>
 </body>
