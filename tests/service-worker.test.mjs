@@ -50,6 +50,7 @@ test('the offline shell includes every page and runtime dependency needed by the
         './assets/location-checkin.js',
         './assets/garden-model.js',
         './assets/writing-security.js',
+        './assets/private-writing-migration.js',
         './assets/voice-note-store.js',
         './assets/compressor.js',
         './assets/garden-room-background.jpg',
