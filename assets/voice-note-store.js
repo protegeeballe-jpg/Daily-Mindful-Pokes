@@ -152,6 +152,11 @@ export async function saveEncryptedVoiceNote(dateString, blob, key) {
         const completed = waitForTransaction(transaction);
         transaction.objectStore(VOICE_NOTE_STORE_NAME).add(record);
         await completed;
+        if (globalThis.window?.dispatchEvent && globalThis.CustomEvent) {
+            globalThis.window.dispatchEvent(new CustomEvent('faith-focus:local-data-changed', {
+                detail: { dateString: record.dateString }
+            }));
+        }
         return { id: record.id, dateString: record.dateString, capturedAt: record.capturedAt };
     } finally {
         database.close();
