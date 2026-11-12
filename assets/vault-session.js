@@ -1,5 +1,8 @@
 import {
-  deriveVaultCredentials, validateVaultUsername, validateVaultPassphrase, wipeWriteToken
+  createVaultAccount, deriveVaultLoginMaterial, finishVaultLogin,
+  prepareVaultPassphraseReset, recoverVaultMasterKey,
+  validateVaultUsername, validateVaultPassphrase, validateRecoveryAnswers,
+  encodeBase64Url, wipeWriteToken
 } from './vault-crypto.js';
 import { startVaultSync, stopVaultSync } from './vault-sync.js';
 import {
@@ -7,28 +10,61 @@ import {
   flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording
 } from './writing-security.js';
 
+const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
+const APP_CLIENT = 'faith-focus-daily-armor-web/1';
 const SESSION_INACTIVITY_MS = 15 * 60 * 1000;
 let activeCredentials = null;
 let inactivityTimer = null;
 let loginInProgress = false;
 let locking = false;
+let recoverySession = null;
 
 const byId = id => document.getElementById(id);
 
-function setLoginStatus(message, state = 'info') {
-  const element = byId('vault-login-message');
+function setStatus(targetId, message, state = 'info') {
+  const element = byId(targetId);
   if (element) {
     element.textContent = message;
     element.dataset.state = state;
   }
 }
 
-function setLoginBusy(busy) {
-  const button = byId('vault-login-submit');
-  if (button) {
-    button.disabled = busy;
-    button.textContent = busy ? 'Securing your vault…' : 'Continue';
-  }
+function clearRecoverySession() {
+  if (recoverySession?.masterBytes instanceof Uint8Array) recoverySession.masterBytes.fill(0);
+  recoverySession = null;
+}
+
+async function accountRequest(route, body, extraHeaders = {}) {
+  const response = await fetch(WORKER_ORIGIN + route, {
+    method: 'POST',
+    cache: 'no-store',
+    credentials: 'omit',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-Client': APP_CLIENT,
+      ...extraHeaders
+    },
+    body: JSON.stringify(body || {})
+  });
+  let result;
+  try { result = await response.json(); }
+  catch { throw new Error('The account service returned an unreadable response. Please try again.'); }
+  if (!response.ok) throw new Error(result?.error || 'The account request could not be completed.');
+  return result;
+}
+
+function setBusy(buttonId, busy, idleText, busyText) {
+  const button = byId(buttonId);
+  if (!button) return;
+  button.disabled = busy;
+  button.textContent = busy ? busyText : idleText;
+}
+
+function showAccountPanel(panelId, focusId) {
+  ['vault-signin-panel', 'vault-signup-panel', 'vault-recovery-panel'].forEach(id => {
+    byId(id)?.classList.toggle('hidden', id !== panelId);
+  });
+  if (focusId) byId(focusId)?.focus();
 }
 
 function showApplication() {
@@ -36,12 +72,13 @@ function showApplication() {
   window.dispatchEvent(new Event('faith-focus:app-unlocked'));
 }
 
-function showLogin(message = 'Sign in or create an account. A new username creates its vault the first time it is used.') {
+function showLogin(message = 'Sign in to open your account and all of its features.') {
+  clearRecoverySession();
   byId('view-pin')?.classList.remove('hidden');
+  showAccountPanel('vault-signin-panel', 'vault-username');
   const passphrase = byId('vault-passphrase');
   if (passphrase) passphrase.value = '';
-  setLoginStatus(message, 'info');
-  passphrase?.focus();
+  setStatus('vault-login-message', message, 'info');
 }
 
 function resetInactivityTimer() {
@@ -61,6 +98,20 @@ function installSessionActivityListeners() {
   });
 }
 
+function collectAnswers(prefix) {
+  return [1, 2, 3].map(index => ({
+    questionId: Number(byId(prefix + '-question-' + index)?.value),
+    answer: byId(prefix + '-answer-' + index)?.value || ''
+  }));
+}
+
+function clearAnswerFields(prefix) {
+  [1, 2, 3].forEach(index => {
+    const answer = byId(prefix + '-answer-' + index);
+    if (answer) answer.value = '';
+  });
+}
+
 async function submitVaultLogin(event) {
   event.preventDefault();
   if (loginInProgress || activeCredentials) return;
@@ -70,36 +121,45 @@ async function submitVaultLogin(event) {
   const username = usernameField?.value || '';
   let passphrase = passphraseField?.value || '';
   const usernameResult = validateVaultUsername(username);
-  const passphraseResult = validateVaultPassphrase(passphrase, { creating: true });
+  const passphraseResult = validateVaultPassphrase(passphrase);
 
   if (!usernameResult.valid) {
-    setLoginStatus('Choose a 3–32 character username using letters, numbers, dots, hyphens, or underscores. It must begin and end with a letter or number.', 'error');
+    setStatus('vault-login-message', 'Enter a valid username (3–32 letters, numbers, dots, hyphens, or underscores).', 'error');
     usernameField?.focus();
     return;
   }
   if (!passphraseResult.valid) {
-    setLoginStatus(passphraseResult.message, 'error');
+    setStatus('vault-login-message', passphraseResult.message, 'error');
     passphraseField?.focus();
     return;
   }
   if (!window.isSecureContext || !window.crypto?.subtle || !window.crypto?.getRandomValues) {
-    setLoginStatus('Secure Web Crypto is unavailable. Open Faith & Focus over HTTPS in a modern browser.', 'error');
+    setStatus('vault-login-message', 'Secure Web Crypto is unavailable. Open Faith & Focus over HTTPS in a modern browser.', 'error');
     return;
   }
 
   loginInProgress = true;
-  setLoginBusy(true);
-  setLoginStatus('Deriving your private account keys on this device…');
+  setBusy('vault-login-submit', true, 'SIGN IN', 'Unlocking account…');
+  setStatus('vault-login-message', 'Looking up your account…');
+  let loginMaterial = null;
   let credentials = null;
 
   try {
-    credentials = await deriveVaultCredentials(username, passphrase);
+    const account = await accountRequest('/account/signin', { username: usernameResult.normalized });
+    setStatus('vault-login-message', 'Checking your passphrase securely on this device…');
+    loginMaterial = await deriveVaultLoginMaterial(account, passphrase);
     passphrase = '';
     passphraseField.value = '';
 
-    setLoginStatus('Connecting to your encrypted vault…');
-    await startVaultSync(credentials);
+    setStatus('vault-login-message', 'Unlocking your encrypted account…');
+    const unlocked = await accountRequest('/account/unlock', { vaultId: account.vaultId }, {
+      'X-Write-Token': encodeBase64Url(loginMaterial.writeToken)
+    });
+    credentials = await finishVaultLogin(account, loginMaterial, unlocked.passphraseEnvelope);
+    loginMaterial = null;
 
+    setStatus('vault-login-message', 'Connecting your Checklist, Diary and Garden…');
+    await startVaultSync(credentials);
     const migration = await adoptVaultEncryptionKey(credentials.encryptionKey);
     activeCredentials = credentials;
     if (usernameField) usernameField.value = credentials.username;
@@ -107,20 +167,213 @@ async function submitVaultLogin(event) {
     resetInactivityTimer();
 
     if (migration.legacyMigrationRequired) {
-      setLoginStatus('Your account is open. This device has older encrypted Diary entries; the Diary will offer a one-time migration when you open it.', 'info');
+      setStatus('vault-login-message', 'Your account is open. This device has older Diary records that need a one-time migration using the previous Diary passphrase.', 'info');
     } else {
-      setLoginStatus('Your account is open. Daily packets are saved locally and synchronized automatically.', 'success');
+      setStatus('vault-login-message', 'Your account is open. Your Checklist, Diary and Garden share one account.', 'success');
     }
   } catch (error) {
     try { await stopVaultSync(); } catch { /* Preserve the original login error. */ }
     clearVaultEncryptionKey();
+    if (loginMaterial) wipeWriteToken(loginMaterial.writeToken);
     if (credentials) wipeWriteToken(credentials.writeToken);
-    setLoginStatus(error?.message || 'The account could not be opened. Your local records were not changed.', 'error');
+    setStatus('vault-login-message', error?.message || 'The account could not be opened. Your local records were not changed.', 'error');
     passphraseField?.focus();
   } finally {
     passphrase = '';
     loginInProgress = false;
-    setLoginBusy(false);
+    setBusy('vault-login-submit', false, 'SIGN IN', 'Unlocking account…');
+  }
+}
+
+async function submitVaultSignup(event) {
+  event.preventDefault();
+  if (loginInProgress || activeCredentials) return;
+
+  const username = byId('signup-username')?.value || '';
+  const passphraseField = byId('signup-passphrase');
+  const confirmField = byId('signup-passphrase-confirm');
+  let passphrase = passphraseField?.value || '';
+  const confirmation = confirmField?.value || '';
+  const answers = collectAnswers('signup');
+  const usernameResult = validateVaultUsername(username);
+  const passphraseResult = validateVaultPassphrase(passphrase, { creating: true });
+  const answerResult = validateRecoveryAnswers(answers);
+
+  if (!usernameResult.valid) {
+    setStatus('vault-signup-message', 'Choose a valid username (3–32 letters, numbers, dots, hyphens, or underscores).', 'error');
+    byId('signup-username')?.focus();
+    return;
+  }
+  if (!passphraseResult.valid) {
+    setStatus('vault-signup-message', passphraseResult.message, 'error');
+    passphraseField?.focus();
+    return;
+  }
+  if (passphrase !== confirmation) {
+    setStatus('vault-signup-message', 'The passphrases do not match.', 'error');
+    confirmField?.focus();
+    return;
+  }
+  if (!answerResult.valid) {
+    setStatus('vault-signup-message', answerResult.message, 'error');
+    return;
+  }
+  if (!window.isSecureContext || !window.crypto?.subtle || !window.crypto?.getRandomValues) {
+    setStatus('vault-signup-message', 'Secure Web Crypto is unavailable. Open Faith & Focus over HTTPS in a modern browser.', 'error');
+    return;
+  }
+
+  loginInProgress = true;
+  setBusy('vault-signup-submit', true, 'CREATE ACCOUNT', 'Creating your private account…');
+  setStatus('vault-signup-message', 'Creating your permanent encrypted account keys on this device…');
+  let credentials = null;
+  let accountCreated = false;
+  try {
+    credentials = await createVaultAccount(usernameResult.normalized, passphrase, answers);
+    passphrase = '';
+    passphraseField.value = '';
+    confirmField.value = '';
+
+    const payload = {
+      ...credentials.accountRecord,
+      writeToken: encodeBase64Url(credentials.writeToken)
+    };
+    setStatus('vault-signup-message', 'Registering your account and recovery questions…');
+    await accountRequest('/account/signup', payload);
+    accountCreated = true;
+    credentials.accountRecord.questionAnswers.forEach(item => { item.answer = ''; });
+
+    setStatus('vault-signup-message', 'Opening your new account…');
+    await startVaultSync(credentials);
+    const migration = await adoptVaultEncryptionKey(credentials.encryptionKey);
+    activeCredentials = credentials;
+    byId('vault-username').value = credentials.username;
+    showApplication();
+    resetInactivityTimer();
+    setStatus('vault-login-message', migration.legacyMigrationRequired
+      ? 'Your account is open. Older Diary records on this device need one-time migration.'
+      : 'Your account is ready. Your Checklist, Diary and Garden now share one account.', 'success');
+  } catch (error) {
+    try { await stopVaultSync(); } catch { /* Keep the original account-creation error. */ }
+    clearVaultEncryptionKey();
+    if (credentials) wipeWriteToken(credentials.writeToken);
+    if (accountCreated) {
+      showLogin('Your account was created, but this device could not finish opening it. Sign in using the username and passphrase you just created.');
+    }
+    setStatus(accountCreated ? 'vault-login-message' : 'vault-signup-message',
+      error?.message || 'The account could not be created. Please try again.', 'error');
+  } finally {
+    passphrase = '';
+    clearAnswerFields('signup');
+    loginInProgress = false;
+    setBusy('vault-signup-submit', false, 'CREATE ACCOUNT', 'Creating your private account…');
+  }
+}
+
+async function submitRecoveryAnswers(event) {
+  event.preventDefault();
+  if (loginInProgress || activeCredentials) return;
+  const answers = collectAnswers('recovery');
+  const validation = validateRecoveryAnswers(answers);
+  if (!validation.valid) {
+    setStatus('vault-recovery-message', validation.message, 'error');
+    return;
+  }
+
+  loginInProgress = true;
+  setBusy('vault-recovery-verify', true, 'VERIFY ANSWERS', 'Verifying answers…');
+  setStatus('vault-recovery-message', 'Checking your selected questions and answers securely…');
+  try {
+    const result = await accountRequest('/account/recover', { questionAnswers: answers });
+    const masterBytes = await recoverVaultMasterKey(result, answers);
+    clearRecoverySession();
+    recoverySession = { ...result, masterBytes };
+    byId('recovery-current-username').textContent = result.username;
+    byId('vault-recovery-form')?.classList.add('hidden');
+    byId('vault-recovery-result')?.classList.remove('hidden');
+    setStatus('vault-recovery-message', 'Your answers were verified. You can now recover your username, reset your passphrase, or do both.', 'success');
+    byId('recovery-new-username')?.focus();
+  } catch (error) {
+    setStatus('vault-recovery-message', error?.message || 'The answers could not be verified.', 'error');
+  } finally {
+    clearAnswerFields('recovery');
+    loginInProgress = false;
+    setBusy('vault-recovery-verify', false, 'VERIFY ANSWERS', 'Verifying answers…');
+  }
+}
+
+async function completeRecovery(event) {
+  event.preventDefault();
+  if (loginInProgress || !recoverySession) return;
+
+  const newUsernameRaw = byId('recovery-new-username')?.value || '';
+  const newUsername = newUsernameRaw ? validateVaultUsername(newUsernameRaw) : { valid: true, normalized: '' };
+  const newPassphraseField = byId('recovery-new-passphrase');
+  const confirmField = byId('recovery-new-passphrase-confirm');
+  let newPassphrase = newPassphraseField?.value || '';
+  const confirmation = confirmField?.value || '';
+
+  if (!newUsername.valid) {
+    setStatus('vault-recovery-message', 'The new username must contain 3–32 letters, numbers, dots, hyphens, or underscores.', 'error');
+    byId('recovery-new-username')?.focus();
+    return;
+  }
+  if (newPassphrase) {
+    const validation = validateVaultPassphrase(newPassphrase, { creating: true });
+    if (!validation.valid) {
+      setStatus('vault-recovery-message', validation.message, 'error');
+      newPassphraseField?.focus();
+      return;
+    }
+    if (newPassphrase !== confirmation) {
+      setStatus('vault-recovery-message', 'The new passphrases do not match.', 'error');
+      confirmField?.focus();
+      return;
+    }
+  } else if (confirmation) {
+    setStatus('vault-recovery-message', 'Enter a new passphrase in both fields, or leave both fields blank.', 'error');
+    newPassphraseField?.focus();
+    return;
+  }
+
+  const usernameChanged = Boolean(newUsername.normalized && newUsername.normalized !== recoverySession.username);
+  const passphraseChanged = Boolean(newPassphrase);
+  if (!usernameChanged && !passphraseChanged) {
+    setStatus('vault-recovery-message', 'Your verified username is shown above. Enter a new username or passphrase to make changes.', 'info');
+    return;
+  }
+
+  loginInProgress = true;
+  setBusy('vault-recovery-save', true, 'SAVE ACCOUNT CHANGES', 'Updating account…');
+  try {
+    const payload = { grant: recoverySession.grant };
+    if (usernameChanged) payload.newUsername = newUsername.normalized;
+    if (passphraseChanged) {
+      const reset = await prepareVaultPassphraseReset(
+        { vaultId: recoverySession.vaultId, username: recoverySession.username },
+        recoverySession.masterBytes,
+        newPassphrase
+      );
+      payload.passphraseSalt = reset.passphraseSalt;
+      payload.passphraseIterations = reset.passphraseIterations;
+      payload.passphraseEnvelope = reset.passphraseEnvelope;
+      payload.writeToken = encodeBase64Url(reset.writeToken);
+      wipeWriteToken(reset.writeToken);
+    }
+    const saved = await accountRequest('/account/complete-recovery', payload);
+    const recoveredUsername = saved.username;
+    clearRecoverySession();
+    if (byId('vault-username')) byId('vault-username').value = recoveredUsername;
+    if (newPassphraseField) newPassphraseField.value = '';
+    if (confirmField) confirmField.value = '';
+    showLogin('Account recovery completed. Sign in using ' + recoveredUsername + (passphraseChanged
+      ? ' and your new passphrase.' : ' and your existing passphrase.'));
+  } catch (error) {
+    setStatus('vault-recovery-message', error?.message || 'The account could not be updated. Your current account credentials remain unchanged.', 'error');
+  } finally {
+    newPassphrase = '';
+    loginInProgress = false;
+    setBusy('vault-recovery-save', false, 'SAVE ACCOUNT CHANGES', 'Updating account…');
   }
 }
 
@@ -137,7 +390,7 @@ export async function lockAccount(message = 'Your account is locked.') {
   } catch (error) {
     locking = false;
     resetInactivityTimer();
-    setLoginStatus('The account remains open because a final local save could not be completed. ' + (error?.message || ''), 'error');
+    setStatus('vault-login-message', 'The account remains open because a final local save could not be completed. ' + (error?.message || ''), 'error');
     return;
   }
 
@@ -153,9 +406,27 @@ export function isVaultAccountUnlocked() {
 }
 
 function initializeVaultSession() {
-  const form = byId('vault-login-form');
-  if (!form) return;
-  form.addEventListener('submit', submitVaultLogin);
+  const loginForm = byId('vault-login-form');
+  if (!loginForm) return;
+  loginForm.addEventListener('submit', submitVaultLogin);
+  byId('vault-signup-form')?.addEventListener('submit', submitVaultSignup);
+  byId('vault-recovery-form')?.addEventListener('submit', submitRecoveryAnswers);
+  byId('vault-recovery-update-form')?.addEventListener('submit', completeRecovery);
+  byId('vault-show-signup')?.addEventListener('click', () => {
+    showAccountPanel('vault-signup-panel', 'signup-username');
+    setStatus('vault-signup-message', 'Create your username, passphrase, and three account-recovery answers.');
+  });
+  byId('vault-show-recovery')?.addEventListener('click', () => {
+    clearRecoverySession();
+    byId('vault-recovery-form')?.classList.remove('hidden');
+    byId('vault-recovery-result')?.classList.add('hidden');
+    showAccountPanel('vault-recovery-panel', 'recovery-question-1');
+    setStatus('vault-recovery-message', 'Select the same three questions you chose during sign-up. Answers are case-sensitive and must contain no spaces.');
+  });
+  byId('vault-back-to-signin-from-signup')?.addEventListener('click', () => {
+    showAccountPanel('vault-signin-panel', 'vault-username');
+  });
+  byId('vault-back-to-signin-from-recovery')?.addEventListener('click', () => showLogin());
   byId('vault-lock-button')?.addEventListener('click', () => lockAccount());
   installSessionActivityListeners();
   showLogin();
