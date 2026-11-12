@@ -56,9 +56,6 @@ function installSessionActivityListeners() {
   ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(eventName => {
     document.addEventListener(eventName, resetInactivityTimer, { passive: true });
   });
-  document.addEventListener('visibilitychange', () => {
-    // vault-sync.js listens for the same event and performs the hidden-page flush.
-  });
   window.addEventListener('faith-focus:lock-account', () => {
     lockAccount('Your account is locked.');
   });
@@ -71,7 +68,7 @@ async function submitVaultLogin(event) {
   const usernameField = byId('vault-username');
   const passphraseField = byId('vault-passphrase');
   const username = usernameField?.value || '';
-  const passphrase = passphraseField?.value || '';
+  let passphrase = passphraseField?.value || '';
   const usernameResult = validateVaultUsername(username);
   const passphraseResult = validateVaultPassphrase(passphrase, { creating: true });
 
@@ -97,6 +94,7 @@ async function submitVaultLogin(event) {
 
   try {
     credentials = await deriveVaultCredentials(username, passphrase);
+    passphrase = '';
     passphraseField.value = '';
 
     setLoginStatus('Connecting to your encrypted vault…');
@@ -120,6 +118,7 @@ async function submitVaultLogin(event) {
     setLoginStatus(error?.message || 'The account could not be opened. Your local records were not changed.', 'error');
     passphraseField?.focus();
   } finally {
+    passphrase = '';
     loginInProgress = false;
     setLoginBusy(false);
   }
