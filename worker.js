@@ -225,7 +225,7 @@ function withCorsPreflight() {
   });
 }
 
-async function callCoordinator(env, vaultId, path, { token, body } = {}) {
+async function callCoordinator(env, vaultId, path, { token, oldToken, body } = {}) {
   const id = env.VAULT_COORDINATOR.idFromName(vaultId);
   const stub = env.VAULT_COORDINATOR.get(id);
   const headers = new Headers({ "X-Vault-Id": vaultId });
