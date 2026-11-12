@@ -107,7 +107,7 @@ export async function importLocalDailyPackets(records) {
     dateString: record.dateString,
     packet: record.packet,
     localUpdatedAt: Date.now(),
-    remoteUpdatedAt: null,
+    remoteUpdatedAt: typeof record.remoteUpdatedAt === 'string' ? record.remoteUpdatedAt : null,
     dirty: true
   }));
   await done;
