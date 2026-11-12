@@ -336,7 +336,8 @@ async function uploadDailyPacket(dateString) {
       body: { packet: local.packet, baseUpdatedAt: local.remoteUpdatedAt || null },
       baseUpdatedAt: local.remoteUpdatedAt || null
     });
-    await markLocalDailyPacketSynced(dateString, result.updatedAt);
+    const syncResult = await markLocalDailyPacketSynced(dateString, result.updatedAt, local.packet, { requirePacketMatch: true });
+    if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush();
     return true;
   } catch (error) {
     if (error.code === 'VAULT_CONFLICT') {
@@ -488,6 +489,9 @@ async function flushVaultSync() {
   cloudDebounceTimer = null;
   if (!activeVault) return;
   try {
+    // Finalize active microphone and writing operations before packaging the day.
+    await stopRegisteredVoiceNoteRecording();
+    await flushAndSaveCurrentPrivateWriting();
     for (const queue of localCaptureQueues.values()) await queue;
     await synchronizeVault();
   } catch {
