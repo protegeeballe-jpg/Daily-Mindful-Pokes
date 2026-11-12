@@ -4,7 +4,7 @@ compatibility_date = "2026-11-01"
 
 [[kv_namespaces]]
 binding = "VAULT_PACKETS"
-id = "REPLACE_WITH_VAULT_PACKETS_NAMESPACE_ID"
+id = "ea1ec0c70eb945f3bb51ba982021c1a2"
 
 [[durable_objects.bindings]]
 name = "VAULT_COORDINATOR"
