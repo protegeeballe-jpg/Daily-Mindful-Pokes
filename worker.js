@@ -264,7 +264,7 @@ export default {
     const url = new URL(request.url);
     const accountRoute = /^\/account\/(signup|migrate-legacy|signin|unlock|recover|complete-recovery)$/.exec(url.pathname);
     let bodyText = "";
-    if (request.method === "POST") {
+    if (request.method === "POST" || request.method === "PUT") {
       bodyText = await readBodyLimited(request, MAX_REQUEST_BYTES);
       if (bodyText === null) return jsonResponse({ error: "Request payload exceeds the 1 MB limit." }, 413, origin);
     }
