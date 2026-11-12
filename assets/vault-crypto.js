@@ -113,6 +113,10 @@ function randomBytes(length, cryptoApi) {
   return cryptoApi.getRandomValues(new Uint8Array(length));
 }
 
+async function sha256Bytes(value, cryptoApi = globalThis.crypto) {
+  return new Uint8Array(await cryptoApi.subtle.digest('SHA-256', value));
+}
+
 function bytesToHex(bytes) {
   return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 }
