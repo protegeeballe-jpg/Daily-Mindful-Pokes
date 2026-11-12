@@ -25,6 +25,12 @@ jobs:
           node --check assets/app-gate.js
           node --check assets/account-security.js
           node --check assets/writing-security.js
+          node --check assets/vault-crypto.js
+          node --check assets/vault-session.js
+          node --check assets/vault-sync.js
+          node --check assets/vault-storage.js
+          node --check assets/local-backup.js
+          node --check worker.js
           node --check assets/garden.js
           node --check assets/settings-modal.js
           node --check assets/garden-model.js
