@@ -82,16 +82,21 @@ export async function putLocalDailyPacket(record) {
   await done;
 }
 
-export async function markLocalDailyPacketSynced(dateString, remoteUpdatedAt, packet = null) {
+export async function markLocalDailyPacketSynced(dateString, remoteUpdatedAt, packet = null, { requirePacketMatch = false } = {}) {
   const existing = await getLocalDailyPacket(dateString);
   if (!existing) throw new Error('The local daily packet no longer exists.');
+  const stillMatchesUploadedSnapshot = !requirePacketMatch
+    || (packet && JSON.stringify(existing.packet) === JSON.stringify(packet));
   await putLocalDailyPacket({
     ...existing,
-    packet: packet || existing.packet,
+    packet: requirePacketMatch && !stillMatchesUploadedSnapshot ? existing.packet : (packet || existing.packet),
     localUpdatedAt: existing.localUpdatedAt,
     remoteUpdatedAt,
-    dirty: false
+    // A newer local packet may have been saved while the upload was in flight.
+    // Preserve its dirty state so the newer packet is uploaded against this version.
+    dirty: stillMatchesUploadedSnapshot ? false : true
   });
+  return { stillMatchesUploadedSnapshot };
 }
 
 export async function importLocalDailyPackets(records) {
