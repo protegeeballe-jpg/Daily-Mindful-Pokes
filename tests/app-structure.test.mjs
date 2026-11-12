@@ -658,7 +658,7 @@ test('encrypted vault sync and JSON backup live in collapsible Settings sections
  assert.match(settings,/id="vault-export-button"/);
  assert.match(settings,/id="vault-import-button"/);
  assert.match(settings,/id="vault-import-file"/);
- assert.doesNotMatch(settings,/gist-sync|drive-sync|Google Drive|GitHub Gist|Sync Key/);
+ assert.doesNotMatch(settings,/gist-sync|drive-connect|Google Drive|GitHub Gist|Sync Key/);
  const roomStart=html.indexOf('<section data-garden-scene="room"');
  const outdoorStart=html.indexOf('<section data-garden-scene="outdoors"',roomStart);
  const roomMarkup=html.slice(roomStart,outdoorStart);
