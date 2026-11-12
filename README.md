@@ -22,7 +22,7 @@ The app uses one **Username + Passphrase** login. No email address, phone number
 
 Each calendar day uses one unified bundle with a `YYYY-MM-DD` date. It includes:
 
-- Every Health Checklist checkbox and its guided/unlocked state, including checked and unchecked items.
+- Checklist checkboxes and their guided/unlocked state, including every checked and unchecked item.
 - Diary text and private checklist reflections.
 - Encrypted voice-note records.
 - Location check-ins for that date.
