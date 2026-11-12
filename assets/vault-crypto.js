@@ -237,7 +237,7 @@ export async function createVaultAccount(username, passphrase, answers, cryptoAp
   }
 }
 
-export async function unlockVaultAccount(account, passphrase, cryptoApi = globalThis.crypto) {
+export async function deriveVaultLoginMaterial(account, passphrase, cryptoApi = globalThis.crypto) {
   const passphraseResult = validateVaultPassphrase(passphrase);
   if (!passphraseResult.valid) throw new Error(passphraseResult.message);
   if (!account || !/^[a-f0-9]{64}$/.test(account.vaultId || '')
@@ -247,8 +247,20 @@ export async function unlockVaultAccount(account, passphrase, cryptoApi = global
   const salt = fromBase64(account.passphraseSalt);
   if (salt.length !== 16) throw new Error('The account encryption settings are invalid.');
   const derived = await derivePassphraseMaterial(passphrase, salt, account.vaultId, cryptoApi);
+  return {
+    username: normalizeVaultUsername(account.username),
+    vaultId: account.vaultId,
+    wrappingKey: derived.wrappingKey,
+    writeToken: derived.writeToken
+  };
+}
+
+export async function finishVaultLogin(account, loginMaterial, passphraseEnvelope, cryptoApi = globalThis.crypto) {
+  if (!account || !loginMaterial?.wrappingKey || loginMaterial.vaultId !== account.vaultId) {
+    throw new TypeError('A verified account login is required.');
+  }
   const masterBytes = await unwrapMasterKey(
-    account.passphraseEnvelope, derived.wrappingKey, PASS_KEY_AAD + account.vaultId, cryptoApi
+    passphraseEnvelope, loginMaterial.wrappingKey, PASS_KEY_AAD + account.vaultId, cryptoApi
   );
   const encryptionKey = await cryptoApi.subtle.importKey(
     'raw', masterBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
@@ -258,8 +270,18 @@ export async function unlockVaultAccount(account, passphrase, cryptoApi = global
     username: normalizeVaultUsername(account.username),
     vaultId: account.vaultId,
     encryptionKey,
-    writeToken: derived.writeToken
+    writeToken: loginMaterial.writeToken
   };
+}
+
+export async function unlockVaultAccount(account, passphrase, cryptoApi = globalThis.crypto) {
+  const loginMaterial = await deriveVaultLoginMaterial(account, passphrase, cryptoApi);
+  try {
+    return await finishVaultLogin(account, loginMaterial, account.passphraseEnvelope, cryptoApi);
+  } catch (error) {
+    wipeWriteToken(loginMaterial.writeToken);
+    throw error;
+  }
 }
 
 export async function recoverVaultMasterKey(account, answers, cryptoApi = globalThis.crypto) {
@@ -282,23 +304,27 @@ export async function prepareVaultPassphraseReset(account, masterBytes, newPassp
     throw new TypeError('A verified account master key is required.');
   }
   const passphraseSalt = randomBytes(16, cryptoApi);
-  const derived = await derivePassphraseMaterial(newPassphrase, passphraseSalt, account.vaultId, cryptoApi);
-  const passphraseEnvelope = await wrapMasterKey(
-    masterBytes, derived.wrappingKey, PASS_KEY_AAD + account.vaultId, cryptoApi
-  );
-  const encryptionKey = await cryptoApi.subtle.importKey(
-    'raw', masterBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-  );
-  passphraseSalt.fill(0);
-  return {
-    username: normalizeVaultUsername(account.username),
-    vaultId: account.vaultId,
-    encryptionKey,
-    writeToken: derived.writeToken,
-    passphraseSalt: toBase64(passphraseSalt),
-    passphraseIterations: VAULT_KDF_ITERATIONS,
-    passphraseEnvelope
-  };
+  const passphraseSaltBase64 = toBase64(passphraseSalt);
+  try {
+    const derived = await derivePassphraseMaterial(newPassphrase, passphraseSalt, account.vaultId, cryptoApi);
+    const passphraseEnvelope = await wrapMasterKey(
+      masterBytes, derived.wrappingKey, PASS_KEY_AAD + account.vaultId, cryptoApi
+    );
+    const encryptionKey = await cryptoApi.subtle.importKey(
+      'raw', masterBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+    return {
+      username: normalizeVaultUsername(account.username),
+      vaultId: account.vaultId,
+      encryptionKey,
+      writeToken: derived.writeToken,
+      passphraseSalt: passphraseSaltBase64,
+      passphraseIterations: VAULT_KDF_ITERATIONS,
+      passphraseEnvelope
+    };
+  } finally {
+    passphraseSalt.fill(0);
+  }
 }
 
 export function wipeWriteToken(token) {
