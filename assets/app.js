@@ -954,7 +954,7 @@ import {
         }
 
         async function openDiaryArchiveDate(dateString) {
-            if (!writingCryptoKey || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return;
+            if (!writingCryptoKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return;
 
             const editor = document.getElementById('private-diary-entry');
             const recordButton = document.getElementById('record-btn');
