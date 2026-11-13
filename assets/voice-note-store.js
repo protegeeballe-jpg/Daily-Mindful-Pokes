@@ -356,20 +356,61 @@ export async function exportEncryptedVoiceNotesForDate(dateString) {
 }
 
 export async function restoreEncryptedVoiceNotesForDate(dateString, records) {
-    if (!isValidDateString(dateString)
-        || !validateEncryptedVoiceNoteBackup(records)
-        || records.some(record => record.dateString !== dateString)) {
-        throw new Error('The daily packet contains invalid voice-note records.');
+    if (!isValidDateString(dateString) || !Array.isArray(records) || records.length > 1000) {
+        throw new Error('The daily packet contains an invalid voice-note collection.');
     }
+
+    const valid = [];
+    const invalid = [];
+    const seen = new Set();
+    for (const record of records) {
+        const isValid = validateEncryptedVoiceNoteRecord(record)
+            && record.dateString === dateString
+            && !seen.has(record.id);
+        if (isValid) {
+            seen.add(record.id);
+            valid.push(record);
+        } else {
+            invalid.push({
+                kind: 'remote-voice-note',
+                id: record?.id,
+                dateString: record?.dateString || dateString,
+                record,
+                reason: 'Malformed, unsupported, duplicate, or wrong-date encrypted voice-note record received in a daily packet'
+            });
+            console.error('[Diary Voice Note] Invalid remote voice-note record skipped; packet and local valid notes are preserved.', {
+                expectedDate: dateString, receivedId: record?.id, receivedDate: record?.dateString
+            });
+        }
+    }
+
     const database = await openVoiceNoteDatabase();
     try {
-        const transaction = database.transaction(VOICE_NOTE_STORE_NAME, 'readwrite');
+        const transaction = database.transaction(
+            [VOICE_NOTE_STORE_NAME, LEGACY_QUARANTINE_STORE_NAME],
+            'readwrite'
+        );
         const completed = waitForTransaction(transaction);
         const store = transaction.objectStore(VOICE_NOTE_STORE_NAME);
+        const quarantineStore = transaction.objectStore(LEGACY_QUARANTINE_STORE_NAME);
         const request = store.index('dateString').getAllKeys(dateString);
         request.onsuccess = () => {
             for (const key of request.result) store.delete(key);
-            records.forEach(record => store.put(record));
+            valid.forEach(record => store.put(record));
+            invalid.forEach((item, index) => {
+                const random = crypto.getRandomValues(new Uint8Array(8));
+                const suffix = Array.from(random, byte => byte.toString(16).padStart(2, '0')).join('');
+                quarantineStore.add({
+                    quarantineId: 'remote-voice-' + Date.now().toString(36) + '-' + index + '-' + suffix,
+                    version: 1,
+                    kind: item.kind,
+                    dateString: item.dateString,
+                    originalId: item.id == null ? null : String(item.id),
+                    record: item.record,
+                    reason: item.reason,
+                    quarantinedAt: new Date().toISOString()
+                });
+            });
         };
         request.onerror = () => {
             try { transaction.abort(); } catch { /* The transaction may already be closed. */ }
