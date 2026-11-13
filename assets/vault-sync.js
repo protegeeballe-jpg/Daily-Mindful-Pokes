@@ -549,7 +549,7 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
     );
     if (syncResult.stillMatchesUploadedSnapshot) {
       await restoreDailyBundle(mergedBundle);
-      status('Today’s entries from both devices have been combined and synced.', 'success');
+      status('Entries for ' + dateString + ' from both devices have been combined and synced.', 'success');
       return true;
     }
 
