@@ -8,7 +8,8 @@ export const MAX_VOICE_NOTE_BYTES = 256 * 1024;
 const ALLOWED_VOICE_NOTE_MIME_TYPES = new Set([
     'audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg',
     'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/aac',
-    'audio/3gpp', 'audio/3gpp2', 'audio/flac', 'audio/x-flac'
+    'audio/3gpp', 'audio/3gpp2', 'audio/flac', 'audio/x-flac',
+    'audio/m4a', 'audio/x-m4a', 'audio/opus', 'audio/amr', 'audio/x-aac'
 ]);
 
 export function isAllowedVoiceNoteMimeType(value) {
