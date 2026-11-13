@@ -658,6 +658,5 @@ export {
     WRITING_CONFIG_KEY,WRITING_DIARY_PREFIX,WRITING_NOTES_PREFIX,PRIVATE_NOTE_IDS,
     writingCryptoKey,writingLoadedDate,hasWritingCrypto,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
-    handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,loadPrivateWritingForDate,schedulePrivateWritingSave,
-    mergeEncryptedPrivateWritingRecords
+    handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,loadPrivateWritingForDate,schedulePrivateWritingSave
 };
