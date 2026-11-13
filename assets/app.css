@@ -885,3 +885,125 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
     color: #166534;
     font-weight: 700;
 }
+
+
+/* Gentle next-day reminders for Health Checklist cards left incomplete. */
+.missed-card-notice {
+    margin: .65rem 0 .8rem;
+    padding: .9rem 1rem;
+    border: 1px solid #e7c98d;
+    border-radius: 1rem;
+    background: linear-gradient(145deg, rgba(255,250,232,.97), rgba(250,241,218,.94));
+    box-shadow: 0 3px 12px rgba(123,94,42,.08);
+    color: #634d2b;
+}
+.missed-card-notice.hidden { display:none !important; }
+.missed-card-notice-heading {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:.65rem;
+}
+.missed-card-eyebrow {
+    margin:0 0 .2rem;
+    color:#9a743b;
+    font-size:.58rem;
+    font-weight:800;
+    letter-spacing:.12em;
+}
+.missed-card-notice-heading h2 {
+    margin:0;
+    color:#684c22;
+    font-size:.9rem;
+    font-weight:800;
+    line-height:1.25;
+}
+.missed-card-count {
+    flex:0 0 auto;
+    padding:.25rem .5rem;
+    border:1px solid rgba(188,145,76,.35);
+    border-radius:999px;
+    background:rgba(255,255,255,.7);
+    color:#805e2d;
+    font-size:.62rem;
+    font-weight:800;
+    white-space:nowrap;
+}
+.missed-card-date {
+    margin:.25rem 0;
+    color:#8b6b3d;
+    font-size:.65rem;
+    font-weight:700;
+}
+.missed-card-copy {
+    margin:.25rem 0 .6rem;
+    color:#705c3d;
+    font-size:.68rem;
+    line-height:1.4;
+}
+.missed-card-list {
+    display:grid;
+    gap:.35rem;
+    margin:0;
+    padding:0;
+    list-style:none;
+}
+.missed-card-item {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.6rem;
+    padding:.42rem .55rem;
+    border:1px solid rgba(188,145,76,.22);
+    border-radius:.7rem;
+    background:rgba(255,255,255,.68);
+}
+.missed-card-item-title {
+    min-width:0;
+    color:#5f4b2d;
+    font-size:.68rem;
+    font-weight:700;
+    line-height:1.3;
+}
+.missed-card-review-button {
+    flex:0 0 auto;
+    min-height:32px;
+    padding:.35rem .6rem;
+    border:1px solid #c8a56d;
+    border-radius:.6rem;
+    background:#fffaf0;
+    color:#775629;
+    font-size:.62rem;
+    font-weight:800;
+}
+.missed-card-review-button:focus-visible,
+.missed-card-dismiss:focus-visible {
+    outline:2px solid #98713b;
+    outline-offset:2px;
+}
+.missed-card-actions {
+    display:flex;
+    justify-content:flex-end;
+    margin-top:.45rem;
+}
+.missed-card-dismiss {
+    min-height:30px;
+    padding:.25rem .55rem;
+    border:0;
+    border-radius:.55rem;
+    background:transparent;
+    color:#806b4d;
+    font-size:.62rem;
+    font-weight:700;
+}
+@media (max-width:620px) {
+    .missed-card-notice {margin:.5rem 0 .65rem;padding:.7rem .75rem;}
+    .missed-card-notice-heading h2 {font-size:.82rem;}
+    .missed-card-item {gap:.35rem;padding:.38rem .45rem;}
+    .missed-card-item-title {font-size:.64rem;}
+    .missed-card-review-button {min-height:30px;padding:.32rem .48rem;}
+}
+@media (max-width:380px) {
+    .missed-card-notice-heading {flex-direction:column;gap:.35rem;}
+    .missed-card-item {align-items:flex-start;flex-direction:column;}
+}
