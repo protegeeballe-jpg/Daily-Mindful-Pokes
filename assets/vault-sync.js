@@ -127,7 +127,11 @@ function validateDailyBundleForEncryption(bundle, expectedDate) {
     if (typeof bundle.appState !== 'object' || Array.isArray(bundle.appState)) {
       fail('app state must be an object.');
     }
-    for (const key of ['garden', 'confidenceScore', 'legacyWritingConfig']) {
+    const allowedAppStateKeys = new Set(['garden', 'confidenceScore', 'legacyWritingConfig']);
+    if (Object.keys(bundle.appState).some(key => !allowedAppStateKeys.has(key))) {
+      fail('app state contains an unexpected field.');
+    }
+    for (const key of allowedAppStateKeys) {
       const value = bundle.appState[key];
       if (value !== null && value !== undefined && typeof value !== 'string') {
         fail('app state field ' + key + ' must be a string or null.');
