@@ -120,6 +120,7 @@ test('account inactivity lock is two minutes and rechecks expired sessions after
  assert.match(vaultSession,/stopVaultSync\(\{ flushRemote: false \}\)/);
  assert.match(vaultSync,/stopVaultSync\(\{ flushRemote = true \} = \{\}\)/);
  assert.match(vaultSync,/for \(const queue of localCaptureQueues\.values\(\)\) await queue/);
+ assert.match(vaultSync,/activeVaultRequestControllers\.forEach\(controller => controller\.abort\(\)\)/);
 });
 
 test('missed checklist cards are shown as actionable next-day in-app reminders',()=>{
