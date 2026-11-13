@@ -16,6 +16,7 @@ const accountSecurity=readFileSync(new URL('../assets/account-security.js',impor
 const vaultSession=readFileSync(new URL('../assets/vault-session.js',import.meta.url),'utf8');
 const vaultSync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
 const gardenModel=readFileSync(new URL('../assets/garden-model.js',import.meta.url),'utf8');
+const dailyMerge=readFileSync(new URL('../assets/daily-merge.js',import.meta.url),'utf8');
 test('Faith & Focus branding, PWA metadata, and unified account copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
@@ -761,7 +762,7 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v6-current-day-sync/);
+ assert.match(serviceWorker,/faith-focus-shell-v7-daily-device-merge/);
 });
 
 test('Diary migration recognizes account-key records and converts only legacy-key entries',()=>{
@@ -804,10 +805,24 @@ test('Garden snapshots are embedded in daily packets and merged without discardi
  assert.match(vaultSync,/GARDEN_DAILY_SYNC_PREFIX\s*\+\s*dateString/);
  assert.match(vaultSync,/mergeGardenStates\(mergedGarden, incomingGarden\)/);
  assert.match(vaultSync,/restoreSharedAppState\(remoteBundle\)/);
- assert.match(vaultSync,/await publishSharedStateMerge\(dateString, remote, remoteBundle\)/);
- assert.match(vaultSync,/baseUpdatedAt: remote\.updatedAt \|\| null/);
+ assert.match(vaultSync,/await mergeDailyBundles\(localBundle, remoteBundle/);
+ assert.match(vaultSync,/mergeEncryptedPrivateWritingRecords\(dateString, localWriting, remoteWriting, activeVault\.encryptionKey\)/);
+ assert.match(vaultSync,/markLocalDailyPacketSynced\([\s\S]*?mergedPacket[\s\S]*?requirePacketMatch: true/);
+ assert.match(vaultSync,/await restoreDailyBundle\(mergedBundle\)/);
+ assert.doesNotMatch(vaultSync,/publishSharedStateMerge/);
  assert.doesNotMatch(vaultSync,/dates\.add\(getCurrentDateString\(\)\)/);
  assert.match(vaultSync,/Only create local packets for dates that actually contain daily records or/);
  assert.match(vaultSync,/await captureExistingLocalDates\(\);[\s\S]*?await synchronizeVault\(\);[\s\S]*?await captureDailyPacket\(getCurrentDateString\(\)\);[\s\S]*?await synchronizeVault\(\);/);
  assert.match(vaultSync,/isUsableLegacyWritingConfig\(remoteLegacyConfig\)/);
+});
+
+test('same-day sync combines both devices without replacing private writing, voice notes, or location history',()=>{
+ assert.match(dailyMerge,/mergeLocationCheckinRecordValues/);
+ assert.match(dailyMerge,/mergeEncryptedVoiceNoteRecords/);
+ assert.match(dailyMerge,/mergeChecklistRecordValues/);
+ assert.match(dailyMerge,/mergeDailyBundles/);
+ assert.match(dailyMerge,/Both device copies remain preserved/);
+ assert.match(writing,/export async function mergeEncryptedPrivateWritingRecords/);
+ assert.match(writing,/mergePrivateWritingText/);
+ assert.match(serviceWorker,/assets\\/daily-merge\\.js/);
 });
