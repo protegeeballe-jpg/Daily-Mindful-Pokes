@@ -82,21 +82,51 @@ export async function putLocalDailyPacket(record) {
   await done;
 }
 
-export async function markLocalDailyPacketSynced(dateString, remoteUpdatedAt, packet = null, { requirePacketMatch = false } = {}) {
-  const existing = await getLocalDailyPacket(dateString);
-  if (!existing) throw new Error('The local daily packet no longer exists.');
-  const stillMatchesUploadedSnapshot = !requirePacketMatch
-    || (packet && JSON.stringify(existing.packet) === JSON.stringify(packet));
-  await putLocalDailyPacket({
-    ...existing,
-    packet: requirePacketMatch && !stillMatchesUploadedSnapshot ? existing.packet : (packet || existing.packet),
-    localUpdatedAt: existing.localUpdatedAt,
-    remoteUpdatedAt,
-    // A newer local packet may have been saved while the upload was in flight.
-    // Preserve its dirty state so the newer packet is uploaded against this version.
-    dirty: stillMatchesUploadedSnapshot ? false : true
-  });
-  return { stillMatchesUploadedSnapshot };
+export async function markLocalDailyPacketSynced(
+  dateString,
+  remoteUpdatedAt,
+  packet = null,
+  { requirePacketMatch = false, expectedPacket = packet } = {}
+) {
+  const database = await openDatabase();
+  const transaction = database.transaction(PACKET_STORE, 'readwrite');
+  const done = transactionDone(transaction);
+  const store = transaction.objectStore(PACKET_STORE);
+  let outcome = null;
+  let missingPacket = false;
+
+  // Read, compare, and replace inside one readwrite transaction. This prevents
+  // a local edit arriving between a separate read and write from being lost.
+  const request = store.get(dateString);
+  request.onsuccess = () => {
+    const existing = request.result;
+    if (!existing) {
+      missingPacket = true;
+      transaction.abort();
+      return;
+    }
+
+    const stillMatchesUploadedSnapshot = !requirePacketMatch
+      || (expectedPacket && JSON.stringify(existing.packet) === JSON.stringify(expectedPacket));
+    store.put({
+      ...existing,
+      packet: requirePacketMatch && !stillMatchesUploadedSnapshot ? existing.packet : (packet || existing.packet),
+      localUpdatedAt: existing.localUpdatedAt,
+      remoteUpdatedAt: remoteUpdatedAt || null,
+      // Preserve a newer local packet so it can be merged and uploaded later.
+      dirty: stillMatchesUploadedSnapshot ? false : true
+    });
+    outcome = { stillMatchesUploadedSnapshot };
+  };
+
+  try {
+    await done;
+  } catch (error) {
+    if (missingPacket) throw new Error('The local daily packet no longer exists.');
+    throw error;
+  }
+  if (!outcome) throw new Error('The local daily packet could not be confirmed as synced.');
+  return outcome;
 }
 
 export async function importLocalDailyPackets(records) {
