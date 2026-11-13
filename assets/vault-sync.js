@@ -30,6 +30,7 @@ let applyingRemotePacket = 0;
 let syncQueue = Promise.resolve();
 let localCaptureQueues = new Map();
 let localChangeVersions = new Map();
+let pendingCloudDates = new Set();
 let lastStatus = '';
 let storageHooksInstalled = false;
 
@@ -43,6 +44,13 @@ function status(message, state = 'info') {
     target.textContent = message;
     target.dataset.state = state;
   }
+  const indicator = byId('vault-sync-indicator');
+  if (indicator) {
+    indicator.dataset.state = state;
+    indicator.textContent = state === 'success' ? '● Synced' : state === 'error' ? '● Sync error / offline' : '● Syncing…';
+    indicator.setAttribute('aria-label', indicator.textContent.trim());
+  }
+  console.log('[Vault Sync] Status:', state, message, activeVault ? { vaultId: activeVault.vaultId } : { vaultId: null });
   window.dispatchEvent(new CustomEvent('faith-focus:vault-sync-status', { detail: { message, state } }));
 }
 
@@ -162,6 +170,7 @@ async function vaultRequest(path, { method = 'GET', body = null, baseUpdatedAt }
   if (baseUpdatedAt !== undefined) headers['X-Base-Updated-At'] = baseUpdatedAt || 'none';
 
   let response;
+  console.log('[Vault Sync] Worker request started:', { vaultId: activeVault?.vaultId || null, method, path });
   try {
     response = await fetch(WORKER_ORIGIN + path, {
       method,
@@ -172,12 +181,18 @@ async function vaultRequest(path, { method = 'GET', body = null, baseUpdatedAt }
       headers,
       body: bodyText
     });
-  } catch {
+  } catch (error) {
+    console.error('[Vault Sync] Worker network failure:', { vaultId: activeVault?.vaultId || null, method, path, error });
     throw new Error('Cloud sync is temporarily unavailable. Your encrypted daily packets remain saved locally.');
   }
 
   let result = {};
   try { result = await response.json(); } catch { result = {}; }
+  console.log('[Vault Sync] Worker response:', {
+    vaultId: activeVault?.vaultId || null, method, path, httpStatus: response.status, ok: response.ok,
+    error: result.error || null, updatedAt: result.updatedAt || null,
+    remoteDateCount: result.index && typeof result.index === 'object' ? Object.keys(result.index).length : undefined
+  });
   if (!response.ok) {
     if (response.status === 401) throw new Error('The username or passphrase was not accepted by this vault.');
     if (response.status === 409) {
@@ -210,7 +225,7 @@ async function captureDailyPacket(dateString) {
         try {
           const priorBundle = await decryptDailyBundle(prior.packet, activeVault.encryptionKey, decompressData);
           if (canonicalBundle(priorBundle) === canonicalBundle(bundle)) {
-            if (prior.dirty) scheduleCloudPush();
+            if (prior.dirty) scheduleCloudPush(dateString);
             return;
           }
         } catch {
@@ -228,7 +243,7 @@ async function captureDailyPacket(dateString) {
       repeat = localChangeVersions.get(dateString) !== snapshotVersion;
       if (!repeat) {
         status('Saved and encrypted locally. Automatic cloud sync is queued.', 'success');
-        scheduleCloudPush();
+        scheduleCloudPush(dateString);
       }
     }
   });
@@ -311,6 +326,7 @@ async function restoreDailyBundle(bundle) {
 }
 
 async function fetchRemoteIndex() {
+  console.log('[Vault Sync] Fetching shared vault index on startup/sync:', { vaultId: activeVault.vaultId, key: activeVault.vaultId + ':index' });
   const result = await vaultRequest('/vault/' + activeVault.vaultId + '/index');
   if (!result.index || typeof result.index !== 'object' || Array.isArray(result.index)) {
     throw new Error('Cloudflare returned an invalid vault index.');
@@ -329,6 +345,10 @@ async function fetchRemoteDay(dateString) {
 async function uploadDailyPacket(dateString) {
   const local = await getLocalDailyPacket(dateString);
   if (!local?.dirty) return false;
+  console.log('[Vault Sync] Uploading encrypted daily packet:', {
+    vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+    baseUpdatedAt: local.remoteUpdatedAt || null
+  });
 
   try {
     const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
@@ -337,7 +357,11 @@ async function uploadDailyPacket(dateString) {
       baseUpdatedAt: local.remoteUpdatedAt || null
     });
     const syncResult = await markLocalDailyPacketSynced(dateString, result.updatedAt, local.packet, { requirePacketMatch: true });
-    if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush();
+    console.log('[Vault Sync] Encrypted daily packet upload accepted by Worker:', {
+      vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+      updatedAt: result.updatedAt, stillMatchesUploadedSnapshot: syncResult.stillMatchesUploadedSnapshot
+    });
+    if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush(dateString);
     return true;
   } catch (error) {
     if (error.code === 'VAULT_CONFLICT') {
@@ -351,6 +375,10 @@ async function uploadDailyPacket(dateString) {
 async function reconcileDay(dateString, remoteUpdatedAt) {
   const local = await getLocalDailyPacket(dateString);
   if (!local) {
+    console.log('[Vault Sync] Remote date has no local packet; fetching and restoring encrypted date:', {
+      vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+      remoteUpdatedAt: remoteUpdatedAt || null
+    });
     const remote = await fetchRemoteDay(dateString);
     if (!remote.packet) return false;
     const bundle = await decryptDailyBundle(remote.packet, activeVault.encryptionKey, decompressData);
@@ -377,6 +405,7 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
 
   const localRemote = local.remoteUpdatedAt || null;
   if (remoteUpdatedAt && remoteUpdatedAt !== localRemote) {
+    if (!localRemote || remoteUpdatedAt > localRemote) console.log('[Vault Sync] Newer remote date detected:', { vaultId: activeVault.vaultId, dateString, remoteUpdatedAt, localRemoteUpdatedAt: localRemote });
     const remote = await fetchRemoteDay(dateString);
     if (remote.packet && remote.updatedAt && (!localRemote || remote.updatedAt > localRemote)) {
       const bundle = await decryptDailyBundle(remote.packet, activeVault.encryptionKey, decompressData);
@@ -404,6 +433,7 @@ async function performVaultSync() {
     status('Checking your encrypted vault…');
     const index = await fetchRemoteIndex();
     const remoteDates = Object.keys(index).filter(isValidDateString).sort();
+    console.log('[Vault Sync] Shared index received:', { vaultId: activeVault.vaultId, key: activeVault.vaultId + ':index', remoteDateCount: remoteDates.length, remoteDates });
     let restored = 0;
 
     for (const dateString of remoteDates) {
@@ -432,12 +462,23 @@ async function performVaultSync() {
     throw error;
   }
 }
-function scheduleCloudPush() {
+function scheduleCloudPush(dateString = null) {
   if (!activeVault) return;
+  if (dateString && isValidDateString(dateString)) pendingCloudDates.add(dateString);
   if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
+  const vaultId = activeVault.vaultId;
+  console.log('[Vault Sync] Local change captured; 5-second debounced cloud save scheduled:', {
+    vaultId, pendingDates: [...pendingCloudDates].sort(), datePacketKeys: [...pendingCloudDates].map(date => vaultId + ':' + date)
+  });
+  status('Local changes are saved on this device. Cloud sync will start in 5 seconds…', 'info');
   cloudDebounceTimer = window.setTimeout(() => {
     cloudDebounceTimer = null;
-    synchronizeVault().catch(() => {});
+    const dates = [...pendingCloudDates].sort();
+    pendingCloudDates.clear();
+    console.log('[Vault Sync] Debounce elapsed; pushing pending encrypted date packets:', {
+      vaultId, dates, packetKeys: dates.map(date => vaultId + ':' + date)
+    });
+    synchronizeVault().catch(error => console.error('[Vault Sync] Debounced sync failed:', { vaultId, error }));
   }, 5000);
 }
 
@@ -467,6 +508,7 @@ export async function startVaultSync(credentials) {
   await captureExistingLocalDates();
   await synchronizeVault();
   window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('faith-focus:local-data-changed', handleLocalDataChanged);
   window.addEventListener('pagehide', flushVaultSync);
@@ -477,7 +519,13 @@ function handleLocalDataChanged(event) {
 }
 
 function handleOnline() {
+  console.log('[Vault Sync] Browser is online; starting immediate reconciliation.', { vaultId: activeVault?.vaultId || null });
   synchronizeVault().catch(() => {});
+}
+
+function handleOffline() {
+  console.warn('[Vault Sync] Browser is offline. Encrypted local packets remain saved and queued.', { vaultId: activeVault?.vaultId || null });
+  status('Offline — encrypted changes remain saved locally and will retry when online.', 'error');
 }
 
 function handleVisibilityChange() {
@@ -505,6 +553,7 @@ export async function stopVaultSync() {
   await flushVaultSync();
   if (activeVault) {
     window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('faith-focus:local-data-changed', handleLocalDataChanged);
     window.removeEventListener('pagehide', flushVaultSync);
@@ -550,6 +599,71 @@ export async function importEncryptedVaultPackets(packets) {
   await importLocalDailyPackets(packets);
   status('Restored ' + packets.length + ' validated encrypted daily packet' + (packets.length === 1 ? '' : 's') + '. Automatic cloud sync is queued.', 'success');
   scheduleCloudPush();
+}
+
+export async function testVaultConnection() {
+  if (!activeVault) throw new Error('Sign in to your unified account before testing cloud sync.');
+  const vaultId = activeVault.vaultId;
+  console.log('[Vault Sync Test] Starting same-vault Cloudflare connection test:', {
+    vaultId, indexKey: vaultId + ':index'
+  });
+  status('Testing Cloudflare vault connection…', 'info');
+
+  // Flush current editor state and capture local daily packets first. The test
+  // uses real encrypted app packets; it never writes plaintext or a dummy KV key.
+  await stopRegisteredVoiceNoteRecording();
+  await flushAndSaveCurrentPrivateWriting();
+  await captureExistingLocalDates();
+  for (const queue of localCaptureQueues.values()) await queue;
+
+  if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
+  cloudDebounceTimer = null;
+  pendingCloudDates.clear();
+
+  // Exercise a real conditional PUT using today's existing encrypted packet.
+  // The ciphertext is unchanged; the Worker write-token and updated-at guard
+  // still protect against overwriting a newer packet from the other device.
+  const today = getCurrentDateString();
+  let todayPacket = await getLocalDailyPacket(today);
+  if (todayPacket && !todayPacket.dirty) {
+    const remoteToday = await fetchRemoteDay(today);
+    const sameBase = remoteToday.packet
+      ? Boolean(todayPacket.remoteUpdatedAt && todayPacket.remoteUpdatedAt === remoteToday.updatedAt)
+      : !todayPacket.remoteUpdatedAt;
+    if (sameBase) {
+      await putLocalDailyPacket({ ...todayPacket, dirty: true });
+      console.log('[Vault Sync Test] Performing conditional encrypted packet push:', {
+        vaultId, dateString: today, packetKey: vaultId + ':' + today,
+        baseUpdatedAt: todayPacket.remoteUpdatedAt || null
+      });
+      await uploadDailyPacket(today);
+    } else {
+      console.warn('[Vault Sync Test] Skipping test PUT because the local packet has no current remote version baseline. No remote data was overwritten.', {
+        vaultId, dateString: today, localRemoteUpdatedAt: todayPacket.remoteUpdatedAt || null,
+        remoteUpdatedAt: remoteToday.updatedAt || null
+      });
+    }
+  } else if (todayPacket?.dirty) {
+    console.log('[Vault Sync Test] Today already has a pending local packet; normal sync will attempt its guarded upload.', {
+      vaultId, dateString: today, packetKey: vaultId + ':' + today
+    });
+  }
+
+  // Complete the normal pull/reconciliation pass, then verify the shared index again.
+  await synchronizeVault();
+  const index = await fetchRemoteIndex();
+  const remoteDates = Object.keys(index).filter(isValidDateString).sort();
+  const localPackets = await listLocalDailyPackets();
+  const pendingUploads = localPackets.filter(record => record.dirty).map(record => record.dateString);
+
+  const result = { vaultId, indexKey: vaultId + ':index', remoteDateCount: remoteDates.length, remoteDates, pendingUploads };
+  console.log('[Vault Sync Test] Completed:', result);
+  if (pendingUploads.length) {
+    status('Cloud connection succeeded. Some local dates remain queued or have a conflict; see the console.', 'error');
+  } else {
+    status('Cloud connection verified. This device is synchronized with the shared vault.', 'success');
+  }
+  return result;
 }
 
 export function isVaultSyncActive() {

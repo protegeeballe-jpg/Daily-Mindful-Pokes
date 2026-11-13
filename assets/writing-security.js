@@ -1,7 +1,8 @@
 import {
     saveEncryptedVoiceNote, loadEncryptedVoiceNotes,
     exportEncryptedVoiceNotes, restoreEncryptedVoiceNotes,
-    validateEncryptedVoiceNoteBackup, encryptVoiceNoteBlob, decryptVoiceNoteRecord
+    validateEncryptedVoiceNoteBackup, encryptVoiceNoteBlob, decryptVoiceNoteRecord,
+    quarantineLegacyWritingRecords
 } from './voice-note-store.js';
 import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-writing-migration.js';
 
@@ -93,58 +94,100 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             const dates=new Set();
             for(let i=0;i<localStorage.length;i++){
                 const key=localStorage.key(i);
-                let match=key&&key.match(/^dmp_diary_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
+                let match=key&&key.match(/^dmp_diary_cipher_v1_(\\d{4}-\\d{2}-\\d{2})$/);
                 if(match)dates.add(match[1]);
-                match=key&&key.match(/^dmp_notes_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
+                match=key&&key.match(/^dmp_notes_cipher_v1_(\\d{4}-\\d{2}-\\d{2})$/);
                 if(match)dates.add(match[1]);
             }
+
             const migrated=[];
+            const quarantined=[];
+            const quarantine=(kind,id,dateString,record,error)=>{
+                const reason=String(error?.message||error||'Unspecified conversion error');
+                quarantined.push({kind,id,dateString,record,reason});
+                console.error('[Diary migration] Record quarantined in local IndexedDB; original ciphertext preserved.',{
+                    kind,id,dateString,reason,error
+                });
+            };
+
             for(const dateStr of dates){
                 const diaryKey=getSecureWritingStorageKey('diary',dateStr);
                 const notesKey=getSecureWritingStorageKey('notes',dateStr);
                 const diaryRecord=localStorage.getItem(diaryKey);
                 const notesRecord=localStorage.getItem(notesKey);
-                const nextDiary=diaryRecord===null?null:await migrateRecordToTargetKey(diaryRecord,{
-                    decryptTarget:value=>decryptPrivatePayload('diary',dateStr,value,targetKey),
-                    decryptLegacy:value=>decryptPrivatePayload('diary',dateStr,value,sourceKey),
-                    encryptTarget:value=>encryptPrivatePayload('diary',dateStr,value,targetKey)
-                });
-                const nextNotes=notesRecord===null?null:await migrateRecordToTargetKey(notesRecord,{
-                    decryptTarget:value=>decryptPrivatePayload('notes',dateStr,value,targetKey),
-                    decryptLegacy:value=>decryptPrivatePayload('notes',dateStr,value,sourceKey),
-                    encryptTarget:value=>encryptPrivatePayload('notes',dateStr,value,targetKey)
-                });
+                let nextDiary=diaryRecord,nextNotes=notesRecord;
+                let quarantineDiary=false,quarantineNotes=false;
+
+                if(diaryRecord!==null){
+                    try{
+                        nextDiary=await migrateRecordToTargetKey(diaryRecord,{
+                            decryptTarget:value=>decryptPrivatePayload('diary',dateStr,value,targetKey),
+                            decryptLegacy:value=>decryptPrivatePayload('diary',dateStr,value,sourceKey),
+                            encryptTarget:value=>encryptPrivatePayload('diary',dateStr,value,targetKey)
+                        });
+                    }catch(error){
+                        quarantine('diary',dateStr,dateStr,diaryRecord,error);
+                        nextDiary=null;
+                        quarantineDiary=true;
+                    }
+                }
+                if(notesRecord!==null){
+                    try{
+                        nextNotes=await migrateRecordToTargetKey(notesRecord,{
+                            decryptTarget:value=>decryptPrivatePayload('notes',dateStr,value,targetKey),
+                            decryptLegacy:value=>decryptPrivatePayload('notes',dateStr,value,sourceKey),
+                            encryptTarget:value=>encryptPrivatePayload('notes',dateStr,value,targetKey)
+                        });
+                    }catch(error){
+                        quarantine('notes',dateStr,dateStr,notesRecord,error);
+                        nextNotes=null;
+                        quarantineNotes=true;
+                    }
+                }
                 migrated.push({
                     diaryKey,notesKey,nextDiary,nextNotes,
-                    originalDiary:diaryRecord,originalNotes:notesRecord
+                    originalDiary:diaryRecord,originalNotes:notesRecord,
+                    quarantineDiary,quarantineNotes
                 });
             }
 
             const voiceRecords=await exportEncryptedVoiceNotes();
             const nextVoiceRecords=[];
-            for(const record of voiceRecords){
-                nextVoiceRecords.push(await migrateRecordToTargetKey(record,{
-                    decryptTarget:value=>decryptVoiceNoteRecord(value,targetKey),
-                    decryptLegacy:value=>decryptVoiceNoteRecord(value,sourceKey),
-                    encryptTarget:blob=>encryptVoiceNoteBlob(blob,targetKey,record.dateString,record.id,record.capturedAt)
-                }));
+            for(let index=0;index<voiceRecords.length;index+=1){
+                const record=voiceRecords[index];
+                try{
+                    nextVoiceRecords.push(await migrateRecordToTargetKey(record,{
+                        decryptTarget:value=>decryptVoiceNoteRecord(value,targetKey),
+                        decryptLegacy:value=>decryptVoiceNoteRecord(value,sourceKey),
+                        encryptTarget:blob=>encryptVoiceNoteBlob(blob,targetKey,record.dateString,record.id,record.capturedAt)
+                    }));
+                }catch(error){
+                    quarantine('voice',record?.id||index,record?.dateString,record,error);
+                }
             }
 
             const affectedDates=new Set([
                 ...dates,
-                ...voiceRecords.map(record=>record.dateString)
+                ...voiceRecords.map(record=>record?.dateString).filter(value=>typeof value==='string')
             ]);
-            let voiceRecordsReplaced=false;
             window.__faithFocusVaultMigration=true;
             try{
-                if(voiceRecords.length){
-                    await restoreEncryptedVoiceNotes(nextVoiceRecords);
-                    voiceRecordsReplaced=true;
-                }
+                // Store unreadable ciphertext in a separate IndexedDB quarantine
+                // object store before removing it from active Diary records. This
+                // avoids localStorage quota limits for large encrypted voice notes.
+                await quarantineLegacyWritingRecords(quarantined);
                 migrated.forEach(item=>{
-                    if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
-                    if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
+                    if(item.quarantineDiary)localStorage.removeItem(item.diaryKey);
+                    else if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
+                    if(item.quarantineNotes)localStorage.removeItem(item.notesKey);
+                    else if(item.nextNotes!==null)localStorage.setItem(item.notesKey,item.nextNotes);
                 });
+
+                // This IndexedDB replacement is transactional. Invalid legacy voice
+                // records have already been preserved in quarantine; valid records
+                // continue under the unified account key.
+                if(voiceRecords.length)await restoreEncryptedVoiceNotes(nextVoiceRecords);
+
                 writingCryptoKey=targetKey;
                 writingLoadedDate=null;
                 legacyMigrationRequired=false;
@@ -155,11 +198,6 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     if(item.originalNotes===null)localStorage.removeItem(item.notesKey);
                     else localStorage.setItem(item.notesKey,item.originalNotes);
                 });
-                if(voiceRecordsReplaced){
-                    try{await restoreEncryptedVoiceNotes(voiceRecords);}catch(rollbackError){
-                        throw new Error('Diary migration failed and the voice-note rollback also failed. Keep this browser profile unchanged and contact support before trying again.');
-                    }
-                }
                 throw error;
             }finally{
                 window.__faithFocusVaultMigration=false;
@@ -167,6 +205,7 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             affectedDates.forEach(dateString=>{
                 window.dispatchEvent(new CustomEvent('faith-focus:local-data-changed',{detail:{dateString}}));
             });
+            return {quarantinedCount:quarantined.length};
         }
 
         function bytesToBase64(bytes){let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);}
@@ -351,7 +390,7 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 return;
             }
             const passphrase=passInput.value,configText=localStorage.getItem(WRITING_CONFIG_KEY);
-            let previousPassphraseVerified=false;
+            let previousPassphraseVerified=false,quarantinedRecordCount=0;
             if(!hasWritingCrypto()){setWritingSecurityStatus('Secure browser encryption is unavailable. Open this app over HTTPS in a modern browser.','error');return;}
             if(!passphrase||passphrase.length<16){setWritingSecurityStatus('Please use a passphrase with at least 16 characters. Several unrelated words work well.','error');return;}
             button.disabled=true;button.textContent='Securing private writing…';
@@ -378,7 +417,11 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     // Stage plaintext migration first but keep every original source
                     // record until encrypted Diary and voice-note migration succeeds.
                     await migrateLegacyPrivateWriting(key,{preserveSource:true});
-                    await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    const migrationResult=await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    quarantinedRecordCount=migrationResult.quarantinedCount;
+                    if(migrationResult.quarantinedCount){
+                        console.warn('[Diary migration] Completed with '+migrationResult.quarantinedCount+' unreadable record(s) preserved in local quarantine. Valid Diary records were migrated.');
+                    }
                     cleanupLegacyPlaintextPrivateWriting();
                     legacyMigrationRequired=false;
                     legacyKeyUnavailable=false;
@@ -393,12 +436,16 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 legacyMigrationRequired=false;
                 legacyKeyUnavailable=false;
                 updatePrivateWritingAccess();
+                setWritingSecurityStatus(quarantinedRecordCount
+                    ?'Your Diary is unlocked. '+quarantinedRecordCount+' unreadable legacy record(s) were preserved in local quarantine; all readable entries were migrated. See the browser console for record-level details.'
+                    :'Your Diary is unlocked and its readable legacy entries were migrated to your unified account key.', quarantinedRecordCount?'info':'success');
                 const saveStatus=document.getElementById('writing-save-status');
                 if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
             }catch(error){
                 writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
+                console.error('[Diary migration] Migration failed after passphrase verification or during conversion:',error);
                 const message=previousPassphraseVerified
-                    ?'Your previous Diary passphrase was accepted, but at least one saved entry could not be converted. The original encrypted entries remain in place. Please keep this browser profile unchanged and contact support with this message.'
+                    ?'Your previous Diary passphrase was accepted, but the migration could not finish safely. Original encrypted entries remain preserved. See the browser console for the exact failure reason.'
                     :error?.message==='The passphrase did not match.'
                         ?'That passphrase did not match the saved previous Diary key. No encrypted entries were changed.'
                         :error?.message==='The two passphrases do not match.'

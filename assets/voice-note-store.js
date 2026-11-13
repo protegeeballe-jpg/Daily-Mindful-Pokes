@@ -1,6 +1,7 @@
 const VOICE_NOTE_DB_NAME = 'faith_focus_private_voice_notes_v1';
-const VOICE_NOTE_DB_VERSION = 1;
+const VOICE_NOTE_DB_VERSION = 2;
 const VOICE_NOTE_STORE_NAME = 'voiceNotes';
+const LEGACY_QUARANTINE_STORE_NAME = 'legacyQuarantine';
 const VOICE_NOTE_ID_PATTERN = /^(\d{4}-\d{2}-\d{2})-([a-f0-9]{32})$/;
 const VOICE_NOTE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -120,6 +121,9 @@ function openVoiceNoteDatabase() {
                 const store = database.createObjectStore(VOICE_NOTE_STORE_NAME, { keyPath: 'id' });
                 store.createIndex('dateString', 'dateString', { unique: false });
             }
+            if (!database.objectStoreNames.contains(LEGACY_QUARANTINE_STORE_NAME)) {
+                database.createObjectStore(LEGACY_QUARANTINE_STORE_NAME, { keyPath: 'quarantineId' });
+            }
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error || new Error('Could not open local voice-note storage.'));
@@ -205,6 +209,41 @@ export async function exportEncryptedVoiceNotes() {
         return dateOrder || Date.parse(left.capturedAt) - Date.parse(right.capturedAt);
     });
     return records;
+}
+
+export async function quarantineLegacyWritingRecords(records) {
+    if (!Array.isArray(records) || records.length > 10000
+        || records.some(item => !item || typeof item.kind !== 'string' || !Object.prototype.hasOwnProperty.call(item, 'record'))) {
+        throw new TypeError('The legacy writing quarantine payload is invalid.');
+    }
+    if (!records.length) return [];
+    const database = await openVoiceNoteDatabase();
+    try {
+        const transaction = database.transaction(LEGACY_QUARANTINE_STORE_NAME, 'readwrite');
+        const completed = waitForTransaction(transaction);
+        const store = transaction.objectStore(LEGACY_QUARANTINE_STORE_NAME);
+        const ids = [];
+        records.forEach((item, index) => {
+            const random = crypto.getRandomValues(new Uint8Array(8));
+            const suffix = Array.from(random, byte => byte.toString(16).padStart(2, '0')).join('');
+            const quarantineId = 'legacy-' + Date.now().toString(36) + '-' + index + '-' + suffix;
+            ids.push(quarantineId);
+            store.add({
+                quarantineId,
+                version: 1,
+                kind: item.kind,
+                dateString: typeof item.dateString === 'string' ? item.dateString : null,
+                originalId: item.id == null ? null : String(item.id),
+                record: item.record,
+                reason: String(item.reason || 'Unspecified legacy migration failure'),
+                quarantinedAt: new Date().toISOString()
+            });
+        });
+        await completed;
+        return ids;
+    } finally {
+        database.close();
+    }
 }
 
 export async function restoreEncryptedVoiceNotes(records) {

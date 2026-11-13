@@ -638,6 +638,11 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
     font-weight:800;
     box-shadow:0 2px 0 rgba(104,69,138,.08);
 }
+.vault-sync-indicator {margin:.35rem 0 .7rem;color:#81758c;font-size:.65rem;font-weight:700;letter-spacing:.01em;}
+#vault-sync-indicator {display:inline-flex;align-items:center;gap:.35rem;}
+#vault-sync-indicator[data-state="success"] {color:#23834d;}
+#vault-sync-indicator[data-state="info"] {color:#a07826;}
+#vault-sync-indicator[data-state="error"] {color:#b33d4b;}
 .diary-notebook-button > span:first-child {font-size:1.1rem;line-height:1;}
 .diary-notebook-button:hover {background:#faf6ff;}
 .diary-notebook-button:focus-visible,

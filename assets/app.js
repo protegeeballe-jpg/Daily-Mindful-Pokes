@@ -954,7 +954,11 @@ import {
         }
 
         async function openDiaryArchiveDate(dateString) {
-            if (!writingCryptoKey || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)) return;
+            console.log('[Diary Notebook] Date selected:', { dateString, diaryUnlocked: Boolean(writingCryptoKey) });
+            if (!writingCryptoKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                console.warn('[Diary Notebook] Date selection ignored because the Diary is locked or the date is invalid.', { dateString });
+                return;
+            }
 
             const editor = document.getElementById('private-diary-entry');
             const recordButton = document.getElementById('record-btn');
@@ -963,6 +967,7 @@ import {
             try {
                 await flushPrivateWritingQueue();
                 await loadPrivateWritingForDate(dateString);
+                console.log('[Diary Notebook] Decrypted Diary entry loaded:', { dateString });
                 diaryViewingHistoricalDate = dateString;
                 editor.value = typeof editor.value === 'string' ? editor.value : '';
                 editor.readOnly = true;
@@ -989,6 +994,7 @@ import {
                 if (label) label.textContent = formatDiaryArchiveDate(dateString) + ' · SAVED ENTRY';
                 document.getElementById('diary-return-today')?.classList.remove('hidden');
             } catch (error) {
+                console.error('[Diary Notebook] Could not open selected saved date:', { dateString, error });
                 setWritingSecurityStatus('This saved Diary date could not be opened. Your existing entries were not changed. '
                     + (error?.message || ''), 'error');
             }
