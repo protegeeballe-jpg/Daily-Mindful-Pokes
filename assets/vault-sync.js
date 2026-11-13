@@ -529,12 +529,28 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
     // Reconcile both device copies by record type. Private writing is decrypted
     // only with the unlocked account key; voice notes and location history are
     // unioned, while checklist completion is combined without unchecking either side.
-    const mergedBundle = await mergeDailyBundles(localBundle, remoteBundle, {
-      dateString,
-      mergePrivateWriting: (localWriting, remoteWriting) =>
-        mergeEncryptedPrivateWritingRecords(dateString, localWriting, remoteWriting, activeVault.encryptionKey),
-      isUsableLegacyWritingConfig
-    });
+    let mergedBundle;
+    try {
+      mergedBundle = await mergeDailyBundles(localBundle, remoteBundle, {
+        dateString,
+        mergePrivateWriting: (localWriting, remoteWriting) =>
+          mergeEncryptedPrivateWritingRecords(dateString, localWriting, remoteWriting, activeVault.encryptionKey),
+        isUsableLegacyWritingConfig
+      });
+    } catch (error) {
+      // A legacy-key or otherwise unreadable private entry must never prevent
+      // account login. Keep both encrypted packets intact and retry after the
+      // device completes its one-time Diary key migration.
+      console.warn('[Vault Sync] Same-day Diary merge is deferred; both encrypted packets remain preserved:', {
+        dateString,
+        reason: error?.message || String(error)
+      });
+      status(
+        'Your account is open, but one device has a Diary entry that still needs its previous writing key. Both encrypted copies are preserved. Complete the one-time Diary migration, then sync again.',
+        'error'
+      );
+      return false;
+    }
     const mergedPacket = await encryptDailyBundle(mergedBundle, activeVault.encryptionKey, compressData);
     const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
       method: 'PUT',
