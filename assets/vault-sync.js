@@ -766,15 +766,27 @@ async function flushVaultSync() {
   }
 }
 
-export async function stopVaultSync() {
+export async function stopVaultSync({ flushRemote = true } = {}) {
   if (foregroundRefreshCleanup) {
     foregroundRefreshCleanup();
     foregroundRefreshCleanup = null;
   }
   if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
   cloudDebounceTimer = null;
-  await flushVaultSync();
+
   if (activeVault) {
+    if (flushRemote) {
+      await flushVaultSync();
+    } else {
+      // Save and encrypt local changes before locking, but do not wait for a
+      // network round-trip. Dirty IndexedDB packets remain queued for next login.
+      await stopRegisteredVoiceNoteRecording();
+      await flushAndSaveCurrentPrivateWriting();
+      for (const queue of localCaptureQueues.values()) await queue;
+      if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
+      cloudDebounceTimer = null;
+      pendingCloudDates.clear();
+    }
     window.removeEventListener('online', handleOnline);
     window.removeEventListener('offline', handleOffline);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
