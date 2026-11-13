@@ -150,7 +150,7 @@ function mergeConfidenceScore(localValue, remoteValue) {
     if (Number.isFinite(localNumber) && Number.isFinite(remoteNumber)) {
         return String(Math.max(localNumber, remoteNumber));
     }
-    return localValue === remoteValue ? remoteValue : remoteValue;
+    return remoteValue;
 }
 
 export async function mergeDailyBundles(localBundle, remoteBundle, {
