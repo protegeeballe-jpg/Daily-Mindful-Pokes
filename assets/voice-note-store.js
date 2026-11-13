@@ -213,7 +213,7 @@ export async function exportEncryptedVoiceNotes() {
 
 export async function quarantineLegacyWritingRecords(records) {
     if (!Array.isArray(records) || records.length > 10000
-        || records.some(item => !item || typeof item.kind !== 'string' || !item.record)) {
+        || records.some(item => !item || typeof item.kind !== 'string' || !Object.prototype.hasOwnProperty.call(item, 'record'))) {
         throw new TypeError('The legacy writing quarantine payload is invalid.');
     }
     if (!records.length) return [];
