@@ -8,7 +8,7 @@ import {
 } from './vault-storage.js';
 import {
   exportEncryptedVoiceNotes, exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate,
-  validateEncryptedVoiceNoteRecord
+  validateEncryptedVoiceNoteRecord, quarantineVoiceNoteRecords
 } from './voice-note-store.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
 import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording } from './writing-security.js';
@@ -111,8 +111,8 @@ function validateDailyBundleForEncryption(bundle, expectedDate) {
     fail('the daily checklist record must contain a JSON object.');
   }
 
-  if (!Array.isArray(bundle.voiceNotes) || bundle.voiceNotes.length > 100) {
-    fail('voice notes must be an array containing no more than 100 records.');
+  if (!Array.isArray(bundle.voiceNotes) || bundle.voiceNotes.length > 1000) {
+    fail('voice notes must be an array containing no more than 1,000 records.');
   }
   const voiceIds = new Set();
   for (const note of bundle.voiceNotes) {
@@ -144,6 +144,38 @@ function validateDailyBundleForEncryption(bundle, expectedDate) {
     fail('the uncompressed daily bundle exceeds the 2 MiB frontend safety limit.');
   }
   return serializedBytes;
+}
+
+async function getSafeVoiceNotesForDate(dateString) {
+  const stored = await exportEncryptedVoiceNotesForDate(dateString);
+  const valid = [];
+  const invalid = [];
+  const seen = new Set();
+  for (const record of stored) {
+    const readableShape = validateEncryptedVoiceNoteRecord(record)
+      && record.dateString === dateString
+      && !seen.has(record.id);
+    if (readableShape) {
+      seen.add(record.id);
+      valid.push(record);
+    } else {
+      invalid.push({
+        kind: 'local-voice-note',
+        id: record?.id,
+        dateString: record?.dateString || dateString,
+        record,
+        reason: 'Malformed, unsupported, duplicate, or wrong-date local encrypted voice-note record'
+      });
+      console.error('[Vault Sync] Invalid local voice note skipped and preserved in quarantine:', {
+        vaultId: activeVault?.vaultId || null,
+        expectedDate: dateString, id: record?.id, receivedDate: record?.dateString
+      });
+    }
+  }
+  if (invalid.length) {
+    await quarantineVoiceNoteRecords(invalid, { removeFromActive: true });
+  }
+  return valid;
 }
 
 async function buildDailyBundle(dateString) {
@@ -186,7 +218,7 @@ async function buildDailyBundle(dateString) {
   checklist.cloud_flow_version = 1;
   records[checklistKey] = JSON.stringify(checklist);
 
-  const voiceNotes = await exportEncryptedVoiceNotesForDate(dateString);
+  const voiceNotes = await getSafeVoiceNotesForDate(dateString);
   return {
     format: 'faith-focus-daily-bundle',
     version: 1,
