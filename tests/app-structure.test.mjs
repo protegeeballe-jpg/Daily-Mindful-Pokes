@@ -245,7 +245,17 @@ test('water animation runs for five seconds before asking the user to take their
  assert.match(app,/activeModalAction\s*=\s*'waiting-for-drink'/);
 });
 test('animal stickers are removed from checklist launchers while Show me animations remain',()=>{
- assert.match(app,/guideButton\.innerHTML = '<span class="guide-play-icon"/);
+ assert.match(app,/const guideButton = document\.createElement\('button'\)/);
+ assert.match(app,/guideButton\.type = 'button'/);
+ assert.match(app,/guideButton\.className = 'guide-launch'/);
+ assert.match(app,/const playIcon = document\.createElement\('span'\)/);
+ assert.match(app,/playIcon\.className = 'guide-play-icon'/);
+ assert.match(app,/playIcon\.setAttribute\('aria-hidden',\s*'true'\)/);
+ assert.match(app,/playIcon\.textContent = '▶'/);
+ assert.match(app,/const guideLabel = document\.createElement\('span'\)/);
+ assert.match(app,/guideLabel\.textContent = 'Show me'/);
+ assert.match(app,/guideButton\.append\(playIcon,\s*guideLabel\)/);
+ assert.match(app,/guideButton\.addEventListener\('click',\s*\(\)\s*=>\s*openModal\('guided',\s*id\)\)/);
  assert.doesNotMatch(app,/guide-buddy/);
  const guideBlock=app.slice(app.indexOf('const guideContent'),app.indexOf('function stopBreathingTimer'));
  assert.doesNotMatch(guideBlock,/🐻|🐰|🐱|🐼|🐨|🦊|🐣|🐥|🦉/);
