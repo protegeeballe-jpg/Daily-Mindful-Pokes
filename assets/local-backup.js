@@ -80,6 +80,13 @@ async function importBackupFile(file) {
     return;
   }
   if (!file) return;
+  const fileName = String(file.name || '').toLowerCase();
+  const fileType = String(file.type || '').toLowerCase().split(';')[0].trim();
+  if (!fileName.endsWith('.json')
+      || (fileType && !['application/json', 'text/json'].includes(fileType))) {
+    setStatus('Choose a valid .json encrypted vault backup file.', 'error');
+    return;
+  }
   if (file.size > MAX_IMPORT_BYTES) {
     setStatus('This JSON file exceeds the 50 MB import limit.', 'error');
     return;
