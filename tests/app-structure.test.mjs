@@ -390,6 +390,21 @@ test('Interactive Ecosystem and trophy rewards appear only in the Grand Finale, 
  assert.match(finaleMarkup,/Claim Victory/);
  assert.match(appCss,/\.finale-ecosystem-card/);
 });
+test('the six-card Grand Finale is shown only once per date, including after reload and repeated Finish clicks',()=>{
+ const start=app.indexOf('function checkSectionCompletion()');
+ const end=app.indexOf('function closeGrandFinale()',start);
+ const completion=app.slice(start,end);
+ const finishStart=app.indexOf('function finishChecklist()');
+ const finishEnd=app.indexOf('let breathingTimer',finishStart);
+ const finish=app.slice(finishStart,finishEnd);
+ assert.match(completion,/if \(completedCards === 6 && !localStorage\.getItem\(scoreAwardedKey\)\)/);
+ assert.match(completion,/localStorage\.setItem\(scoreAwardedKey, 'true'\)[\s\S]*?trophyBanner\.classList\.remove\('hidden'\)/);
+ assert.match(completion,/scheduleMissedCardVictoryReturn\(dateStr\)/);
+ assert.match(finish,/checkSectionCompletion\(\)/);
+ assert.doesNotMatch(finish,/grand-finale-overlay.*classList\.remove|trophy-banner.*classList\.remove/);
+ assert.match(completion,/else if \(completedCards !== 6\)/);
+});
+
 test('The ecosystem canvas is measured after the Grand Finale opens and completion points remain idempotent',()=>{
  const start=app.indexOf('function checkSectionCompletion()');
  const end=app.indexOf('function closeGrandFinale()',start);
