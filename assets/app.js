@@ -1223,6 +1223,7 @@ import {
                 await loadPrivateWritingForDate(dateString);
                 console.log('[Diary Notebook] Decrypted Diary entry loaded:', { dateString });
                 diaryViewingHistoricalDate = dateString;
+                updateDiaryDateAccess(dateString);
                 editor.value = typeof editor.value === 'string' ? editor.value : '';
                 editor.readOnly = true;
                 editor.setAttribute('aria-label', 'Read-only Diary entry for ' + formatDiaryArchiveDate(dateString));
@@ -1265,12 +1266,7 @@ import {
                 editor.removeAttribute('aria-label');
                 editor.placeholder = 'Your private thoughts are encrypted before they are saved on this device.';
             }
-            if (recordButton) {
-                recordButton.disabled = false;
-                recordButton.removeAttribute('aria-disabled');
-                recordButton.removeAttribute('title');
-                recordButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
+            updateDiaryDateAccess(getCurrentWritingDate());
             handleDateChange().catch(error =>
                 setWritingSecurityStatus('Your current Diary page could not be restored. Saved entries remain unchanged. '
                     + (error?.message || ''), 'error')
@@ -1280,6 +1276,52 @@ import {
         function updateDiaryDateLabel(dateString = getCurrentWritingDate()) {
             const label = document.getElementById('diary-current-date-label');
             if (label) label.textContent = formatDiaryArchiveDate(dateString);
+        }
+
+        function updateDiaryDateAccess(dateString = getCurrentWritingDate()) {
+            const isToday = dateString === getDeviceLocalDateString();
+            const canEditCurrentDiary = isToday
+                && !diaryViewingHistoricalDate
+                && Boolean(writingCryptoKey)
+                && writingLoadedDate === dateString;
+            const editor = document.getElementById('private-diary-entry');
+            const recordButton = document.getElementById('record-btn');
+            const updateButton = document.getElementById('diary-update-button');
+
+            if (editor) {
+                editor.readOnly = !canEditCurrentDiary;
+                if (canEditCurrentDiary) {
+                    editor.removeAttribute('aria-label');
+                    editor.placeholder = 'Your private thoughts are encrypted before they are saved on this device.';
+                } else {
+                    editor.setAttribute('aria-label', 'Read-only Diary entry for ' + formatDiaryArchiveDate(dateString));
+                    editor.placeholder = 'Past Diary entries are read-only.';
+                }
+            }
+            if (recordButton) {
+                recordButton.disabled = !canEditCurrentDiary || mediaRecorder?.state === 'recording';
+                recordButton.classList.toggle('opacity-50', !canEditCurrentDiary);
+                recordButton.classList.toggle('cursor-not-allowed', !canEditCurrentDiary);
+                if (canEditCurrentDiary) {
+                    recordButton.removeAttribute('aria-disabled');
+                    recordButton.removeAttribute('title');
+                } else {
+                    recordButton.setAttribute('aria-disabled', 'true');
+                    recordButton.title = 'New voice notes can only be recorded for today. Previous recordings are read-only.';
+                }
+            }
+            if (updateButton) {
+                updateButton.classList.toggle('hidden', !canEditCurrentDiary);
+                updateButton.disabled = !canEditCurrentDiary;
+            }
+
+            // Location check-ins are append-only history. Past dates may be viewed,
+            // but their location selectors cannot be changed or used to add captures.
+            document.querySelectorAll('#card-step-1 .app-chk.sec-1').forEach(checkbox => {
+                checkbox.disabled = !isToday;
+                if (isToday) checkbox.removeAttribute('aria-disabled');
+                else checkbox.setAttribute('aria-disabled', 'true');
+            });
         }
 
         function revokeDiaryVoiceNoteUrls() {
@@ -1363,6 +1405,7 @@ import {
         document.addEventListener('private-writing:locked', () => {
             clearDiaryVoiceNotePlayback();
             closeDiaryArchive();
+            updateDiaryDateAccess(getCurrentWritingDate());
         });
         registerVoiceNoteStopHandler(stopActiveVoiceRecording);
 
@@ -1372,6 +1415,10 @@ import {
 
             const dateString = document.getElementById('currentDate')?.value;
             if (!dateString) return;
+            if (dateString !== getDeviceLocalDateString()) {
+                setLocationCheckinMessage('Past location history is permanent and cannot be changed.', 'info');
+                return;
+            }
 
             if (!navigator.geolocation) {
                 setLocationCheckinMessage('This browser does not provide location access. The location was not recorded.', 'error');
@@ -1968,6 +2015,7 @@ import {
             if(writingCryptoKey&&previousDate)await savePrivateWritingForDate(previousDate);
             loadData();
             const dateString = getCurrentWritingDate();
+            updateDiaryDateAccess(dateString);
             if (diaryViewingHistoricalDate) {
                 const historicalDate = diaryViewingHistoricalDate;
                 const editor = document.getElementById('private-diary-entry');
@@ -1981,6 +2029,7 @@ import {
             if(writingCryptoKey){
                 try {
                     await loadPrivateWritingForDate(dateString);
+                    updateDiaryDateAccess(dateString);
                     renderDiaryLocationLogs(dateString);
                     await renderDiaryVoiceNotes(dateString);
                     updateDiaryDateLabel(dateString);
@@ -2056,7 +2105,13 @@ import {
         }
 
         async function startVoiceNoteRecording() {
+            const dateString = getCurrentWritingDate();
             if (!writingCryptoKey) throw new Error('Unlock your Diary before recording a voice note.');
+            if (dateString !== getDeviceLocalDateString()
+                || writingLoadedDate !== dateString
+                || diaryViewingHistoricalDate) {
+                throw new Error('New voice notes can only be recorded on today’s Diary page. Previous voice notes are read-only.');
+            }
             if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
                 throw new Error('This browser does not support voice recording.');
             }
@@ -2165,7 +2220,48 @@ import {
             if (voiceNoteStopPromise) await voiceNoteStopPromise;
         }
 
+        async function updateCurrentDiary() {
+            const dateString = getCurrentWritingDate();
+            const canUpdate = dateString === getDeviceLocalDateString()
+                && writingLoadedDate === dateString
+                && Boolean(writingCryptoKey)
+                && !diaryViewingHistoricalDate;
+            const button = document.getElementById('diary-update-button');
+            if (!canUpdate) {
+                updateDiaryDateAccess(dateString);
+                setWritingSecurityStatus('Only today’s Diary page can be updated. Previous entries remain read-only.', 'info');
+                return;
+            }
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Updating…';
+            }
+            try {
+                // This also finishes an in-progress recording before confirming the update.
+                await flushAndSaveCurrentPrivateWriting();
+                await renderDiaryVoiceNotes(dateString);
+                setWritingSecurityStatus('Today’s Diary page and its saved voice notes are up to date on this device.', 'success');
+            } catch (error) {
+                setWritingSecurityStatus('The current Diary page could not be updated. Your visible text remains here. '
+                    + (error?.message || ''), 'error');
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = 'Update';
+                }
+            }
+        }
+
         async function toggleVoiceRecording() {
+            const dateString = getCurrentWritingDate();
+            if (dateString !== getDeviceLocalDateString()
+                || writingLoadedDate !== dateString
+                || diaryViewingHistoricalDate) {
+                setWritingSecurityStatus('New voice notes can only be recorded on today’s Diary page. Previous recordings are read-only.', 'info');
+                updateDiaryDateAccess(dateString);
+                return;
+            }
             const recordBtn = document.getElementById('record-btn');
             const recordText = document.getElementById('record-text');
 
@@ -2200,6 +2296,7 @@ import {
             const now=new Date();
             const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
             document.getElementById('currentDate').value=today;
+            updateDiaryDateAccess(today);
             updateDeviceClock();
             window.setInterval(updateDeviceClock,15000);
             attachChecklistCartoons();
@@ -2228,6 +2325,7 @@ import {
             lockPrivateWriting:()=>lockPrivateWriting(),
             resetDayData:()=>resetDayData(),
             toggleVoiceRecording:()=>toggleVoiceRecording(),
+            updateCurrentDiary:()=>updateCurrentDiary(),
             copyLocationCoordinates:button=>copyLocationCoordinates(button)
         };
         document.addEventListener('click',event=>{
@@ -2267,6 +2365,7 @@ import {
             if (writingCryptoKey) {
                 try {
                     await loadPrivateWritingForDate(dateString);
+                    updateDiaryDateAccess(dateString);
                     renderDiaryLocationLogs(dateString);
                     await renderDiaryVoiceNotes(dateString);
                 } catch (error) {
