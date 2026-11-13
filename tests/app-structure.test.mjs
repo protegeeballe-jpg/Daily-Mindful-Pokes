@@ -806,6 +806,8 @@ test('Garden snapshots are embedded in daily packets and merged without discardi
  assert.match(vaultSync,/restoreSharedAppState\(remoteBundle\)/);
  assert.match(vaultSync,/await publishSharedStateMerge\(dateString, remote, remoteBundle\)/);
  assert.match(vaultSync,/baseUpdatedAt: remote\.updatedAt \|\| null/);
- assert.match(vaultSync,/dates\.add\(getCurrentDateString\(\)\)/);
+ assert.doesNotMatch(vaultSync,/dates\.add\(getCurrentDateString\(\)\)/);
+ assert.match(vaultSync,/Only create local packets for dates that actually contain daily records or/);
+ assert.match(vaultSync,/await captureExistingLocalDates\(\);[\s\S]*?await synchronizeVault\(\);[\s\S]*?await captureDailyPacket\(getCurrentDateString\(\)\);[\s\S]*?await synchronizeVault\(\);/);
  assert.match(vaultSync,/isUsableLegacyWritingConfig\(remoteLegacyConfig\)/);
 });
