@@ -32,6 +32,21 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             return false;
         }
 
+        async function hasLegacyEncryptedRecordReadableWithKey(key){
+            for(let index=0;index<localStorage.length;index++){
+                const storageKey=localStorage.key(index);
+                const match=storageKey&&storageKey.match(/^dmp_(diary|notes)_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
+                if(!match)continue;
+                const kind=match[1],dateString=match[2],record=localStorage.getItem(storageKey);
+                if(await isRecordReadableWithKey(record,value=>decryptPrivatePayload(kind,dateString,value,key)))return true;
+            }
+            const voiceNotes=await exportEncryptedVoiceNotes();
+            for(const record of voiceNotes){
+                if(await isRecordReadableWithKey(record,value=>decryptVoiceNoteRecord(value,key)))return true;
+            }
+            return false;
+        }
+
         function hasLegacyPrivateRecords(){
             for(let i=0;i<localStorage.length;i++){
                 const key=localStorage.key(i);
@@ -53,7 +68,7 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             const voiceNotes=await exportEncryptedVoiceNotes();
             const legacyConfigExists=Boolean(localStorage.getItem(WRITING_CONFIG_KEY));
             const encryptedRecordsNeedPreviousKey=await hasEncryptedRecordsOutsideKey(vaultPrimaryKey,voiceNotes);
-            legacyMigrationRequired=legacyConfigExists&&encryptedRecordsNeedPreviousKey;
+            legacyMigrationRequired=encryptedRecordsNeedPreviousKey;
             legacyKeyUnavailable=!legacyConfigExists&&encryptedRecordsNeedPreviousKey;
             if(legacyMigrationRequired){
                 writingCryptoKey=null;
@@ -66,7 +81,7 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 writingCryptoKey=null;
                 writingLoadedDate=null;
                 updatePrivateWritingAccess();
-                setWritingSecurityStatus('Some encrypted Diary records could not be opened with this account key, and this device has no saved previous-key verification record. Your entries were left untouched. Do not create a new Diary key or clear this browser’s site data. Contact the app maintainer for recovery guidance.','error');
+                setWritingSecurityStatus('Some encrypted Diary entries still need the previous Diary key, and its saved settings are missing on this device. Enter your previous Diary passphrase to try recovery. Your original encrypted entries remain untouched unless the correct key can open them.','info');
                 return {legacyMigrationRequired:false,legacyKeyUnavailable:true};
             }
             writingCryptoKey=vaultPrimaryKey;
@@ -94,9 +109,9 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             const dates=new Set();
             for(let i=0;i<localStorage.length;i++){
                 const key=localStorage.key(i);
-                let match=key&&key.match(/^dmp_diary_cipher_v1_(\\d{4}-\\d{2}-\\d{2})$/);
+                let match=key&&key.match(/^dmp_diary_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
                 if(match)dates.add(match[1]);
-                match=key&&key.match(/^dmp_notes_cipher_v1_(\\d{4}-\\d{2}-\\d{2})$/);
+                match=key&&key.match(/^dmp_notes_cipher_v1_(\d{4}-\d{2}-\d{2})$/);
                 if(match)dates.add(match[1]);
             }
 
@@ -249,10 +264,12 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             document.getElementById('diary-lock-panel')?.classList.remove('hidden');
             document.getElementById('diary-editor-panel')?.classList.add('hidden');
             if(legacyKeyUnavailable){
-                if(heading)heading.textContent='Diary key recovery required';
-                if(intro)intro.textContent='Some encrypted entries could not be opened with this account key, and the previous Diary key verifier is missing on this device. Your encrypted entries remain untouched. Do not create a new Diary key or clear site data.';
+                if(heading)heading.textContent='One-time Diary migration';
+                if(intro)intro.textContent='The previous Diary key settings are missing on this device. Enter the passphrase you used before to try unlocking the older encrypted entries. Your original encrypted entries will remain untouched unless the correct key opens them.';
                 confirmWrap?.classList.add('hidden');
-                if(button){button.disabled=true;button.textContent='Recovery guidance required';}
+                if(button){button.disabled=false;button.textContent='Try previous Diary passphrase';}
+                const pass=document.getElementById('diary-passphrase');
+                if(pass){pass.autocomplete='current-password';pass.placeholder='Enter your previous Diary passphrase';}
                 return;
             }
             if(heading)heading.textContent=legacyMigrationRequired?'One-time Diary migration':configured?'Unlock your private writing':'Create your private writing key';
@@ -385,10 +402,6 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
         }
         async function handleDiaryKeyAction(){
             const passInput=document.getElementById('diary-passphrase'),confirmInput=document.getElementById('diary-passphrase-confirm'),button=document.getElementById('diary-key-action');
-            if(legacyKeyUnavailable){
-                setWritingSecurityStatus('The saved previous Diary key verifier is missing. Your existing encrypted entries were not changed. Do not create a replacement key or clear site data.','error');
-                return;
-            }
             const passphrase=passInput.value,configText=localStorage.getItem(WRITING_CONFIG_KEY);
             let previousPassphraseVerified=false,quarantinedRecordCount=0;
             if(!hasWritingCrypto()){setWritingSecurityStatus('Secure browser encryption is unavailable. Open this app over HTTPS in a modern browser.','error');return;}
@@ -397,6 +410,9 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             try{
                 let key;
                 if(!configText){
+                    if(vaultPrimaryKey&&legacyMigrationRequired){
+                        throw new Error('The previous Diary key settings are unavailable on this device. Sign in on the device that still has the previous Diary settings and let it sync first. Your encrypted entries remain untouched.');
+                    }
                     if(passphrase!==confirmInput.value)throw new Error('The two passphrases do not match.');
                     const salt=crypto.getRandomValues(new Uint8Array(16));
                     key=await derivePrivateWritingKey(passphrase,salt,WRITING_KDF_ITERATIONS);
@@ -405,12 +421,19 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     localStorage.setItem(WRITING_CONFIG_KEY,JSON.stringify({version:1,algorithm:'AES-256-GCM',kdf:'PBKDF2-HMAC-SHA-256',iterations:WRITING_KDF_ITERATIONS,salt:bytesToBase64(salt),verifierIv:bytesToBase64(verifyIv),verifierCiphertext:bytesToBase64(new Uint8Array(verifier))}));
                 }else{
                     const config=JSON.parse(configText);
-                    if(config.version!==1||config.algorithm!=='AES-256-GCM'||config.kdf!=='PBKDF2-HMAC-SHA-256'||config.iterations!==WRITING_KDF_ITERATIONS)throw new Error('The saved encryption settings are unsupported or have been changed.');
+                    if(config.version!==1||config.algorithm!=='AES-256-GCM'||config.kdf!=='PBKDF2-HMAC-SHA-256'||config.iterations!==WRITING_KDF_ITERATIONS||typeof config.salt!=='string')throw new Error('The saved previous Diary key settings are incomplete.');
                     key=await derivePrivateWritingKey(passphrase,base64ToBytes(config.salt),config.iterations);
-                    let verified;
-                    try{verified=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(config.verifierIv),additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,base64ToBytes(config.verifierCiphertext));}
-                    catch(error){throw new Error('The passphrase did not match.');}
-                    if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('The passphrase did not match.');
+                    const hasVerifier=typeof config.verifierIv==='string'&&typeof config.verifierCiphertext==='string';
+                    if(hasVerifier){
+                        let verified;
+                        try{verified=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(config.verifierIv),additionalData:new TextEncoder().encode('Daily Mindful Pokes|key-verifier|v1'),tagLength:128},key,base64ToBytes(config.verifierCiphertext));}
+                        catch(error){throw new Error('Incorrect previous Diary passphrase.');}
+                        if(new TextDecoder().decode(verified)!==WRITING_CHECK_TEXT)throw new Error('Incorrect previous Diary passphrase.');
+                    }else{
+                        // Test the derived key directly against original encrypted entries.
+                        const openedLegacyRecord=await hasLegacyEncryptedRecordReadableWithKey(key);
+                        if(!openedLegacyRecord)throw new Error('Incorrect previous Diary passphrase.');
+                    }
                     previousPassphraseVerified=true;
                 }
                 if(vaultPrimaryKey&&legacyMigrationRequired){
@@ -446,8 +469,8 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 console.error('[Diary migration] Migration failed after passphrase verification or during conversion:',error);
                 const message=previousPassphraseVerified
                     ?'Your previous Diary passphrase was accepted, but the migration could not finish safely. Original encrypted entries remain preserved. See the browser console for the exact failure reason.'
-                    :error?.message==='The passphrase did not match.'
-                        ?'That passphrase did not match the saved previous Diary key. No encrypted entries were changed.'
+                    :error?.message==='Incorrect previous Diary passphrase.'
+                        ?'Incorrect previous Diary passphrase. No encrypted entries were changed.'
                         :error?.message==='The two passphrases do not match.'
                             ?error.message
                             :'Could not unlock or migrate private writing. Existing entries were left in place. '+(error?.message||'');
