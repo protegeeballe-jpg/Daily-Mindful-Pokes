@@ -215,13 +215,30 @@ export async function loadEncryptedVoiceNotes(dateString, key) {
     const records = await getStoredRecords(dateString);
     records.sort((left, right) => Date.parse(left.capturedAt) - Date.parse(right.capturedAt));
     const notes = [];
+    const unreadable = [];
     for (const record of records) {
-        notes.push({
-            id: record.id,
-            dateString: record.dateString,
-            capturedAt: record.capturedAt,
-            blob: await decryptVoiceNoteRecord(record, key)
-        });
+        try {
+            notes.push({
+                id: record.id,
+                dateString: record.dateString,
+                capturedAt: record.capturedAt,
+                blob: await decryptVoiceNoteRecord(record, key)
+            });
+        } catch (error) {
+            unreadable.push({
+                kind: 'voice-note',
+                id: record?.id,
+                dateString: record?.dateString,
+                record,
+                reason: error?.message || 'Voice-note decryption failed'
+            });
+            console.error('[Diary Voice Note] An unreadable record was skipped and preserved in local quarantine.', {
+                id: record?.id, dateString: record?.dateString, error
+            });
+        }
+    }
+    if (unreadable.length) {
+        await quarantineVoiceNoteRecords(unreadable, { removeFromActive: true });
     }
     return notes;
 }
@@ -265,6 +282,49 @@ export async function quarantineLegacyWritingRecords(records) {
         });
         await completed;
         return ids;
+    } finally {
+        database.close();
+    }
+}
+
+export async function quarantineVoiceNoteRecords(records, { removeFromActive = false } = {}) {
+    if (!Array.isArray(records) || records.length > 10000
+        || records.some(item => !item || typeof item.kind !== 'string'
+            || !Object.prototype.hasOwnProperty.call(item, 'record'))) {
+        throw new TypeError('The voice-note quarantine payload is invalid.');
+    }
+    if (!records.length) return [];
+    const database = await openVoiceNoteDatabase();
+    try {
+        const transaction = database.transaction(
+            removeFromActive
+                ? [VOICE_NOTE_STORE_NAME, LEGACY_QUARANTINE_STORE_NAME]
+                : [LEGACY_QUARANTINE_STORE_NAME],
+            'readwrite'
+        );
+        const completed = waitForTransaction(transaction);
+        const quarantineStore = transaction.objectStore(LEGACY_QUARANTINE_STORE_NAME);
+        const activeStore = removeFromActive ? transaction.objectStore(VOICE_NOTE_STORE_NAME) : null;
+        const quarantineIds = [];
+        records.forEach((item, index) => {
+            const random = crypto.getRandomValues(new Uint8Array(8));
+            const suffix = Array.from(random, byte => byte.toString(16).padStart(2, '0')).join('');
+            const quarantineId = 'voice-' + Date.now().toString(36) + '-' + index + '-' + suffix;
+            quarantineIds.push(quarantineId);
+            quarantineStore.add({
+                quarantineId,
+                version: 1,
+                kind: item.kind,
+                dateString: typeof item.dateString === 'string' ? item.dateString : null,
+                originalId: item.id == null ? null : String(item.id),
+                record: item.record,
+                reason: String(item.reason || 'Unspecified voice-note validation or decryption failure'),
+                quarantinedAt: new Date().toISOString()
+            });
+            if (activeStore && typeof item.id === 'string') activeStore.delete(item.id);
+        });
+        await completed;
+        return quarantineIds;
     } finally {
         database.close();
     }
