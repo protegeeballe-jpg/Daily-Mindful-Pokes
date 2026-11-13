@@ -243,13 +243,9 @@ import {
             }
 
             status.classList.add('hidden');
+            // Completion checks own the one-time celebration. Do not reopen the
+            // Grand Finale merely because the user presses Finish again.
             checkSectionCompletion();
-            document.getElementById('trophy-banner').classList.remove('hidden');
-            document.getElementById('grand-finale-overlay').classList.remove('hidden');
-            requestAnimationFrame(() => {
-                resizeEcosystemCanvas();
-                updateEcosystemTree();
-            });
         }
 
 
@@ -1859,28 +1855,29 @@ import {
             const scoreAwardedKey = 'score_awarded_' + dateStr;
 
             const grandFinale = document.getElementById('grand-finale-overlay');
-            if (completedCards === 6) {
-                if (trophyBanner.classList.contains('hidden')) {
-                    trophyBanner.classList.remove('hidden');
-                    playFanfareSound();
-                    setTimeout(speakProudCue, 400);
-                    confetti({ particleCount: 120, spread: 90, origin: { y: 0.3 } });
+            // This date-specific marker already exists in synced daily records.
+            // Previous app versions set it when the victory was first shown, so
+            // it also prevents old completed dates from replaying after this update.
+            if (completedCards === 6 && !localStorage.getItem(scoreAwardedKey)) {
+                // Claim the one-time reward before showing anything. Reloads,
+                // repeated checks, and repeated Finish clicks cannot replay it.
+                localStorage.setItem(scoreAwardedKey, 'true');
+                let currentScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
+                localStorage.setItem('user_confidence_score', currentScore + 100);
+                updateScoreDisplay();
 
-                    grandFinale.classList.remove('hidden');
-                    requestAnimationFrame(() => {
-                        resizeEcosystemCanvas();
-                        updateEcosystemTree();
-                    });
+                trophyBanner.classList.remove('hidden');
+                playFanfareSound();
+                setTimeout(speakProudCue, 400);
+                confetti({ particleCount: 120, spread: 90, origin: { y: 0.3 } });
 
-                    if (!localStorage.getItem(scoreAwardedKey)) {
-                        let currentScore = parseInt(localStorage.getItem('user_confidence_score') || '0');
-                        localStorage.setItem('user_confidence_score', currentScore + 100);
-                        localStorage.setItem(scoreAwardedKey, 'true');
-                        updateScoreDisplay();
-                    }
-                    scheduleMissedCardVictoryReturn(dateStr);
-                }
-            } else {
+                grandFinale.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    resizeEcosystemCanvas();
+                    updateEcosystemTree();
+                });
+                scheduleMissedCardVictoryReturn(dateStr);
+            } else if (completedCards !== 6) {
                 trophyBanner.classList.add('hidden');
                 grandFinale.classList.add('hidden');
             }
