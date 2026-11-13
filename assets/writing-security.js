@@ -390,7 +390,7 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 return;
             }
             const passphrase=passInput.value,configText=localStorage.getItem(WRITING_CONFIG_KEY);
-            let previousPassphraseVerified=false;
+            let previousPassphraseVerified=false,quarantinedRecordCount=0;
             if(!hasWritingCrypto()){setWritingSecurityStatus('Secure browser encryption is unavailable. Open this app over HTTPS in a modern browser.','error');return;}
             if(!passphrase||passphrase.length<16){setWritingSecurityStatus('Please use a passphrase with at least 16 characters. Several unrelated words work well.','error');return;}
             button.disabled=true;button.textContent='Securing private writing…';
@@ -418,6 +418,7 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     // record until encrypted Diary and voice-note migration succeeds.
                     await migrateLegacyPrivateWriting(key,{preserveSource:true});
                     const migrationResult=await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    quarantinedRecordCount=migrationResult.quarantinedCount;
                     if(migrationResult.quarantinedCount){
                         console.warn('[Diary migration] Completed with '+migrationResult.quarantinedCount+' unreadable record(s) preserved in local quarantine. Valid Diary records were migrated.');
                     }
@@ -435,6 +436,9 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 legacyMigrationRequired=false;
                 legacyKeyUnavailable=false;
                 updatePrivateWritingAccess();
+                setWritingSecurityStatus(quarantinedRecordCount
+                    ?'Your Diary is unlocked. '+quarantinedRecordCount+' unreadable legacy record(s) were preserved in local quarantine; all readable entries were migrated. See the browser console for record-level details.'
+                    :'Your Diary is unlocked and its readable legacy entries were migrated to your unified account key.', quarantinedRecordCount?'info':'success');
                 const saveStatus=document.getElementById('writing-save-status');
                 if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
             }catch(error){
