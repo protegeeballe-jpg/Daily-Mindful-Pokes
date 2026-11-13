@@ -633,7 +633,6 @@ function initializeVaultSession() {
     showAccountPanel('vault-signin-panel', 'vault-username');
   });
   byId('vault-back-to-signin-from-recovery')?.addEventListener('click', () => showLogin());
-  byId('vault-lock-button')?.addEventListener('click', () => lockAccount());
   installSessionActivityListeners();
   showLogin();
 }

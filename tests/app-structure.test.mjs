@@ -669,7 +669,7 @@ test('checklist controls remain compact and backup controls are comfortably size
  assert.match(gardenCss,/\.settings-modal \.drive-sync-panel \.garden-action-button/);
  assert.match(gardenCss,/min-height:\s*38px/);
  assert.match(html,/id="vault-export-button"/);
- assert.match(html,/id="vault-lock-button"/);
+ assert.doesNotMatch(html,/id="vault-lock-button"/);
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
 });
@@ -783,7 +783,7 @@ test('encrypted vault sync and JSON backup live in collapsible Settings sections
  assert.match(settings,/<details id="vault-sync-settings"/);
  assert.match(settings,/<details id="local-backup-settings"/);
  assert.match(settings,/id="vault-sync-status"/);
- assert.match(settings,/id="vault-lock-button"/);
+ assert.doesNotMatch(settings,/id="vault-lock-button"/);
  assert.match(settings,/id="vault-export-button"/);
  assert.match(settings,/id="vault-import-button"/);
  assert.match(settings,/id="vault-import-file"/);
@@ -813,7 +813,29 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v12-missed-victory-return/);
+ assert.match(serviceWorker,/faith-focus-shell-v13-auto-vault-sync/);
+});
+
+test('vault sync retries date-level conditional-write conflicts and Settings has no manual sync or lock buttons',()=>{
+ const sync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
+ const settings=readFileSync(new URL('../assets/settings-modal.js',import.meta.url),'utf8');
+ assert.match(sync,/const MAX_DATE_RECONCILE_ATTEMPTS = 4/);
+ assert.match(sync,/async function reconcileDay\(dateString, remoteUpdatedAt\)/);
+ assert.match(sync,/attempt <= MAX_DATE_RECONCILE_ATTEMPTS/);
+ assert.match(sync,/error\.code !== 'VAULT_CONFLICT'/);
+ assert.match(sync,/await reconcileDayOnce\(dateString, remoteUpdatedAt\)/);
+ assert.match(sync,/automatic sync will retry/);
+ assert.match(sync,/await reconcileDay\(record\.dateString, null\)/);
+ assert.match(sync,/const pendingRecords = finalLocalRecords\.filter\(record => record\.dirty\)/);
+ assert.match(sync,/expectedPacket: unchangedSinceSnapshot \? local\.packet : null/);
+ const storage=readFileSync(new URL('../assets/vault-storage.js',import.meta.url),'utf8');
+ assert.match(storage,/expectedPacket = packet/);
+ assert.match(storage,/const transaction = database\.transaction\(PACKET_STORE, 'readwrite'\)[\s\S]*?const request = store\.get\(dateString\)[\s\S]*?request\.onsuccess = \(\) => \{[\s\S]*?store\.put\(/);
+ assert.doesNotMatch(sync,/testVaultConnection|Vault Sync Test/);
+ assert.doesNotMatch(settings,/testVaultConnection|vault-test-sync-button|Testing cloud/);
+ assert.doesNotMatch(html,/vault-test-sync-button|vault-lock-button|Test Cloud Connection|Lock Account/);
+ assert.doesNotMatch(vaultSession,/vault-lock-button/);
+ assert.match(vaultSession,/SESSION_INACTIVITY_MS = 2 \* 60 \* 1000/);
 });
 
 test('vault synchronization refreshes while foregrounded without interrupting an active Diary editor',()=>{
@@ -837,7 +859,7 @@ test('Diary migration recognizes account-key records and converts only legacy-ke
  assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
  assert.match(privateMigration,/const plaintext = await decryptLegacy\(record\)/);
  assert.match(privateMigration,/return encryptTarget\(plaintext\)/);
- assert.match(serviceWorker,/faith-focus-shell-v12-missed-victory-return/);
+ assert.match(serviceWorker,/faith-focus-shell-v13-auto-vault-sync/);
 });
 
 test('legacy Diary migration permits direct encrypted-record checks when its verifier is unavailable',()=>{
