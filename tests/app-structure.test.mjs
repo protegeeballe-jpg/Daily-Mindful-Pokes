@@ -762,7 +762,7 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v7-daily-device-merge/);
+ assert.match(serviceWorker,/faith-focus-shell-v8-nonblocking-diary-merge/);
 });
 
 test('Diary migration recognizes account-key records and converts only legacy-key entries',()=>{
@@ -774,7 +774,7 @@ test('Diary migration recognizes account-key records and converts only legacy-ke
  assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
  assert.match(privateMigration,/const plaintext = await decryptLegacy\(record\)/);
  assert.match(privateMigration,/return encryptTarget\(plaintext\)/);
- assert.match(serviceWorker,/faith-focus-shell-v7-daily-device-merge/);
+ assert.match(serviceWorker,/faith-focus-shell-v8-nonblocking-diary-merge/);
 });
 
 test('legacy Diary migration permits direct encrypted-record checks when its verifier is unavailable',()=>{
@@ -814,6 +814,13 @@ test('Garden snapshots are embedded in daily packets and merged without discardi
  assert.match(vaultSync,/Only create local packets for dates that actually contain daily records or/);
  assert.match(vaultSync,/await captureExistingLocalDates\(\);[\s\S]*?await synchronizeVault\(\);[\s\S]*?await captureDailyPacket\(getCurrentDateString\(\)\);[\s\S]*?await synchronizeVault\(\);/);
  assert.match(vaultSync,/isUsableLegacyWritingConfig\(remoteLegacyConfig\)/);
+});
+
+test('an unreadable same-day Diary conflict is deferred without blocking the account session',()=>{
+ assert.match(vaultSync,/catch \(error\) \{[\s\S]*?Same-day Diary merge is deferred/);
+ assert.match(vaultSync,/Both encrypted copies are preserved/);
+ assert.match(vaultSync,/Complete the one-time Diary migration, then sync again/);
+ assert.match(vaultSync,/return false;[\s\S]*?const mergedPacket = await encryptDailyBundle/);
 });
 
 test('same-day sync combines both devices without replacing private writing, voice notes, or location history',()=>{
