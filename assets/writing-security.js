@@ -13,7 +13,9 @@ import { mergePrivateWritingText } from './daily-merge.js';
         const WRITING_KDF_ITERATIONS=600000;
         const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
         const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
+        const PRIVATE_NOTE_META_KEY='__privateNoteUpdatedAt';
         let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
+        let writingLoadedNoteValues=null,writingLoadedNoteMeta={};
         let vaultPrimaryKey=null,legacyMigrationRequired=false,legacyKeyUnavailable=false;
         let voiceNoteSavePromise=Promise.resolve();
         let voiceNoteStopHandler=async()=>{};
@@ -101,6 +103,8 @@ import { mergePrivateWritingText } from './daily-merge.js';
             vaultPrimaryKey=null;
             writingCryptoKey=null;
             writingLoadedDate=null;
+            writingLoadedNoteValues=null;
+            writingLoadedNoteMeta={};
             legacyMigrationRequired=false;
             legacyKeyUnavailable=false;
             updatePrivateWritingAccess();
@@ -246,6 +250,47 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return JSON.parse(new TextDecoder().decode(plaintext));
         }
 
+        function unpackPrivateWritingNotes(value){
+            if(!value||typeof value!=='object'||Array.isArray(value)){
+                throw new Error('The encrypted reflection record has an unsupported format.');
+            }
+            const notes={};
+            Object.entries(value).forEach(([id,note])=>{
+                if(id===PRIVATE_NOTE_META_KEY)return;
+                if(typeof note!=='string')throw new Error('A private reflection field has an unsupported format.');
+                notes[id]=note;
+            });
+            const rawMeta=value[PRIVATE_NOTE_META_KEY];
+            if(rawMeta!==undefined&&(!rawMeta||typeof rawMeta!=='object'||Array.isArray(rawMeta))){
+                throw new Error('The private reflection revision metadata has an unsupported format.');
+            }
+            const meta={};
+            Object.entries(rawMeta||{}).forEach(([id,revision])=>{
+                if(!Number.isSafeInteger(revision)||revision<0){
+                    throw new Error('A private reflection revision is invalid.');
+                }
+                meta[id]=revision;
+            });
+            return {notes,meta};
+        }
+
+        export function buildPrivateWritingNotesPayload(notes,previousValues={},previousMeta={},updatedAt=Date.now()){
+            if(!notes||typeof notes!=='object'||Array.isArray(notes)
+                ||!Number.isSafeInteger(updatedAt)||updatedAt<0){
+                throw new TypeError('A valid private reflection payload and revision time are required.');
+            }
+            const meta={...(previousMeta&&typeof previousMeta==='object'&&!Array.isArray(previousMeta)?previousMeta:{})};
+            PRIVATE_NOTE_IDS.forEach(id=>{
+                const current=typeof notes[id]==='string'?notes[id]:'';
+                const previous=typeof previousValues?.[id]==='string'?previousValues[id]:'';
+                if(current!==previous){
+                    const previousRevision=Number.isSafeInteger(meta[id])&&meta[id]>=0?meta[id]:0;
+                    meta[id]=Math.max(updatedAt,previousRevision+1);
+                }
+            });
+            return {...notes,[PRIVATE_NOTE_META_KEY]:meta};
+        }
+
         function samePrivateWritingValue(left,right){
             const stable=value=>{
                 if(Array.isArray(value))return value.map(stable);
@@ -259,23 +304,35 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return JSON.stringify(stable(left))===JSON.stringify(stable(right));
         }
         function mergePrivateWritingNotes(localValue,remoteValue){
-            if(!localValue||typeof localValue!=='object'||Array.isArray(localValue)
-                ||!remoteValue||typeof remoteValue!=='object'||Array.isArray(remoteValue)){
-                throw new Error('The encrypted reflection record has an unsupported format.');
-            }
-            const merged={};
-            for(const id of [...new Set([...Object.keys(localValue),...Object.keys(remoteValue)])].sort()){
-                const left=localValue[id],right=remoteValue[id];
-                if(left===undefined){merged[id]=right;continue;}
-                if(right===undefined){merged[id]=left;continue;}
-                if(typeof left==='string'&&typeof right==='string'){
-                    merged[id]=mergePrivateWritingText(left,right);
+            const local=unpackPrivateWritingNotes(localValue);
+            const remote=unpackPrivateWritingNotes(remoteValue);
+            const merged={},mergedMeta={};
+            const ids=[...new Set([...Object.keys(local.notes),...Object.keys(remote.notes)])].sort();
+            for(const id of ids){
+                const hasLocal=Object.prototype.hasOwnProperty.call(local.notes,id);
+                const hasRemote=Object.prototype.hasOwnProperty.call(remote.notes,id);
+                const leftRevision=Number.isSafeInteger(local.meta[id])?local.meta[id]:0;
+                const rightRevision=Number.isSafeInteger(remote.meta[id])?remote.meta[id]:0;
+                if(!hasLocal){merged[id]=remote.notes[id];mergedMeta[id]=rightRevision;continue;}
+                if(!hasRemote){merged[id]=local.notes[id];mergedMeta[id]=leftRevision;continue;}
+                if(local.notes[id]===remote.notes[id]){
+                    merged[id]=remote.notes[id];
+                    mergedMeta[id]=Math.max(leftRevision,rightRevision);
                     continue;
                 }
-                if(JSON.stringify(left)===JSON.stringify(right)){merged[id]=right;continue;}
-                throw new Error('A private reflection field could not be combined safely.');
+                // Reflection fields are editable values, not append-only writing.
+                // A cleared string is a real update and must beat an older value.
+                // Legacy records without revision metadata are revision 0; when both
+                // legacy values conflict, the remote copy is the stable fallback.
+                if(leftRevision>rightRevision){
+                    merged[id]=local.notes[id];
+                    mergedMeta[id]=leftRevision;
+                }else{
+                    merged[id]=remote.notes[id];
+                    mergedMeta[id]=rightRevision;
+                }
             }
-            return merged;
+            return {...merged,[PRIVATE_NOTE_META_KEY]:mergedMeta};
         }
         export async function mergeEncryptedPrivateWritingRecords(dateStr,localRecords,remoteRecords,key=writingCryptoKey){
             const mergeRecord=async(kind,localRecord,remoteRecord)=>{
@@ -306,11 +363,21 @@ import { mergePrivateWritingText } from './daily-merge.js';
             ]);
             return {diary,notes};
         }
+        function getDeviceLocalDateString(){
+            const now=new Date();
+            return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+        }
+        export function isCurrentPrivateWritingDate(dateString,todayString=getDeviceLocalDateString()){
+            return typeof dateString==='string'
+                &&dateString.length===10
+                &&dateString.charAt(4)==='-'
+                &&dateString.charAt(7)==='-'
+                &&dateString===todayString;
+        }
         function getCurrentWritingDate(){
             const input=document.getElementById('currentDate');
             if(input&&input.value)return input.value;
-            const now=new Date();
-            return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+            return getDeviceLocalDateString();
         }
         function setWritingSecurityStatus(message,state='info'){
             const status=document.getElementById('diary-security-status');
@@ -345,13 +412,27 @@ import { mergePrivateWritingText } from './daily-merge.js';
         }
         function updatePrivateWritingAccess(){
             const unlocked=!!writingCryptoKey;
-            document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{field.disabled=!unlocked;if(!unlocked)field.value='';});
+            const editable=unlocked&&isCurrentPrivateWritingDate(writingLoadedDate);
+            document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
+                field.disabled=!unlocked;
+                field.readOnly=unlocked&&!editable;
+                if(!unlocked)field.value='';
+            });
+            const updateButton=document.getElementById('diary-update-button');
+            if(updateButton){
+                updateButton.classList.toggle('hidden',!editable);
+                updateButton.disabled=!editable;
+            }
             document.getElementById('writing-lock-hint')?.classList.toggle('hidden',unlocked);
             const lockButton=document.querySelector('#diary-editor-panel [data-action="lockPrivateWriting"]');
             if(lockButton)lockButton.classList.toggle('hidden',!unlocked);
             renderDiarySecurityUI();
-            if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing and voice notes are encrypted on this device.';}
-            else document.dispatchEvent(new CustomEvent('private-writing:locked'));
+            if(unlocked){
+                const status=document.getElementById('writing-save-status');
+                if(status)status.textContent=editable
+                    ?'Private writing and voice notes are encrypted on this device.'
+                    :'Past Diary entries and reflection notes are read-only.';
+            }else document.dispatchEvent(new CustomEvent('private-writing:locked'));
         }
         async function migrateLegacyPrivateWriting(key,{preserveSource=false}={}){
             const dates=new Set();
@@ -545,13 +626,19 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return {diary,notes};
         }
         async function savePrivateWritingForDate(dateStr=writingLoadedDate){
-            if(!writingCryptoKey||!dateStr||writingLoadedDate!==dateStr)return;
+            if(!writingCryptoKey||!dateStr||writingLoadedDate!==dateStr
+                ||!isCurrentPrivateWritingDate(dateStr))return;
             const key=writingCryptoKey,payload=getPrivateWritingPayload();
             const task=async()=>{
+                const notesPayload=buildPrivateWritingNotesPayload(
+                    payload.notes,writingLoadedNoteValues||{},writingLoadedNoteMeta
+                );
                 const diary=await encryptPrivatePayload('diary',dateStr,payload.diary,key);
-                const notes=await encryptPrivatePayload('notes',dateStr,payload.notes,key);
+                const notes=await encryptPrivatePayload('notes',dateStr,notesPayload,key);
                 localStorage.setItem(getSecureWritingStorageKey('diary',dateStr),diary);
                 localStorage.setItem(getSecureWritingStorageKey('notes',dateStr),notes);
+                writingLoadedNoteValues={...payload.notes};
+                writingLoadedNoteMeta={...notesPayload[PRIVATE_NOTE_META_KEY]};
                 window.dispatchEvent(new Event('faith-focus:local-data-changed'));
                 const status=document.getElementById('writing-save-status');
                 if(status&&writingCryptoKey)status.textContent='Saved securely on this device.';
@@ -560,7 +647,8 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return writingSavePromise;
         }
         function schedulePrivateWritingSave(){
-            if(!writingCryptoKey||!writingLoadedDate)return;
+            if(!writingCryptoKey||!writingLoadedDate
+                ||!isCurrentPrivateWritingDate(writingLoadedDate))return;
             if(writingSaveTimer)clearTimeout(writingSaveTimer);
             writingSaveTimer=setTimeout(()=>{
                 writingSaveTimer=null;
@@ -580,13 +668,22 @@ import { mergePrivateWritingText } from './daily-merge.js';
             if(!writingCryptoKey)return;
             if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
             await writingSavePromise;
-            let diaryText='',notes={};
+            let diaryText='',notes={},noteMeta={};
             const diaryRecord=localStorage.getItem(getSecureWritingStorageKey('diary',dateStr)),notesRecord=localStorage.getItem(getSecureWritingStorageKey('notes',dateStr));
             if(diaryRecord)diaryText=await decryptPrivatePayload('diary',dateStr,diaryRecord,writingCryptoKey);
-            if(notesRecord)notes=await decryptPrivatePayload('notes',dateStr,notesRecord,writingCryptoKey);
+            if(notesRecord){
+                const unpacked=unpackPrivateWritingNotes(
+                    await decryptPrivatePayload('notes',dateStr,notesRecord,writingCryptoKey)
+                );
+                notes=unpacked.notes;
+                noteMeta=unpacked.meta;
+            }
             document.getElementById('private-diary-entry').value=typeof diaryText==='string'?diaryText:'';
             PRIVATE_NOTE_IDS.forEach(id=>{const field=document.getElementById(id);if(field)field.value=typeof notes[id]==='string'?notes[id]:'';});
+            writingLoadedNoteValues={...notes};
+            writingLoadedNoteMeta={...noteMeta};
             writingLoadedDate=dateStr;
+            updatePrivateWritingAccess();
         }
         async function lockPrivateWriting(){
             if(vaultPrimaryKey){
@@ -600,7 +697,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 await flushPrivateVoiceNoteQueue();
                 await savePrivateWritingForDate(writingLoadedDate);
                 await writingSavePromise;
-                writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
+                writingCryptoKey=null;writingLoadedDate=null;writingLoadedNoteValues=null;writingLoadedNoteMeta={};updatePrivateWritingAccess();
                 setWritingSecurityStatus('Locked. Your saved private writing and voice notes remain encrypted on this device.','info');
             }catch(error){setWritingSecurityStatus('Could not finish encrypted saving, so the writing remains unlocked. '+(error?.message||''),'error');}
         }

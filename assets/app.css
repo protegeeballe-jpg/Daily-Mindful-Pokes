@@ -645,6 +645,22 @@ body {position:fixed;inset:0;min-width:0;min-height:0 !important;padding-bottom:
 #vault-sync-indicator[data-state="error"] {color:#b33d4b;}
 .diary-notebook-button > span:first-child {font-size:1.1rem;line-height:1;}
 .diary-notebook-button:hover {background:#faf6ff;}
+.diary-update-button {
+    flex:0 0 auto;
+    min-height:2rem;
+    padding:.32rem .7rem;
+    border:1px solid #b9a0d3;
+    border-radius:.65rem;
+    background:#eee5f7;
+    color:#583b78;
+    font-size:.65rem;
+    font-weight:800;
+    letter-spacing:.01em;
+    box-shadow:0 1px 0 rgba(88,59,120,.08);
+}
+.diary-update-button:hover:not(:disabled) {background:#e4d7f1;}
+.diary-update-button:disabled {opacity:.55;cursor:not-allowed;}
+.diary-update-button:focus-visible {outline:3px solid #a88ac8;outline-offset:2px;}
 .diary-notebook-button:focus-visible,
 .diary-archive-close:focus-visible,
 .diary-archive-back:focus-visible,
