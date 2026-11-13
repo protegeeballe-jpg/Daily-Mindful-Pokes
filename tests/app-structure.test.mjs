@@ -13,6 +13,9 @@ const packageMetadata=JSON.parse(readFileSync(new URL('../package.json',import.m
 const appIcon=readFileSync(new URL('../assets/icon.png',import.meta.url));
 const serviceWorker=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
 const accountSecurity=readFileSync(new URL('../assets/account-security.js',import.meta.url),'utf8');
+const vaultSession=readFileSync(new URL('../assets/vault-session.js',import.meta.url),'utf8');
+const vaultSync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
+const gardenModel=readFileSync(new URL('../assets/garden-model.js',import.meta.url),'utf8');
 test('Faith & Focus branding, PWA metadata, and unified account copy stay aligned',()=>{
  assert.match(html,/<title>Faith &amp; Focus \| Your Daily Armor<\/title>|<title>Faith & Focus \| Your Daily Armor<\/title>/);
  assert.match(html,/Faith & Focus: Daily Armor/);
@@ -758,7 +761,7 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v4-diary-key-compatibility/);
+ assert.match(serviceWorker,/faith-focus-shell-v5-diary-recovery-garden-sync/);
 });
 
 test('Diary migration recognizes account-key records and converts only legacy-key entries',()=>{
@@ -770,5 +773,37 @@ test('Diary migration recognizes account-key records and converts only legacy-ke
  assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
  assert.match(privateMigration,/const plaintext = await decryptLegacy\(record\)/);
  assert.match(privateMigration,/return encryptTarget\(plaintext\)/);
- assert.match(serviceWorker,/faith-focus-shell-v4-diary-key-compatibility/);
+ assert.match(serviceWorker,/faith-focus-shell-v5-diary-recovery-garden-sync/);
+});
+
+test('legacy Diary migration permits direct encrypted-record checks when its verifier is unavailable',()=>{
+ assert.match(writing,/legacyMigrationRequired=encryptedRecordsNeedPreviousKey/);
+ assert.match(writing,/legacyKeyUnavailable=!legacyConfigExists&&encryptedRecordsNeedPreviousKey/);
+ assert.match(writing,/button\.disabled=false;button\.textContent='Try previous Diary passphrase'/);
+ assert.match(writing,/hasLegacyEncryptedRecordReadableWithKey\(key\)/);
+ assert.match(writing,/Incorrect previous Diary passphrase/);
+ assert.match(writing,/key\.match\(\/\^dmp_diary_cipher_v1_\\d/);
+ assert.match(writing,/key\.match\(\/\^dmp_notes_cipher_v1_\\d/);
+ assert.doesNotMatch(writing,/if\(legacyKeyUnavailable\)\{\s*setWritingSecurityStatus\([^;]+;\s*return;/);
+});
+
+test('new-account registration clearly reports a claimed username and offers the existing-account path',()=>{
+ assert.match(vaultSession,/error\?\.status\s*===\s*409/);
+ assert.match(vaultSession,/This username is already taken\. Please choose a different username \(or switch to Log In if this is your account\)\./);
+ assert.match(html,/Create New Account/);
+ assert.match(html,/CREATE NEW ACCOUNT/);
+ assert.match(html,/LOG IN/);
+ assert.match(html,/Log In to Existing Account/);
+ assert.match(html,/id="vault-login-form"/);
+ assert.match(html,/id="vault-signup-form"/);
+});
+
+test('Garden snapshots are embedded in daily packets and merged without discarding newer local plants',()=>{
+ assert.match(gardenModel,/GARDEN_DAILY_SYNC_PREFIX/);
+ assert.match(gardenModel,/export function mergeGardenStates/);
+ assert.match(vaultSync,/GARDEN_DAILY_SYNC_PREFIX\s*\+\s*dateString/);
+ assert.match(vaultSync,/mergeGardenStates\(mergedGarden, incomingGarden\)/);
+ assert.match(vaultSync,/restoreSharedAppState\(remoteBundle\)/);
+ assert.match(vaultSync,/dates\.add\(getCurrentDateString\(\)\)/);
+ assert.match(vaultSync,/isUsableLegacyWritingConfig\(remoteLegacyConfig\)/);
 });
