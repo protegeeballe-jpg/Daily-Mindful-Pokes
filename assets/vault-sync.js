@@ -38,6 +38,7 @@ let pendingCloudDates = new Set();
 let lastStatus = '';
 let storageHooksInstalled = false;
 let foregroundRefreshCleanup = null;
+let activeVaultRequestControllers = new Set();
 
 const byId = id => document.getElementById(id);
 
@@ -249,6 +250,8 @@ async function vaultRequest(path, { method = 'GET', body = null, baseUpdatedAt }
   if (baseUpdatedAt !== undefined) headers['X-Base-Updated-At'] = baseUpdatedAt || 'none';
 
   let response;
+  const requestController = new AbortController();
+  activeVaultRequestControllers.add(requestController);
   console.log('[Vault Sync] Worker request started:', { vaultId: activeVault?.vaultId || null, method, path });
   try {
     response = await fetch(WORKER_ORIGIN + path, {
@@ -258,11 +261,14 @@ async function vaultRequest(path, { method = 'GET', body = null, baseUpdatedAt }
       cache: 'no-store',
       redirect: 'error',
       headers,
-      body: bodyText
+      body: bodyText,
+      signal: requestController.signal
     });
   } catch (error) {
     console.error('[Vault Sync] Worker network failure:', { vaultId: activeVault?.vaultId || null, method, path, error });
     throw new Error('Cloud sync is temporarily unavailable. Your encrypted daily packets remain saved locally.');
+  } finally {
+    activeVaultRequestControllers.delete(requestController);
   }
 
   let result = {};
@@ -778,6 +784,10 @@ export async function stopVaultSync({ flushRemote = true } = {}) {
     if (flushRemote) {
       await flushVaultSync();
     } else {
+      // Stop any in-flight cloud operation before the credentials are cleared.
+      // Conditional writes and the retained dirty local packets make retries safe.
+      activeVaultRequestControllers.forEach(controller => controller.abort());
+      activeVaultRequestControllers.clear();
       // Save and encrypt local changes before locking, but do not wait for a
       // network round-trip. Dirty IndexedDB packets remain queued for next login.
       await stopRegisteredVoiceNoteRecording();
