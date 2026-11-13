@@ -27,6 +27,7 @@ const PRECACHE_URLS = [
     './assets/legal.css',
 
     './assets/app.js',
+    './assets/device-clock.js',
     './assets/garden.js',
     './assets/settings-modal.js',
     './assets/vault-crypto.js',
