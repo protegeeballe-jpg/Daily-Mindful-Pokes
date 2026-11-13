@@ -39,6 +39,7 @@ test('the offline shell includes every page and runtime dependency needed by the
         './assets/garden.css',
         './assets/legal.css',
         './assets/app.js',
+        './assets/missed-card-notifications.js',
         './assets/garden.js',
         './assets/settings-modal.js',
         './assets/vault-crypto.js',
