@@ -18,6 +18,7 @@ import { installVaultSyncRefresh } from './vault-refresh.js';
 const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
 const APP_CLIENT = 'faith-focus-daily-armor-web/1';
 const MAX_DAILY_PACKET_BYTES = 1024 * 1024;
+const MAX_DATE_RECONCILE_ATTEMPTS = 4;
 const DAILY_RECORD_PREFIXES = [
   'mindful_pokes_data_',
   'score_awarded_',
@@ -475,37 +476,60 @@ async function fetchRemoteDay(dateString) {
   return result;
 }
 
-async function uploadDailyPacket(dateString) {
+async function uploadDailyPacket(dateString, { baseUpdatedAt } = {}) {
   const local = await getLocalDailyPacket(dateString);
   if (!local?.dirty) return false;
+  const uploadBaseUpdatedAt = baseUpdatedAt === undefined
+    ? (local.remoteUpdatedAt || null)
+    : (baseUpdatedAt || null);
   console.log('[Vault Sync] Uploading encrypted daily packet:', {
     vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
-    baseUpdatedAt: local.remoteUpdatedAt || null
+    baseUpdatedAt: uploadBaseUpdatedAt
   });
 
-  try {
-    const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
-      method: 'PUT',
-      body: { packet: local.packet, baseUpdatedAt: local.remoteUpdatedAt || null },
-      baseUpdatedAt: local.remoteUpdatedAt || null
-    });
-    const syncResult = await markLocalDailyPacketSynced(dateString, result.updatedAt, local.packet, { requirePacketMatch: true });
-    console.log('[Vault Sync] Encrypted daily packet upload accepted by Worker:', {
-      vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
-      updatedAt: result.updatedAt, stillMatchesUploadedSnapshot: syncResult.stillMatchesUploadedSnapshot
-    });
-    if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush(dateString);
-    return true;
-  } catch (error) {
-    if (error.code === 'VAULT_CONFLICT') {
-      status('Sync conflict for ' + dateString + '. Both the local packet and newer cloud version are preserved; automatic overwrite has stopped for this date.', 'error');
-      return false;
-    }
-    throw error;
-  }
+  const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
+    method: 'PUT',
+    body: { packet: local.packet, baseUpdatedAt: uploadBaseUpdatedAt },
+    baseUpdatedAt: uploadBaseUpdatedAt
+  });
+  const syncResult = await markLocalDailyPacketSynced(dateString, result.updatedAt, local.packet, { requirePacketMatch: true });
+  console.log('[Vault Sync] Encrypted daily packet upload accepted by Worker:', {
+    vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+    updatedAt: result.updatedAt, stillMatchesUploadedSnapshot: syncResult.stillMatchesUploadedSnapshot
+  });
+  if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush(dateString);
+  return true;
 }
 
 async function reconcileDay(dateString, remoteUpdatedAt) {
+  for (let attempt = 1; attempt <= MAX_DATE_RECONCILE_ATTEMPTS; attempt += 1) {
+    try {
+      // reconcileDayOnce fetches the latest remote packet on every attempt, then
+      // merges it with the latest local encrypted packet before a guarded write.
+      return await reconcileDayOnce(dateString, remoteUpdatedAt);
+    } catch (error) {
+      if (error.code !== 'VAULT_CONFLICT') throw error;
+      console.warn('[Vault Sync] Date changed during reconciliation; retrying against the latest cloud version:', {
+        vaultId: activeVault?.vaultId || null,
+        dateString,
+        attempt,
+        maxAttempts: MAX_DATE_RECONCILE_ATTEMPTS,
+        remoteUpdatedAt: error.updatedAt || null
+      });
+      if (attempt === MAX_DATE_RECONCILE_ATTEMPTS) {
+        status(
+          'Cloud updates for ' + dateString + ' are still changing. Both copies remain saved; automatic sync will retry.',
+          'error'
+        );
+        return false;
+      }
+      await new Promise(resolve => window.setTimeout(resolve, 200 * attempt));
+    }
+  }
+  return false;
+}
+
+async function reconcileDayOnce(dateString, remoteUpdatedAt) {
   const local = await getLocalDailyPacket(dateString);
   if (!local) {
     console.log('[Vault Sync] Remote date has no local packet; fetching and restoring encrypted date:', {
@@ -525,7 +549,7 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
 
   if (local.dirty) {
     const remote = await fetchRemoteDay(dateString);
-    if (!remote.packet) return uploadDailyPacket(dateString);
+    if (!remote.packet) return uploadDailyPacket(dateString, { baseUpdatedAt: remote.updatedAt || null });
     const remoteBundle = await decryptDailyBundle(remote.packet, activeVault.encryptionKey, decompressData);
     const localBundle = await decryptDailyBundle(local.packet, activeVault.encryptionKey, decompressData);
     if (canonicalBundle(remoteBundle) === canonicalBundle(localBundle)) {
@@ -624,18 +648,27 @@ async function performVaultSync() {
 
     const localRecords = await listLocalDailyPackets();
     for (const record of localRecords) {
-      if (!record.dirty) continue;
-      if (!Object.hasOwn(index, record.dateString)) {
-        await uploadDailyPacket(record.dateString);
-      } else if (!record.remoteUpdatedAt) {
-        // The remote date was already reconciled above; mismatches are preserved as conflicts.
-        continue;
-      }
+      if (!record.dirty || Object.hasOwn(index, record.dateString)) continue;
+      // Re-read the remote date before uploading. The index can change while
+      // this pass is running, so even dates absent from the initial index must
+      // go through the same guarded reconciliation path.
+      await reconcileDay(record.dateString, null);
     }
 
-    if (restored) {
+    const finalLocalRecords = await listLocalDailyPackets();
+    const pendingRecords = finalLocalRecords.filter(record => record.dirty);
+    if (pendingRecords.length) {
+      const pendingDates = pendingRecords.map(record => record.dateString).sort();
+      status(
+        'Cloud sync is connected. ' + pendingRecords.length + ' local date packet' +
+        (pendingRecords.length === 1 ? ' remains' : 's remain') +
+        ' queued: ' + pendingDates.join(', ') +
+        '. Both local and cloud copies are preserved; automatic retry will continue.',
+        'error'
+      );
+    } else if (restored) {
       status('Restored ' + restored + ' newer daily packet' + (restored === 1 ? '' : 's') + ' from your vault.', 'success');
-    } else if (!localRecords.some(record => record.dirty)) {
+    } else {
       status('Your encrypted vault is up to date on this device.', 'success');
     }
   } catch (error) {
@@ -844,71 +877,6 @@ export async function importEncryptedVaultPackets(packets) {
   await importLocalDailyPackets(packets);
   status('Restored ' + packets.length + ' validated encrypted daily packet' + (packets.length === 1 ? '' : 's') + '. Automatic cloud sync is queued.', 'success');
   scheduleCloudPush();
-}
-
-export async function testVaultConnection() {
-  if (!activeVault) throw new Error('Sign in to your unified account before testing cloud sync.');
-  const vaultId = activeVault.vaultId;
-  console.log('[Vault Sync Test] Starting same-vault Cloudflare connection test:', {
-    vaultId, indexKey: vaultId + ':index'
-  });
-  status('Testing Cloudflare vault connection…', 'info');
-
-  // Flush current editor state and capture local daily packets first. The test
-  // uses real encrypted app packets; it never writes plaintext or a dummy KV key.
-  await stopRegisteredVoiceNoteRecording();
-  await flushAndSaveCurrentPrivateWriting();
-  await captureExistingLocalDates();
-  for (const queue of localCaptureQueues.values()) await queue;
-
-  if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
-  cloudDebounceTimer = null;
-  pendingCloudDates.clear();
-
-  // Exercise a real conditional PUT using today's existing encrypted packet.
-  // The ciphertext is unchanged; the Worker write-token and updated-at guard
-  // still protect against overwriting a newer packet from the other device.
-  const today = getCurrentDateString();
-  let todayPacket = await getLocalDailyPacket(today);
-  if (todayPacket && !todayPacket.dirty) {
-    const remoteToday = await fetchRemoteDay(today);
-    const sameBase = remoteToday.packet
-      ? Boolean(todayPacket.remoteUpdatedAt && todayPacket.remoteUpdatedAt === remoteToday.updatedAt)
-      : !todayPacket.remoteUpdatedAt;
-    if (sameBase) {
-      await putLocalDailyPacket({ ...todayPacket, dirty: true });
-      console.log('[Vault Sync Test] Performing conditional encrypted packet push:', {
-        vaultId, dateString: today, packetKey: vaultId + ':' + today,
-        baseUpdatedAt: todayPacket.remoteUpdatedAt || null
-      });
-      await uploadDailyPacket(today);
-    } else {
-      console.warn('[Vault Sync Test] Skipping test PUT because the local packet has no current remote version baseline. No remote data was overwritten.', {
-        vaultId, dateString: today, localRemoteUpdatedAt: todayPacket.remoteUpdatedAt || null,
-        remoteUpdatedAt: remoteToday.updatedAt || null
-      });
-    }
-  } else if (todayPacket?.dirty) {
-    console.log('[Vault Sync Test] Today already has a pending local packet; normal sync will attempt its guarded upload.', {
-      vaultId, dateString: today, packetKey: vaultId + ':' + today
-    });
-  }
-
-  // Complete the normal pull/reconciliation pass, then verify the shared index again.
-  await synchronizeVault();
-  const index = await fetchRemoteIndex();
-  const remoteDates = Object.keys(index).filter(isValidDateString).sort();
-  const localPackets = await listLocalDailyPackets();
-  const pendingUploads = localPackets.filter(record => record.dirty).map(record => record.dateString);
-
-  const result = { vaultId, indexKey: vaultId + ':index', remoteDateCount: remoteDates.length, remoteDates, pendingUploads };
-  console.log('[Vault Sync Test] Completed:', result);
-  if (pendingUploads.length) {
-    status('Cloud connection succeeded. Some local dates remain queued or have a conflict; see the console.', 'error');
-  } else {
-    status('Cloud connection verified. This device is synchronized with the shared vault.', 'success');
-  }
-  return result;
 }
 
 export function isVaultSyncActive() {
