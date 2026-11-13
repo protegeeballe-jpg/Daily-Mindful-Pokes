@@ -110,6 +110,29 @@ test('Forge Room setup is top-aligned and the subtitle remains readable on mobil
  assert.match(html,/type="module" src="\.\/assets\/garden\.js"/);
 });
 
+test('account inactivity lock is two minutes and rechecks expired sessions after browser resume',()=>{
+ assert.match(vaultSession,/SESSION_INACTIVITY_MS = 2 \* 60 \* 1000/);
+ assert.match(vaultSession,/locked after 2 minutes of inactivity/);
+ assert.match(vaultSession,/pointermove/);
+ assert.match(vaultSession,/function checkInactivityOnResume/);
+ assert.match(vaultSession,/document\.visibilityState === 'visible'/);
+ assert.match(vaultSession,/window\.addEventListener\('pageshow'/);
+ assert.match(vaultSession,/stopVaultSync\(\{ flushRemote: false \}\)/);
+ assert.match(vaultSync,/stopVaultSync\(\{ flushRemote = true \} = \{\}\)/);
+ assert.match(vaultSync,/for \(const queue of localCaptureQueues\.values\(\)\) await queue/);
+});
+
+test('missed checklist cards are shown as actionable next-day in-app reminders',()=>{
+ assert.match(html,/id="missed-card-notice"/);
+ assert.match(html,/id="missed-card-list"/);
+ assert.match(app,/getMissedChecklistCards/);
+ assert.match(app,/getPreviousDeviceDateString/);
+ assert.match(app,/data-action = 'reviewMissedCard'/);
+ assert.match(app,/dismissMissedCardNotifications/);
+ assert.match(appCss,/\.missed-card-notice/);
+ assert.match(html,/http-equiv="Content-Security-Policy"/);
+});
+
 test('the product interface does not expose the private inspiration name',()=>{
  assert.doesNotMatch(html,/Onnea/i);
  assert.doesNotMatch(readme,/Onnea/i);
@@ -777,7 +800,7 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v10-foreground-sync/);
+ assert.match(serviceWorker,/faith-focus-shell-v11-two-minute-lock-reminders/);
 });
 
 test('vault synchronization refreshes while foregrounded without interrupting an active Diary editor',()=>{
@@ -801,7 +824,7 @@ test('Diary migration recognizes account-key records and converts only legacy-ke
  assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
  assert.match(privateMigration,/const plaintext = await decryptLegacy\(record\)/);
  assert.match(privateMigration,/return encryptTarget\(plaintext\)/);
- assert.match(serviceWorker,/faith-focus-shell-v10-foreground-sync/);
+ assert.match(serviceWorker,/faith-focus-shell-v11-two-minute-lock-reminders/);
 });
 
 test('legacy Diary migration permits direct encrypted-record checks when its verifier is unavailable',()=>{
