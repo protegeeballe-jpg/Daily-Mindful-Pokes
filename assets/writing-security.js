@@ -438,7 +438,10 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     // Stage plaintext migration first but keep every original source
                     // record until encrypted Diary and voice-note migration succeeds.
                     await migrateLegacyPrivateWriting(key,{preserveSource:true});
-                    await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    const migrationResult=await migrateEncryptedPrivateRecords(key,vaultPrimaryKey);
+                    if(migrationResult.quarantinedCount){
+                        console.warn('[Diary migration] Completed with '+migrationResult.quarantinedCount+' unreadable record(s) preserved in local quarantine. Valid Diary records were migrated.');
+                    }
                     cleanupLegacyPlaintextPrivateWriting();
                     legacyMigrationRequired=false;
                     legacyKeyUnavailable=false;
@@ -457,8 +460,9 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
             }catch(error){
                 writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
+                console.error('[Diary migration] Migration failed after passphrase verification or during conversion:',error);
                 const message=previousPassphraseVerified
-                    ?'Your previous Diary passphrase was accepted, but at least one saved entry could not be converted. The original encrypted entries remain in place. Please keep this browser profile unchanged and contact support with this message.'
+                    ?'Your previous Diary passphrase was accepted, but the migration could not finish safely. Original encrypted entries remain preserved. See the browser console for the exact failure reason.'
                     :error?.message==='The passphrase did not match.'
                         ?'That passphrase did not match the saved previous Diary key. No encrypted entries were changed.'
                         :error?.message==='The two passphrases do not match.'
