@@ -127,7 +127,7 @@ test('missed checklist cards are shown as actionable next-day in-app reminders',
  assert.match(html,/id="missed-card-list"/);
  assert.match(app,/getMissedChecklistCards/);
  assert.match(app,/getPreviousDeviceDateString/);
- assert.match(app,/data-action = 'reviewMissedCard'/);
+ assert.match(app,/review\.dataset\.action = 'reviewMissedCard'/);
  assert.match(app,/dismissMissedCardNotifications/);
  assert.match(appCss,/\.missed-card-notice/);
  assert.match(html,/http-equiv="Content-Security-Policy"/);
