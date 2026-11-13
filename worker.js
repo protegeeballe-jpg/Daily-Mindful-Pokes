@@ -1,6 +1,7 @@
 const APP_ORIGIN = "https://protegeeballe-jpg.github.io";
 const APP_CLIENT = "faith-focus-daily-armor-web/1";
 const MAX_REQUEST_BYTES = 1024 * 1024;
+const MAX_PACKET_CIPHERTEXT_BYTES = 700 * 1024 + 16;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const VAULT_ID_PATTERN = /^[a-f0-9]{64}$/;
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -26,6 +27,9 @@ function validDate(value) {
 
 function validPacket(packet, dateString) {
   if (!packet || typeof packet !== "object" || Array.isArray(packet)) return false;
+  const allowedFields = new Set(["format", "version", "dateString", "algorithm", "compression", "iv", "ciphertext"]);
+  const fields = Object.keys(packet);
+  if (fields.length !== allowedFields.size || fields.some(field => !allowedFields.has(field))) return false;
   if (packet.format !== PACKET_FORMAT || packet.version !== 1
       || packet.dateString !== dateString || packet.algorithm !== "AES-256-GCM"
       || !["none", "gzip-base64"].includes(packet.compression)
@@ -33,7 +37,11 @@ function validPacket(packet, dateString) {
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(packet.iv)
       || !/^[A-Za-z0-9+/]+={0,2}$/.test(packet.ciphertext)) return false;
   try {
-    return atob(packet.iv).length === 12 && atob(packet.ciphertext).length >= 16;
+    const iv = atob(packet.iv);
+    const ciphertext = atob(packet.ciphertext);
+    return iv.length === 12
+      && ciphertext.length >= 16
+      && ciphertext.length <= MAX_PACKET_CIPHERTEXT_BYTES;
   } catch {
     return false;
   }
@@ -265,7 +273,15 @@ export default {
     const accountRoute = /^\/account\/(signup|migrate-legacy|signin|unlock|recover|complete-recovery)$/.exec(url.pathname);
     let bodyText = "";
     if (request.method === "POST" || request.method === "PUT") {
-      bodyText = await readBodyLimited(request, MAX_REQUEST_BYTES);
+      const contentType = (request.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
+      if (contentType !== "application/json") {
+        return jsonResponse({ error: "Requests with a body must use Content-Type: application/json." }, 415, origin);
+      }
+      try {
+        bodyText = await readBodyLimited(request, MAX_REQUEST_BYTES);
+      } catch (error) {
+        return jsonResponse({ error: "The request body could not be read safely." }, 400, origin);
+      }
       if (bodyText === null) return jsonResponse({ error: "Request payload exceeds the 1 MB limit." }, 413, origin);
     }
 

@@ -7,7 +7,8 @@ import {
   getLocalDailyPacket, listLocalDailyPackets, putLocalDailyPacket, markLocalDailyPacketSynced
 } from './vault-storage.js';
 import {
-  exportEncryptedVoiceNotes, exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate
+  exportEncryptedVoiceNotes, exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate,
+  validateEncryptedVoiceNoteRecord
 } from './voice-note-store.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
 import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording } from './writing-security.js';
@@ -80,6 +81,65 @@ function getCurrentDateString() {
   if (isValidDateString(value)) return value;
   const now = new Date();
   return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+}
+
+function validateDailyBundleForEncryption(bundle, expectedDate) {
+  const fail = reason => { throw new Error('Daily packet validation failed: ' + reason); };
+  if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle)
+      || bundle.format !== 'faith-focus-daily-bundle' || bundle.version !== 1
+      || bundle.dateString !== expectedDate || !isValidDateString(bundle.dateString)) {
+    fail('the bundle header or calendar date is invalid.');
+  }
+  if (!bundle.records || typeof bundle.records !== 'object' || Array.isArray(bundle.records)) {
+    fail('daily records must be a plain object.');
+  }
+  const recordKeys = Object.keys(bundle.records);
+  if (recordKeys.length > DAILY_RECORD_PREFIXES.length) fail('too many daily record keys were supplied.');
+  for (const [key, value] of Object.entries(bundle.records)) {
+    if (!DAILY_RECORD_PREFIXES.some(prefix => key === prefix + expectedDate)) {
+      fail('unexpected daily record key: ' + String(key).slice(0, 80));
+    }
+    if (typeof value !== 'string') fail('daily record values must be strings.');
+  }
+
+  const checklistKey = 'mindful_pokes_data_' + expectedDate;
+  if (typeof bundle.records[checklistKey] !== 'string') fail('the daily checklist record is missing.');
+  let checklist;
+  try { checklist = JSON.parse(bundle.records[checklistKey]); }
+  catch { fail('the daily checklist record is not valid JSON.'); }
+  if (!checklist || typeof checklist !== 'object' || Array.isArray(checklist)) {
+    fail('the daily checklist record must contain a JSON object.');
+  }
+
+  if (!Array.isArray(bundle.voiceNotes) || bundle.voiceNotes.length > 100) {
+    fail('voice notes must be an array containing no more than 100 records.');
+  }
+  const voiceIds = new Set();
+  for (const note of bundle.voiceNotes) {
+    if (!validateEncryptedVoiceNoteRecord(note) || note.dateString !== expectedDate) {
+      fail('a voice-note record is malformed, unsupported, or belongs to another date.');
+    }
+    if (voiceIds.has(note.id)) fail('duplicate voice-note identifiers were found.');
+    voiceIds.add(note.id);
+  }
+
+  if (bundle.appState !== null && bundle.appState !== undefined) {
+    if (typeof bundle.appState !== 'object' || Array.isArray(bundle.appState)) {
+      fail('app state must be an object.');
+    }
+    for (const key of ['garden', 'confidenceScore', 'legacyWritingConfig']) {
+      const value = bundle.appState[key];
+      if (value !== null && value !== undefined && typeof value !== 'string') {
+        fail('app state field ' + key + ' must be a string or null.');
+      }
+    }
+  }
+
+  const serializedBytes = new TextEncoder().encode(JSON.stringify(bundle)).byteLength;
+  if (serializedBytes > 2 * 1024 * 1024) {
+    fail('the uncompressed daily bundle exceeds the 2 MiB frontend safety limit.');
+  }
+  return serializedBytes;
 }
 
 async function buildDailyBundle(dateString) {
@@ -220,6 +280,8 @@ async function captureDailyPacket(dateString) {
     while (repeat && activeVault) {
       const snapshotVersion = localChangeVersions.get(dateString);
       const bundle = await buildDailyBundle(dateString);
+      const validatedBytes = validateDailyBundleForEncryption(bundle, dateString);
+      console.log('[Vault Sync] Frontend daily packet validation passed:', { vaultId: activeVault.vaultId, dateString, serializedBytes: validatedBytes, recordCount: Object.keys(bundle.records).length, voiceNoteCount: bundle.voiceNotes.length });
       const prior = await getLocalDailyPacket(dateString);
       if (prior) {
         try {
