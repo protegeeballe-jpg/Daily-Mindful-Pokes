@@ -668,12 +668,10 @@ function scheduleCloudPush(dateString = null) {
 }
 
 async function captureExistingLocalDates() {
+  // Only create local packets for dates that actually contain daily records or
+  // voice notes. Global account settings must not create an empty "today" packet
+  // before the cloud's current-day packet has been reconciled.
   const dates = new Set(listLocalStorageDates());
-  if (localStorage.getItem(GARDEN_STORAGE_KEY) !== null
-      || localStorage.getItem(LEGACY_WRITING_CONFIG_KEY) !== null
-      || localStorage.getItem('user_confidence_score') !== null) {
-    dates.add(getCurrentDateString());
-  }
   const voiceNotes = await exportEncryptedVoiceNotes();
   voiceNotes.forEach(record => dates.add(record.dateString));
   for (const dateString of [...dates].sort()) await captureDailyPacket(dateString);
@@ -694,9 +692,21 @@ export async function startVaultSync(credentials) {
     throw error;
   }
 
-  // Capture existing local records before comparing dates with the cloud index.
+  // Capture actual local daily records first; do not manufacture an empty current-day
+  // packet merely because account-wide settings exist on this device.
   await captureExistingLocalDates();
   await synchronizeVault();
+
+  // Reconcile remote dates before attaching account-wide state to today's packet.
+  // This lets a newly signed-in device receive today's Diary/location/voice data
+  // instead of treating an empty bootstrap packet as a conflicting local edit.
+  if (localStorage.getItem(GARDEN_STORAGE_KEY) !== null
+      || localStorage.getItem(LEGACY_WRITING_CONFIG_KEY) !== null
+      || localStorage.getItem('user_confidence_score') !== null) {
+    await captureDailyPacket(getCurrentDateString());
+    await synchronizeVault();
+  }
+
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
   document.addEventListener('visibilitychange', handleVisibilityChange);
