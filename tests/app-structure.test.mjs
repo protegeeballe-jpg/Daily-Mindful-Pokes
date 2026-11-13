@@ -765,6 +765,18 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
  assert.match(serviceWorker,/faith-focus-shell-v10-foreground-sync/);
 });
 
+test('vault synchronization refreshes while foregrounded without interrupting an active Diary editor',()=>{
+ const vaultSync=readFileSync(new URL('../assets/vault-sync.js',import.meta.url),'utf8');
+ const refresh=readFileSync(new URL('../assets/vault-refresh.js',import.meta.url),'utf8');
+ assert.match(vaultSync,/installVaultSyncRefresh\(/);
+ assert.match(vaultSync,/intervalMs:\s*30_000/);
+ assert.match(vaultSync,/isPrivateWritingEditorFocused/);
+ assert.match(vaultSync,/!isPrivateWritingEditorFocused\(\)/);
+ assert.match(vaultSync,/foregroundRefreshCleanup\?\.\(\)/);
+ assert.match(refresh,/visibilityState !== 'visible'/);
+ assert.match(refresh,/inFlight/);
+});
+
 test('Diary migration recognizes account-key records and converts only legacy-key entries',()=>{
  const privateMigration=readFileSync(new URL('../assets/private-writing-migration.js',import.meta.url),'utf8');
  assert.match(writing,/hasEncryptedRecordsOutsideKey\(vaultPrimaryKey,voiceNotes\)/);
