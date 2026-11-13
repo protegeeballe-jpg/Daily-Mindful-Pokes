@@ -24,7 +24,7 @@ test('vault packets save locally first and automatically synchronize after the f
   assert.match(sync, /addEventListener\('online'/);
   assert.match(sync, /function synchronizeVault\(/);
   assert.match(sync, /function performVaultSync\(/);
-  assert.match(session, /SESSION_INACTIVITY_MS = 15 \* 60 \* 1000/);
+  assert.match(session, /SESSION_INACTIVITY_MS = 2 \* 60 \* 1000/);
 });
 
 test('local encrypted JSON export and import remain optional Settings actions', () => {
