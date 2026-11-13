@@ -430,7 +430,7 @@ test('unified vault login derives separate credentials and synchronizes encrypte
  assert.match(cryptoModule,/AES-GCM/);
  assert.match(cryptoModule,/VAULT_ID_DOMAIN/);
  assert.match(cryptoModule,/writeToken/);
- assert.match(session,/SESSION_INACTIVITY_MS = 15 \* 60 \* 1000/);
+ assert.match(session,/SESSION_INACTIVITY_MS = 2 \* 60 \* 1000/);
  assert.match(session,/deriveVaultLoginMaterial/);
  assert.match(session,/finishVaultLogin/);
  assert.match(session,/recoverVaultMasterKey/);
