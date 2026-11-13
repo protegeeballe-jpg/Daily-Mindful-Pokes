@@ -827,7 +827,7 @@ test('vault sync retries date-level conditional-write conflicts and Settings has
  assert.match(sync,/automatic sync will retry/);
  assert.match(sync,/await reconcileDay\(record\.dateString, null\)/);
  assert.match(sync,/const pendingRecords = finalLocalRecords\.filter\(record => record\.dirty\)/);
- assert.match(sync,/expectedPacket: local\.packet/);
+ assert.match(sync,/expectedPacket: unchangedSinceSnapshot \? local\.packet : null/);
  const storage=readFileSync(new URL('../assets/vault-storage.js',import.meta.url),'utf8');
  assert.match(storage,/expectedPacket = packet/);
  assert.match(storage,/const transaction = database\.transaction\(PACKET_STORE, 'readwrite'\)[\s\S]*?const request = store\.get\(dateString\)[\s\S]*?request\.onsuccess = \(\) => \{[\s\S]*?store\.put\(/);
