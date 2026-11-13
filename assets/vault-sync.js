@@ -13,6 +13,7 @@ import {
 import { GARDEN_STORAGE_KEY, GARDEN_DAILY_SYNC_PREFIX, mergeGardenStates, validateGardenState } from './garden-model.js';
 import { mergeDailyBundles } from './daily-merge.js';
 import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording, mergeEncryptedPrivateWritingRecords } from './writing-security.js';
+import { installVaultSyncRefresh } from './vault-refresh.js';
 
 const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
 const APP_CLIENT = 'faith-focus-daily-armor-web/1';
@@ -36,6 +37,7 @@ let localChangeVersions = new Map();
 let pendingCloudDates = new Set();
 let lastStatus = '';
 let storageHooksInstalled = false;
+let foregroundRefreshCleanup = null;
 
 const byId = id => document.getElementById(id);
 
@@ -700,10 +702,39 @@ export async function startVaultSync(credentials) {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('faith-focus:local-data-changed', handleLocalDataChanged);
   window.addEventListener('pagehide', flushVaultSync);
+
+  // Pull changes made on another device when this app returns to the foreground,
+  // and periodically while visible. Do not refresh over text currently being edited.
+  foregroundRefreshCleanup?.();
+  foregroundRefreshCleanup = installVaultSyncRefresh({
+    windowRef: window,
+    documentRef: document,
+    refresh: refreshVaultFromForeground,
+    canRefresh: () => Boolean(activeVault) && !isPrivateWritingEditorFocused(),
+    intervalMs: 30_000
+  });
 }
 
 function handleLocalDataChanged(event) {
   if (activeVault) scheduleCapture(event?.detail?.dateString || getCurrentDateString());
+}
+
+function isPrivateWritingEditorFocused() {
+  const focusedElement = document.activeElement;
+  return focusedElement?.id === 'private-diary-entry'
+    || focusedElement?.classList?.contains('text-input') === true;
+}
+
+async function refreshVaultFromForeground() {
+  if (!activeVault) return;
+  try {
+    await synchronizeVault();
+  } catch (error) {
+    console.warn('[Vault Sync] Foreground refresh failed; local encrypted packets remain preserved.', {
+      vaultId: activeVault?.vaultId || null,
+      error
+    });
+  }
 }
 
 function handleOnline() {
@@ -736,6 +767,10 @@ async function flushVaultSync() {
 }
 
 export async function stopVaultSync() {
+  if (foregroundRefreshCleanup) {
+    foregroundRefreshCleanup();
+    foregroundRefreshCleanup = null;
+  }
   if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
   cloudDebounceTimer = null;
   await flushVaultSync();
