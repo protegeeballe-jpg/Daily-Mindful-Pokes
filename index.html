@@ -622,6 +622,23 @@
                 <div class="watercolor-track" role="progressbar" aria-label="Completed health checklist activities" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="daily-progress-track"><div id="daily-progress-bar" class="watercolor-fill"></div></div>
             </section>
             
+
+            <section id="missed-card-notice" class="missed-card-notice hidden" role="region" aria-labelledby="missed-card-heading">
+                <div class="missed-card-notice-heading">
+                    <div>
+                        <p class="missed-card-eyebrow">A GENTLE LOOK BACK</p>
+                        <h2 id="missed-card-heading">A few cards are ready for another look</h2>
+                    </div>
+                    <span id="missed-card-count" class="missed-card-count" aria-live="polite"></span>
+                </div>
+                <p id="missed-card-date" class="missed-card-date"></p>
+                <p class="missed-card-copy">These cards were left incomplete yesterday. There is no penalty—review what matters when you are ready.</p>
+                <ul id="missed-card-list" class="missed-card-list"></ul>
+                <div class="missed-card-actions">
+                    <button type="button" class="missed-card-dismiss" data-action="dismissMissedCardNotifications">Dismiss reminders</button>
+                </div>
+            </section>
+
             <!-- CARD 1 -->
             <div id="card-step-1" class="step-card card-yellow rounded-3xl p-8 relative">
                 <div class="flex justify-between items-center mb-4">
@@ -860,7 +877,7 @@
                         <p id="vault-backup-status" class="drive-sync-status" role="status" aria-live="polite"></p>
                     </section>
                 </details>
-                <p class="settings-modal-note">Your local encrypted packets remain available on this device. Locking clears the in-memory account key and write credential.</p>
+                <p class="settings-modal-note">For your privacy, the account locks after 2 minutes without activity. Sign in again to continue. Local encrypted packets remain available on this device; a lock clears the in-memory account key and write credential.</p>
 
             </div>
         </div>
