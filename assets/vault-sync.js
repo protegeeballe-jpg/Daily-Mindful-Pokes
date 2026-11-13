@@ -479,6 +479,7 @@ async function fetchRemoteDay(dateString) {
 async function uploadDailyPacket(dateString, { baseUpdatedAt } = {}) {
   const local = await getLocalDailyPacket(dateString);
   if (!local?.dirty) return false;
+  const localChangeVersion = localChangeVersions.get(dateString) || 0;
   const uploadBaseUpdatedAt = baseUpdatedAt === undefined
     ? (local.remoteUpdatedAt || null)
     : (baseUpdatedAt || null);
@@ -492,12 +493,18 @@ async function uploadDailyPacket(dateString, { baseUpdatedAt } = {}) {
     body: { packet: local.packet, baseUpdatedAt: uploadBaseUpdatedAt },
     baseUpdatedAt: uploadBaseUpdatedAt
   });
-  const syncResult = await markLocalDailyPacketSynced(dateString, result.updatedAt, local.packet, { requirePacketMatch: true });
+  const unchangedSinceSnapshot = (localChangeVersions.get(dateString) || 0) === localChangeVersion;
+  const syncResult = await markLocalDailyPacketSynced(
+    dateString,
+    result.updatedAt,
+    local.packet,
+    { requirePacketMatch: true, expectedPacket: unchangedSinceSnapshot ? local.packet : null }
+  );
   console.log('[Vault Sync] Encrypted daily packet upload accepted by Worker:', {
     vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
     updatedAt: result.updatedAt, stillMatchesUploadedSnapshot: syncResult.stillMatchesUploadedSnapshot
   });
-  if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush(dateString);
+  if (!syncResult.stillMatchesUploadedSnapshot) scheduleCapture(dateString);
   return true;
 }
 
@@ -531,6 +538,7 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
 
 async function reconcileDayOnce(dateString, remoteUpdatedAt) {
   const local = await getLocalDailyPacket(dateString);
+  const localChangeVersion = localChangeVersions.get(dateString) || 0;
   if (!local) {
     console.log('[Vault Sync] Remote date has no local packet; fetching and restoring encrypted date:', {
       vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
@@ -554,11 +562,12 @@ async function reconcileDayOnce(dateString, remoteUpdatedAt) {
     const localBundle = await decryptDailyBundle(local.packet, activeVault.encryptionKey, decompressData);
     if (canonicalBundle(remoteBundle) === canonicalBundle(localBundle)) {
       restoreSharedAppState(remoteBundle);
+      const unchangedSinceSnapshot = (localChangeVersions.get(dateString) || 0) === localChangeVersion;
       const syncResult = await markLocalDailyPacketSynced(
         dateString,
         remote.updatedAt || remoteUpdatedAt,
         remote.packet,
-        { requirePacketMatch: true, expectedPacket: local.packet }
+        { requirePacketMatch: true, expectedPacket: unchangedSinceSnapshot ? local.packet : null }
       );
       if (!syncResult.stillMatchesUploadedSnapshot) scheduleCapture(dateString);
       return false;
@@ -595,11 +604,12 @@ async function reconcileDayOnce(dateString, remoteUpdatedAt) {
       body: { packet: mergedPacket, baseUpdatedAt: remote.updatedAt || remoteUpdatedAt || null },
       baseUpdatedAt: remote.updatedAt || remoteUpdatedAt || null
     });
+    const unchangedSinceSnapshot = (localChangeVersions.get(dateString) || 0) === localChangeVersion;
     const syncResult = await markLocalDailyPacketSynced(
       dateString,
       result.updatedAt || remote.updatedAt || remoteUpdatedAt,
       mergedPacket,
-      { requirePacketMatch: true, expectedPacket: local.packet }
+      { requirePacketMatch: true, expectedPacket: unchangedSinceSnapshot ? local.packet : null }
     );
     if (syncResult.stillMatchesUploadedSnapshot) {
       await restoreDailyBundle(mergedBundle);
@@ -620,11 +630,18 @@ async function reconcileDayOnce(dateString, remoteUpdatedAt) {
     const remote = await fetchRemoteDay(dateString);
     if (remote.packet && remote.updatedAt && (!localRemote || remote.updatedAt > localRemote)) {
       const bundle = await decryptDailyBundle(remote.packet, activeVault.encryptionKey, decompressData);
+      const unchangedSinceSnapshot = (localChangeVersions.get(dateString) || 0) === localChangeVersion;
+      const syncResult = await markLocalDailyPacketSynced(
+        dateString,
+        remote.updatedAt,
+        remote.packet,
+        { requirePacketMatch: true, expectedPacket: unchangedSinceSnapshot ? local.packet : null }
+      );
+      if (!syncResult.stillMatchesUploadedSnapshot) {
+        scheduleCapture(dateString);
+        return false;
+      }
       await restoreDailyBundle(bundle);
-      await putLocalDailyPacket({
-        dateString, packet: remote.packet, localUpdatedAt: Date.now(),
-        remoteUpdatedAt: remote.updatedAt, dirty: false
-      });
       return true;
     }
   }
