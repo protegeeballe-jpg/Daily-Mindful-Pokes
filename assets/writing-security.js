@@ -5,6 +5,7 @@ import {
     quarantineLegacyWritingRecords
 } from './voice-note-store.js';
 import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-writing-migration.js';
+import { mergePrivateWritingText } from './daily-merge.js';
 
         const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
         const WRITING_DIARY_PREFIX='dmp_diary_cipher_v1_';
@@ -243,6 +244,67 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
             if(!encrypted||encrypted.version!==1||encrypted.algorithm!=='AES-256-GCM')throw new Error('Unsupported encrypted writing format.');
             const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(encrypted.iv),additionalData:getWritingAad(kind,dateStr),tagLength:128},key,base64ToBytes(encrypted.ciphertext));
             return JSON.parse(new TextDecoder().decode(plaintext));
+        }
+
+        function samePrivateWritingValue(left,right){
+            const stable=value=>{
+                if(Array.isArray(value))return value.map(stable);
+                if(value&&typeof value==='object'){
+                    const sorted={};
+                    Object.keys(value).sort().forEach(key=>{sorted[key]=stable(value[key]);});
+                    return sorted;
+                }
+                return value;
+            };
+            return JSON.stringify(stable(left))===JSON.stringify(stable(right));
+        }
+        function mergePrivateWritingNotes(localValue,remoteValue){
+            if(!localValue||typeof localValue!=='object'||Array.isArray(localValue)
+                ||!remoteValue||typeof remoteValue!=='object'||Array.isArray(remoteValue)){
+                throw new Error('The encrypted reflection record has an unsupported format.');
+            }
+            const merged={};
+            for(const id of [...new Set([...Object.keys(localValue),...Object.keys(remoteValue)])].sort()){
+                const left=localValue[id],right=remoteValue[id];
+                if(left===undefined){merged[id]=right;continue;}
+                if(right===undefined){merged[id]=left;continue;}
+                if(typeof left==='string'&&typeof right==='string'){
+                    merged[id]=mergePrivateWritingText(left,right);
+                    continue;
+                }
+                if(JSON.stringify(left)===JSON.stringify(right)){merged[id]=right;continue;}
+                throw new Error('A private reflection field could not be combined safely.');
+            }
+            return merged;
+        }
+        export async function mergeEncryptedPrivateWritingRecords(dateStr,localRecords,remoteRecords,key=writingCryptoKey){
+            const mergeRecord=async(kind,localRecord,remoteRecord)=>{
+                if(localRecord==null)return remoteRecord??null;
+                if(remoteRecord==null)return localRecord;
+                if(localRecord===remoteRecord)return remoteRecord;
+                if(!key)throw new Error('The account encryption key is unavailable. Both device copies remain preserved.');
+                let localValue,remoteValue;
+                try{
+                    localValue=await decryptPrivatePayload(kind,dateStr,localRecord,key);
+                    remoteValue=await decryptPrivatePayload(kind,dateStr,remoteRecord,key);
+                }catch(error){
+                    throw new Error('A private '+(kind==='diary'?'Diary':'reflection')+' record could not be decrypted for a safe merge. Both device copies remain preserved.');
+                }
+                const mergedValue=kind==='diary'
+                    ?(typeof localValue==='string'&&typeof remoteValue==='string'
+                        ?mergePrivateWritingText(localValue,remoteValue)
+                        :(()=>{throw new Error('The encrypted Diary entry has an unsupported format. Both device copies remain preserved.');})())
+                    :mergePrivateWritingNotes(localValue,remoteValue);
+                if(samePrivateWritingValue(mergedValue,remoteValue))return remoteRecord;
+                if(samePrivateWritingValue(mergedValue,localValue))return localRecord;
+                return encryptPrivatePayload(kind,dateStr,mergedValue,key);
+            };
+            const local=localRecords||{},remote=remoteRecords||{};
+            const [diary,notes]=await Promise.all([
+                mergeRecord('diary',local.diary,remote.diary),
+                mergeRecord('notes',local.notes,remote.notes)
+            ]);
+            return {diary,notes};
         }
         function getCurrentWritingDate(){
             const input=document.getElementById('currentDate');

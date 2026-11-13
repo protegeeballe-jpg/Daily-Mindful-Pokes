@@ -11,7 +11,8 @@ import {
   validateEncryptedVoiceNoteRecord
 } from './voice-note-store.js';
 import { GARDEN_STORAGE_KEY, GARDEN_DAILY_SYNC_PREFIX, mergeGardenStates, validateGardenState } from './garden-model.js';
-import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording } from './writing-security.js';
+import { mergeDailyBundles } from './daily-merge.js';
+import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording, mergeEncryptedPrivateWritingRecords } from './writing-security.js';
 
 const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
 const APP_CLIENT = 'faith-focus-daily-armor-web/1';
@@ -496,59 +497,6 @@ async function uploadDailyPacket(dateString) {
   }
 }
 
-async function publishSharedStateMerge(dateString, remote, remoteBundle) {
-  if (!activeVault || !remote?.packet || !remoteBundle) return false;
-
-  const mergedBundle = {
-    ...remoteBundle,
-    createdAt: new Date().toISOString(),
-    records: { ...remoteBundle.records },
-    appState: { ...(remoteBundle.appState || {}) }
-  };
-  let changed = false;
-
-  const gardenRecordKey = GARDEN_DAILY_SYNC_PREFIX + dateString;
-  const remoteGarden = mergeGardenStates(
-    parseGardenSnapshot(mergedBundle.records[gardenRecordKey]),
-    parseGardenSnapshot(mergedBundle.appState.garden)
-  );
-  const localGarden = parseGardenSnapshot(localStorage.getItem(GARDEN_STORAGE_KEY));
-  const mergedGarden = mergeGardenStates(remoteGarden, localGarden);
-  if (mergedGarden && JSON.stringify(mergedGarden) !== JSON.stringify(remoteGarden)) {
-    const gardenText = JSON.stringify(mergedGarden);
-    mergedBundle.records[gardenRecordKey] = gardenText;
-    mergedBundle.appState.garden = gardenText;
-    changed = true;
-  }
-
-  const localLegacyConfig = localStorage.getItem(LEGACY_WRITING_CONFIG_KEY);
-  if (isUsableLegacyWritingConfig(localLegacyConfig)
-      && !isUsableLegacyWritingConfig(mergedBundle.appState.legacyWritingConfig)) {
-    mergedBundle.appState.legacyWritingConfig = localLegacyConfig;
-    changed = true;
-  }
-
-  if (!changed) return false;
-
-  const packet = await encryptDailyBundle(mergedBundle, activeVault.encryptionKey, compressData);
-  try {
-    const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
-      method: 'PUT',
-      body: { packet, baseUpdatedAt: remote.updatedAt || null },
-      baseUpdatedAt: remote.updatedAt || null
-    });
-    console.log('[Vault Sync] Shared account state merge accepted:', {
-      dateString,
-      updatedAt: result.updatedAt || null
-    });
-    return true;
-  } catch (error) {
-    // A concurrent update wins. The original remote and local daily records remain intact.
-    console.warn('[Vault Sync] Shared account state merge was not published:', error?.message || error);
-    return false;
-  }
-}
-
 async function reconcileDay(dateString, remoteUpdatedAt) {
   const local = await getLocalDailyPacket(dateString);
   if (!local) {
@@ -577,14 +525,38 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
       await markLocalDailyPacketSynced(dateString, remote.updatedAt || remoteUpdatedAt, remote.packet);
       return false;
     }
-    // Keep conflicting checklist/Diary records untouched. Merge and publish only
-    // the independently shared Garden state and a missing valid legacy-key setting.
-    restoreSharedAppState(remoteBundle);
-    await publishSharedStateMerge(dateString, remote, remoteBundle);
-    window.dispatchEvent(new CustomEvent('faith-focus:vault-data-restored', {
-      detail: { dateString, sharedStateOnly: true }
-    }));
-    status('Sync conflict for ' + dateString + '. Both date records are preserved; shared account state was checked separately.', 'error');
+
+    // Reconcile both device copies by record type. Private writing is decrypted
+    // only with the unlocked account key; voice notes and location history are
+    // unioned, while checklist completion is combined without unchecking either side.
+    const mergedBundle = await mergeDailyBundles(localBundle, remoteBundle, {
+      dateString,
+      mergePrivateWriting: (localWriting, remoteWriting) =>
+        mergeEncryptedPrivateWritingRecords(dateString, localWriting, remoteWriting, activeVault.encryptionKey),
+      isUsableLegacyWritingConfig
+    });
+    const mergedPacket = await encryptDailyBundle(mergedBundle, activeVault.encryptionKey, compressData);
+    const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
+      method: 'PUT',
+      body: { packet: mergedPacket, baseUpdatedAt: remote.updatedAt || remoteUpdatedAt || null },
+      baseUpdatedAt: remote.updatedAt || remoteUpdatedAt || null
+    });
+    const syncResult = await markLocalDailyPacketSynced(
+      dateString,
+      result.updatedAt || remote.updatedAt || remoteUpdatedAt,
+      mergedPacket,
+      { requirePacketMatch: true }
+    );
+    if (syncResult.stillMatchesUploadedSnapshot) {
+      await restoreDailyBundle(mergedBundle);
+      status('Entries for ' + dateString + ' from both devices have been combined and synced.', 'success');
+      return true;
+    }
+
+    // A newer edit appeared during the upload. Keep it local and reconcile it
+    // against the just-published combined packet on the next sync pass.
+    scheduleCapture(dateString);
+    status('A newer local edit was kept safely and will be included in another sync pass.', 'info');
     return false;
   }
 
