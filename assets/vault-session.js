@@ -90,7 +90,7 @@ function clearPendingLegacyAccount() {
   pendingLegacyAccount = null;
 }
 
-function showLogin(message = 'Sign in to open your account and all of its features.') {
+function showLogin(message = 'Log in to your existing account and open all of its features.') {
   clearRecoverySession();
   clearPendingLegacyAccount();
   byId('view-pin')?.classList.remove('hidden');
@@ -158,7 +158,7 @@ async function submitVaultLogin(event) {
   }
 
   loginInProgress = true;
-  setBusy('vault-login-submit', true, 'SIGN IN', 'Unlocking account…');
+  setBusy('vault-login-submit', true, 'LOG IN', 'Unlocking account…');
   setStatus('vault-login-message', 'Looking up your account…');
   let loginMaterial = null;
   let credentials = null;
@@ -237,7 +237,7 @@ async function submitVaultLogin(event) {
   } finally {
     passphrase = '';
     loginInProgress = false;
-    setBusy('vault-login-submit', false, 'SIGN IN', 'Unlocking account…');
+    setBusy('vault-login-submit', false, 'LOG IN', 'Unlocking account…');
   }
 }
 
@@ -280,7 +280,7 @@ async function submitVaultSignup(event) {
   }
 
   loginInProgress = true;
-  setBusy('vault-signup-submit', true, 'CREATE ACCOUNT', 'Creating your private account…');
+  setBusy('vault-signup-submit', true, 'CREATE NEW ACCOUNT', 'Creating your private account…');
   let signupStage = 'preparing your account on this device';
   setStatus('vault-signup-message', 'Creating your account…');
   let credentials = null;
@@ -328,10 +328,18 @@ async function submitVaultSignup(event) {
         'Your account was created, but this device could not finish opening it. ' +
         (error?.message || 'Sign in using the username and passphrase you just created.'), 'error');
     } else {
-      const detail = error?.message || 'The account service did not complete the request.';
-      setStatus('vault-signup-message',
-        'We could not finish ' + signupStage + '. ' + detail +
-        ' Your entries are still here; check the message and try again.', 'error');
+      const usernameAlreadyTaken = error?.status === 409
+        && /^That username is already in use/i.test(error?.message || '');
+      if (usernameAlreadyTaken) {
+        setStatus('vault-signup-message',
+          'This username is already taken. Please choose a different username (or switch to Log In if this is your account).',
+          'error');
+      } else {
+        const detail = error?.message || 'The account service did not complete the request.';
+        setStatus('vault-signup-message',
+          'We could not finish ' + signupStage + '. ' + detail +
+          ' Your entries are still here; check the message and try again.', 'error');
+      }
       const status = byId('vault-signup-message');
       status?.scrollIntoView?.({ block: 'nearest', behavior: 'auto' });
       status?.focus?.({ preventScroll: true });
@@ -339,7 +347,7 @@ async function submitVaultSignup(event) {
   } finally {
     passphrase = '';
     loginInProgress = false;
-    setBusy('vault-signup-submit', false, 'CREATE ACCOUNT', 'Creating your private account…');
+    setBusy('vault-signup-submit', false, 'CREATE NEW ACCOUNT', 'Creating your private account…');
   }
 }
 async function submitLegacyUpgrade(event) {
