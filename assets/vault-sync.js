@@ -585,6 +585,43 @@ export async function importEncryptedVaultPackets(packets) {
   scheduleCloudPush();
 }
 
+export async function testVaultConnection() {
+  if (!activeVault) throw new Error('Sign in to your unified account before testing cloud sync.');
+  const vaultId = activeVault.vaultId;
+  console.log('[Vault Sync Test] Starting same-vault Cloudflare connection test:', {
+    vaultId, indexKey: vaultId + ':index'
+  });
+  status('Testing Cloudflare vault connection…', 'info');
+
+  // Flush current editor state and capture local daily packets first. The test
+  // uses real encrypted app packets; it never writes plaintext or a dummy KV key.
+  await stopRegisteredVoiceNoteRecording();
+  await flushAndSaveCurrentPrivateWriting();
+  await captureExistingLocalDates();
+  for (const queue of localCaptureQueues.values()) await queue;
+
+  if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
+  cloudDebounceTimer = null;
+  pendingCloudDates.clear();
+
+  // This performs the normal authenticated index pull, conflict-safe remote
+  // reconciliation, and upload of any genuinely dirty encrypted packets.
+  await synchronizeVault();
+  const index = await fetchRemoteIndex();
+  const remoteDates = Object.keys(index).filter(isValidDateString).sort();
+  const localPackets = await listLocalDailyPackets();
+  const pendingUploads = localPackets.filter(record => record.dirty).map(record => record.dateString);
+
+  const result = { vaultId, indexKey: vaultId + ':index', remoteDateCount: remoteDates.length, remoteDates, pendingUploads };
+  console.log('[Vault Sync Test] Completed:', result);
+  if (pendingUploads.length) {
+    status('Cloud connection succeeded. Some local dates remain queued or have a conflict; see the console.', 'error');
+  } else {
+    status('Cloud connection verified. This device is synchronized with the shared vault.', 'success');
+  }
+  return result;
+}
+
 export function isVaultSyncActive() {
   return Boolean(activeVault);
 }
