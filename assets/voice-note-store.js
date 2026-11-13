@@ -213,7 +213,11 @@ export async function loadEncryptedVoiceNotes(dateString, key) {
         throw new Error('Unlock your Diary to load its saved voice notes.');
     }
     const records = await getStoredRecords(dateString);
-    records.sort((left, right) => Date.parse(left.capturedAt) - Date.parse(right.capturedAt));
+    records.sort((left, right) => {
+        const leftTime = Date.parse(typeof left?.capturedAt === 'string' ? left.capturedAt : '');
+        const rightTime = Date.parse(typeof right?.capturedAt === 'string' ? right.capturedAt : '');
+        return (Number.isFinite(leftTime) ? leftTime : 0) - (Number.isFinite(rightTime) ? rightTime : 0);
+    });
     const notes = [];
     const unreadable = [];
     for (const record of records) {
@@ -246,8 +250,12 @@ export async function loadEncryptedVoiceNotes(dateString, key) {
 export async function exportEncryptedVoiceNotes() {
     const records = await getStoredRecords();
     records.sort((left, right) => {
-        const dateOrder = left.dateString.localeCompare(right.dateString);
-        return dateOrder || Date.parse(left.capturedAt) - Date.parse(right.capturedAt);
+        const leftDate = typeof left?.dateString === 'string' ? left.dateString : '';
+        const rightDate = typeof right?.dateString === 'string' ? right.dateString : '';
+        const dateOrder = leftDate.localeCompare(rightDate);
+        const leftTime = Date.parse(typeof left?.capturedAt === 'string' ? left.capturedAt : '');
+        const rightTime = Date.parse(typeof right?.capturedAt === 'string' ? right.capturedAt : '');
+        return dateOrder || (Number.isFinite(leftTime) ? leftTime : 0) - (Number.isFinite(rightTime) ? rightTime : 0);
     });
     return records;
 }
@@ -351,7 +359,11 @@ export async function restoreEncryptedVoiceNotes(records) {
 export async function exportEncryptedVoiceNotesForDate(dateString) {
     if (!isValidDateString(dateString)) throw new TypeError('A valid Diary date is required.');
     const records = await getStoredRecords(dateString);
-    records.sort((left, right) => Date.parse(left.capturedAt) - Date.parse(right.capturedAt));
+    records.sort((left, right) => {
+        const leftTime = Date.parse(typeof left?.capturedAt === 'string' ? left.capturedAt : '');
+        const rightTime = Date.parse(typeof right?.capturedAt === 'string' ? right.capturedAt : '');
+        return (Number.isFinite(leftTime) ? leftTime : 0) - (Number.isFinite(rightTime) ? rightTime : 0);
+    });
     return records;
 }
 
