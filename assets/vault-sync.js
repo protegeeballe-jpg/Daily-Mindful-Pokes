@@ -188,7 +188,11 @@ async function vaultRequest(path, { method = 'GET', body = null, baseUpdatedAt }
 
   let result = {};
   try { result = await response.json(); } catch { result = {}; }
-  console.log('[Vault Sync] Worker response:', { vaultId: activeVault?.vaultId || null, method, path, httpStatus: response.status, ok: response.ok, result });
+  console.log('[Vault Sync] Worker response:', {
+    vaultId: activeVault?.vaultId || null, method, path, httpStatus: response.status, ok: response.ok,
+    error: result.error || null, updatedAt: result.updatedAt || null,
+    remoteDateCount: result.index && typeof result.index === 'object' ? Object.keys(result.index).length : undefined
+  });
   if (!response.ok) {
     if (response.status === 401) throw new Error('The username or passphrase was not accepted by this vault.');
     if (response.status === 409) {
