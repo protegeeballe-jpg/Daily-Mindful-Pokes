@@ -138,13 +138,13 @@ test('same-day bundles merge Diary, notes, checklist, location, voice notes, and
 test('a conflicting unrecognized daily field stops reconciliation rather than discarding either copy', async () => {
     const localBundle = {
         dateString,
-        records: { 'unknown_' + dateString: 'local value' },
+        records: { ['unknown_' + dateString]: 'local value' },
         voiceNotes: [],
         appState: {}
     };
     const remoteBundle = {
         dateString,
-        records: { 'unknown_' + dateString: 'remote value' },
+        records: { ['unknown_' + dateString]: 'remote value' },
         voiceNotes: [],
         appState: {}
     };
