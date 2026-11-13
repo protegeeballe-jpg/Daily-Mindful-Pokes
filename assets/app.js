@@ -45,6 +45,7 @@ import {
 } from './location-checkin.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
 import { MAX_VOICE_NOTE_BYTES, isAllowedVoiceNoteMimeType } from './voice-note-store.js';
+import { installDeviceClockRefresh } from './device-clock.js';
 import {
     WRITING_DIARY_PREFIX, writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
@@ -116,6 +117,8 @@ import {
             }
             lastObservedDeviceDate = today;
         }
+
+        installDeviceClockRefresh({ windowRef: window, documentRef: document, refresh: updateDeviceClock });
 
         function showPage(pageId) {
             // The Forge Room is the app's home. Checklist and diary remain
