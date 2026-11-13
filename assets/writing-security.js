@@ -363,11 +363,18 @@ import { mergePrivateWritingText } from './daily-merge.js';
             ]);
             return {diary,notes};
         }
+        function getDeviceLocalDateString(){
+            const now=new Date();
+            return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+        }
+        export function isCurrentPrivateWritingDate(dateString,todayString=getDeviceLocalDateString()){
+            return typeof dateString==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)
+                &&dateString===todayString;
+        }
         function getCurrentWritingDate(){
             const input=document.getElementById('currentDate');
             if(input&&input.value)return input.value;
-            const now=new Date();
-            return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+            return getDeviceLocalDateString();
         }
         function setWritingSecurityStatus(message,state='info'){
             const status=document.getElementById('diary-security-status');
@@ -402,13 +409,27 @@ import { mergePrivateWritingText } from './daily-merge.js';
         }
         function updatePrivateWritingAccess(){
             const unlocked=!!writingCryptoKey;
-            document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{field.disabled=!unlocked;if(!unlocked)field.value='';});
+            const editable=unlocked&&isCurrentPrivateWritingDate(writingLoadedDate);
+            document.querySelectorAll('#private-diary-entry,.text-input').forEach(field=>{
+                field.disabled=!unlocked;
+                field.readOnly=unlocked&&!editable;
+                if(!unlocked)field.value='';
+            });
+            const updateButton=document.getElementById('diary-update-button');
+            if(updateButton){
+                updateButton.classList.toggle('hidden',!editable);
+                updateButton.disabled=!editable;
+            }
             document.getElementById('writing-lock-hint')?.classList.toggle('hidden',unlocked);
             const lockButton=document.querySelector('#diary-editor-panel [data-action="lockPrivateWriting"]');
             if(lockButton)lockButton.classList.toggle('hidden',!unlocked);
             renderDiarySecurityUI();
-            if(unlocked){const status=document.getElementById('writing-save-status');if(status)status.textContent='Private writing and voice notes are encrypted on this device.';}
-            else document.dispatchEvent(new CustomEvent('private-writing:locked'));
+            if(unlocked){
+                const status=document.getElementById('writing-save-status');
+                if(status)status.textContent=editable
+                    ?'Private writing and voice notes are encrypted on this device.'
+                    :'Past Diary entries and reflection notes are read-only.';
+            }else document.dispatchEvent(new CustomEvent('private-writing:locked'));
         }
         async function migrateLegacyPrivateWriting(key,{preserveSource=false}={}){
             const dates=new Set();
@@ -602,7 +623,8 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return {diary,notes};
         }
         async function savePrivateWritingForDate(dateStr=writingLoadedDate){
-            if(!writingCryptoKey||!dateStr||writingLoadedDate!==dateStr)return;
+            if(!writingCryptoKey||!dateStr||writingLoadedDate!==dateStr
+                ||!isCurrentPrivateWritingDate(dateStr))return;
             const key=writingCryptoKey,payload=getPrivateWritingPayload();
             const task=async()=>{
                 const notesPayload=buildPrivateWritingNotesPayload(
@@ -622,7 +644,8 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return writingSavePromise;
         }
         function schedulePrivateWritingSave(){
-            if(!writingCryptoKey||!writingLoadedDate)return;
+            if(!writingCryptoKey||!writingLoadedDate
+                ||!isCurrentPrivateWritingDate(writingLoadedDate))return;
             if(writingSaveTimer)clearTimeout(writingSaveTimer);
             writingSaveTimer=setTimeout(()=>{
                 writingSaveTimer=null;
@@ -657,6 +680,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
             writingLoadedNoteValues={...notes};
             writingLoadedNoteMeta={...noteMeta};
             writingLoadedDate=dateStr;
+            updatePrivateWritingAccess();
         }
         async function lockPrivateWriting(){
             if(vaultPrimaryKey){
@@ -728,5 +752,6 @@ export {
     WRITING_CONFIG_KEY,WRITING_DIARY_PREFIX,WRITING_NOTES_PREFIX,PRIVATE_NOTE_IDS,
     writingCryptoKey,writingLoadedDate,hasWritingCrypto,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
-    handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,loadPrivateWritingForDate,schedulePrivateWritingSave
+    handleDiaryKeyAction,lockPrivateWriting,savePrivateWritingForDate,loadPrivateWritingForDate,schedulePrivateWritingSave,
+    isCurrentPrivateWritingDate
 };
