@@ -66,6 +66,14 @@ test('private-writing encryption remains separate and preserved',()=>{
  assert.match(writing,/PRIVATE_NOTE_IDS/);
  assert.match(app,/handleDiaryKeyAction/);
 });
+test('the main Diary paragraph uses versioned replacement semantics and remains backward compatible',()=>{
+ assert.match(writing,/PRIVATE_DIARY_META_KEY/);
+ assert.match(writing,/function unpackPrivateWritingDiary/);
+ assert.match(writing,/buildPrivateWritingDiaryPayload/);
+ assert.match(writing,/mergePrivateWritingDiary/);
+ assert.match(writing,/unpackPrivateWritingDiary\(value\)\.text/);
+ assert.doesNotMatch(writing,/mergePrivateWritingText\(localValue,remoteValue\)/);
+});
 test('ordinary progress storage is documented as not encrypted',()=>{
  assert.match(app,/mindful_pokes_data_/);
  assert.match(readme,/Checklist checkboxes/i);
