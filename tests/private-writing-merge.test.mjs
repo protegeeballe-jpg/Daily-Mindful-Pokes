@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import {
     buildPrivateWritingNotesPayload,
+    isCurrentPrivateWritingDate,
     mergeEncryptedPrivateWritingRecords
 } from '../assets/writing-security.js';
 
@@ -129,4 +130,12 @@ test('unreadable encrypted writing blocks the merge without changing either sour
     );
     assert.equal(JSON.parse(local).version, 1);
     assert.equal(JSON.parse(remote).version, 1);
+});
+
+
+test('only the current device date is writable in the private Diary', () => {
+    assert.equal(isCurrentPrivateWritingDate('2026-11-13', '2026-11-13'), true);
+    assert.equal(isCurrentPrivateWritingDate('2026-11-12', '2026-11-13'), false);
+    assert.equal(isCurrentPrivateWritingDate('2026-11-14', '2026-11-13'), false);
+    assert.equal(isCurrentPrivateWritingDate('not-a-date', '2026-11-13'), false);
 });
