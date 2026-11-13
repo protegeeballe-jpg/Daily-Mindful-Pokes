@@ -554,7 +554,13 @@ async function reconcileDayOnce(dateString, remoteUpdatedAt) {
     const localBundle = await decryptDailyBundle(local.packet, activeVault.encryptionKey, decompressData);
     if (canonicalBundle(remoteBundle) === canonicalBundle(localBundle)) {
       restoreSharedAppState(remoteBundle);
-      await markLocalDailyPacketSynced(dateString, remote.updatedAt || remoteUpdatedAt, remote.packet);
+      const syncResult = await markLocalDailyPacketSynced(
+        dateString,
+        remote.updatedAt || remoteUpdatedAt,
+        remote.packet,
+        { requirePacketMatch: true, expectedPacket: local.packet }
+      );
+      if (!syncResult.stillMatchesUploadedSnapshot) scheduleCapture(dateString);
       return false;
     }
 
@@ -593,7 +599,7 @@ async function reconcileDayOnce(dateString, remoteUpdatedAt) {
       dateString,
       result.updatedAt || remote.updatedAt || remoteUpdatedAt,
       mergedPacket,
-      { requirePacketMatch: true }
+      { requirePacketMatch: true, expectedPacket: local.packet }
     );
     if (syncResult.stillMatchesUploadedSnapshot) {
       await restoreDailyBundle(mergedBundle);
