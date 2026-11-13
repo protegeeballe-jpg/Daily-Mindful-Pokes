@@ -2098,6 +2098,7 @@ import {
 
         async function handleDiaryKeyActionWithLocationLogs() {
             await handleDiaryKeyAction();
+            updateDiaryDateAccess(getCurrentWritingDate());
             if (writingCryptoKey) {
                 renderDiaryLocationLogs(getCurrentWritingDate());
                 await renderDiaryVoiceNotes(getCurrentWritingDate());
@@ -2246,10 +2247,8 @@ import {
                 setWritingSecurityStatus('The current Diary page could not be updated. Your visible text remains here. '
                     + (error?.message || ''), 'error');
             } finally {
-                if (button) {
-                    button.disabled = false;
-                    button.textContent = 'Update';
-                }
+                if (button) button.textContent = 'Update';
+                updateDiaryDateAccess(getCurrentWritingDate());
             }
         }
 
