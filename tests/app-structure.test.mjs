@@ -816,6 +816,13 @@ test('Garden snapshots are embedded in daily packets and merged without discardi
  assert.match(vaultSync,/isUsableLegacyWritingConfig\(remoteLegacyConfig\)/);
 });
 
+test('an unreadable same-day Diary conflict is deferred without blocking the account session',()=>{
+ assert.match(vaultSync,/catch \(error\) \{[\s\S]*?Same-day Diary merge is deferred/);
+ assert.match(vaultSync,/Both encrypted copies are preserved/);
+ assert.match(vaultSync,/Complete the one-time Diary migration, then sync again/);
+ assert.match(vaultSync,/return false;[\s\S]*?const mergedPacket = await encryptDailyBundle/);
+});
+
 test('same-day sync combines both devices without replacing private writing, voice notes, or location history',()=>{
  assert.match(dailyMerge,/mergeLocationCheckinRecordValues/);
  assert.match(dailyMerge,/mergeEncryptedVoiceNoteRecords/);
