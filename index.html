@@ -33,18 +33,18 @@
                     <input id="vault-username" type="text" inputmode="text" autocapitalize="none" autocomplete="username" spellcheck="false" maxlength="32" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3 mb-3" placeholder="Enter your username">
                     <label for="vault-passphrase" class="block text-xs font-bold text-amber-950 mb-1">Passphrase</label>
                     <input id="vault-passphrase" type="password" autocomplete="current-password" minlength="12" maxlength="128" required class="w-full bg-white rounded-xl border-2 border-amber-300 focus:outline-none focus:border-amber-500 px-4 py-3" placeholder="Enter your passphrase">
-                    <p id="vault-login-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Sign in to open your account and all of its features.</p>
-                    <button id="vault-login-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">SIGN IN</button>
+                    <p id="vault-login-message" class="text-xs text-amber-900/80 mt-3 mb-4" role="status" aria-live="polite">Log in to your existing account and open all of its features.</p>
+                    <button id="vault-login-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">LOG IN</button>
                 </form>
                 <div class="flex items-center justify-center gap-4 mt-4 text-xs">
-                    <button id="vault-show-signup" type="button" class="font-bold text-amber-900 underline underline-offset-2">Sign Up</button>
+                    <button id="vault-show-signup" type="button" class="font-bold text-amber-900 underline underline-offset-2">Create New Account</button>
                     <span class="text-amber-700" aria-hidden="true">·</span>
                     <button id="vault-show-recovery" type="button" class="font-bold text-amber-900 underline underline-offset-2">Forgot Password / Username?</button>
                 </div>
             </section>
 
             <section id="vault-signup-panel" class="hidden text-left">
-                <h3 class="text-xl font-bold text-amber-950 handwriting text-center">Create your account</h3>
+                <h3 class="text-xl font-bold text-amber-950 handwriting text-center">Create a new account</h3>
                 <p class="text-xs text-amber-900/80 text-center mt-1 mb-4">Your account will have one permanent vault, even if you change your username or passphrase later.</p>
                 <form id="vault-signup-form" novalidate>
                     <label for="signup-username" class="block text-xs font-bold text-amber-950 mb-1">Choose a username</label>
@@ -147,9 +147,9 @@
                     <input id="signup-answer-3" type="text" required maxlength="64" pattern="^\S+$" title="Enter one word only, with no spaces. Letter case matters." autocomplete="off" autocapitalize="none" spellcheck="false" class="w-full bg-white rounded-lg border border-amber-300 px-3 py-2 text-sm" placeholder="One word only">
                 </div>
                     <p id="vault-signup-message" class="vault-account-status text-xs text-amber-900/90 mt-3 mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 min-h-[2.5rem]" role="status" aria-live="polite" tabindex="-1">Your three answers will be protected and used only for account recovery.</p>
-                    <button id="vault-signup-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">CREATE ACCOUNT</button>
+                    <button id="vault-signup-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">CREATE NEW ACCOUNT</button>
                 </form>
-                <button id="vault-back-to-signin-from-signup" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Back to Sign In</button>
+                <button id="vault-back-to-signin-from-signup" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Log In to Existing Account</button>
             </section>
 
             <section id="vault-recovery-panel" class="hidden text-left">
@@ -262,7 +262,7 @@
                         <button id="vault-recovery-save" type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-md transition">SAVE ACCOUNT CHANGES</button>
                     </form>
                 </section>
-                <button id="vault-back-to-signin-from-recovery" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Back to Sign In</button>
+                <button id="vault-back-to-signin-from-recovery" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Log In to Existing Account</button>
             </section>
 
             <section id="vault-legacy-upgrade-panel" class="hidden text-left">
@@ -366,7 +366,7 @@
                     <p id="vault-legacy-upgrade-message" class="vault-account-status text-xs text-amber-900/90 mt-3 mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 min-h-[2.5rem]" role="status" aria-live="polite" tabindex="-1">Your existing vault data will remain under the same master key.</p>
                     <button id="vault-legacy-upgrade-submit" type="submit" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-2xl shadow-md transition">SECURE EXISTING ACCOUNT</button>
                 </form>
-                <button id="vault-back-to-signin-from-legacy" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Back to Sign In</button>
+                <button id="vault-back-to-signin-from-legacy" type="button" class="w-full mt-3 py-2 text-xs font-bold text-amber-900 underline underline-offset-2">Log In to Existing Account</button>
             </section>
 
             <p class="text-[10px] text-amber-900/70 mt-5">Your passphrase is never sent to Cloudflare. Security answers are sent over HTTPS for protected recovery verification and are not stored as readable answers. Keep your credentials and recovery answers private.</p>
