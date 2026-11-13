@@ -933,3 +933,20 @@ test('same-day sync combines both devices without replacing private writing, voi
  assert.match(writing,/mergePrivateWritingText/);
  assert.ok(serviceWorker.includes('./assets/daily-merge.js'));
 });
+
+
+test('Diary Update is current-date-only; previous voice notes and location history remain read-only', () => {
+ assert.match(html, /id="diary-update-button"[^>]*data-action="updateCurrentDiary"/);
+ assert.match(app, /async function updateCurrentDiary\(\)/);
+ assert.match(app, /await flushAndSaveCurrentPrivateWriting\(\)/);
+ assert.match(app, /dateString !== getDeviceLocalDateString\(\)/);
+ assert.match(app, /previous voice notes are read-only/i);
+ assert.match(app, /Past location history is permanent and cannot be changed/);
+ assert.match(app, /checkbox.disabled = !isToday/);
+ assert.match(app, /updateCurrentDiary:\(\)=>updateCurrentDiary\(\)/);
+ assert.match(writing, /isCurrentPrivateWritingDate\(writingLoadedDate\)/);
+ assert.match(writing, /field.readOnly=unlocked&&!editable/);
+ assert.match(writing, /!isCurrentPrivateWritingDate\(dateStr\)/);
+ assert.match(html, /Location History/);
+ assert.match(html, /READ ONLY/);
+});
