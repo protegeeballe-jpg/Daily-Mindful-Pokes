@@ -368,7 +368,10 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
         }
         export function isCurrentPrivateWritingDate(dateString,todayString=getDeviceLocalDateString()){
-            return typeof dateString==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(dateString)
+            return typeof dateString==='string'
+                &&dateString.length===10
+                &&dateString.charAt(4)==='-'
+                &&dateString.charAt(7)==='-'
                 &&dateString===todayString;
         }
         function getCurrentWritingDate(){
