@@ -44,6 +44,7 @@ import {
     loadLocationCheckinEntries, saveLocationCheckin
 } from './location-checkin.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
+import { MAX_VOICE_NOTE_BYTES, isAllowedVoiceNoteMimeType } from './voice-note-store.js';
 import {
     WRITING_DIARY_PREFIX, writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
@@ -61,6 +62,8 @@ import {
         let activeTargetCheckboxId = null;
         let mediaRecorder, audioChunks = [];
         let activeVoiceNoteDate = null;
+        let activeVoiceNoteBytes = 0;
+        let activeVoiceNoteExceededLimit = false;
         let voiceRecorderStarting = null;
         let voiceNoteStopPromise = null;
         let voiceNoteStopResolve = null;
@@ -1806,19 +1809,41 @@ import {
                 voiceNoteStopPromise = new Promise(resolve => {
                     voiceNoteStopResolve = resolve;
                 });
+                activeVoiceNoteBytes = 0;
+                activeVoiceNoteExceededLimit = false;
                 mediaRecorder.ondataavailable = event => {
-                    if (event.data?.size) audioChunks.push(event.data);
+                    if (!event.data?.size || activeVoiceNoteExceededLimit) return;
+                    if (activeVoiceNoteBytes + event.data.size > MAX_VOICE_NOTE_BYTES) {
+                        activeVoiceNoteExceededLimit = true;
+                        console.warn('[Diary Voice Note] Recording stopped at the configured size limit.', {
+                            maxBytes: MAX_VOICE_NOTE_BYTES,
+                            receivedBytes: activeVoiceNoteBytes + event.data.size
+                        });
+                        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+                        return;
+                    }
+                    audioChunks.push(event.data);
+                    activeVoiceNoteBytes += event.data.size;
                 };
                 mediaRecorder.onstop = async () => {
                     const mimeType = mediaRecorder?.mimeType
                         || audioChunks.find(chunk => chunk.type)?.type
                         || 'audio/webm';
-                    const blob = new Blob(audioChunks, { type: mimeType });
                     stream?.getTracks().forEach(track => track.stop());
                     const dateString = activeVoiceNoteDate;
 
                     try {
+                        if (activeVoiceNoteExceededLimit) {
+                            throw new Error('Voice notes are limited to ' + Math.round(MAX_VOICE_NOTE_BYTES / 1024) + ' KB each. The recording was stopped and the oversized audio was discarded before encryption.');
+                        }
+                        if (!isAllowedVoiceNoteMimeType(mimeType)) {
+                            throw new Error('This browser produced an unsupported audio format (' + mimeType + '). Use a browser that records WebM, MP4, Ogg, WAV, AAC, or FLAC audio.');
+                        }
+                        const blob = new Blob(audioChunks, { type: mimeType });
                         if (!blob.size) throw new Error('The microphone did not produce any audio data.');
+                        if (blob.size > MAX_VOICE_NOTE_BYTES) {
+                            throw new Error('Voice notes are limited to ' + Math.round(MAX_VOICE_NOTE_BYTES / 1024) + ' KB each.');
+                        }
                         const saveStatus = document.getElementById('writing-save-status');
                         if (saveStatus) saveStatus.textContent = 'Encrypting and saving your voice note…';
                         await savePrivateVoiceNoteForDate(dateString, blob);
@@ -1830,6 +1855,8 @@ import {
                         setWritingSecurityStatus('The voice note could not be saved. ' + (error?.message || ''), 'error');
                     } finally {
                         audioChunks = [];
+                        activeVoiceNoteBytes = 0;
+                        activeVoiceNoteExceededLimit = false;
                         activeVoiceNoteDate = null;
                         mediaRecorder = null;
                         const recordBtn = document.getElementById('record-btn');
@@ -1845,7 +1872,7 @@ import {
                     }
                 };
 
-                mediaRecorder.start();
+                mediaRecorder.start(1000);
                 const recordBtn = document.getElementById('record-btn');
                 const recordText = document.getElementById('record-text');
                 if (recordText) recordText.textContent = 'Stop Recording';
@@ -1859,6 +1886,9 @@ import {
                 stream?.getTracks().forEach(track => track.stop());
                 mediaRecorder = null;
                 activeVoiceNoteDate = null;
+                audioChunks = [];
+                activeVoiceNoteBytes = 0;
+                activeVoiceNoteExceededLimit = false;
                 voiceNoteStopResolve?.();
                 voiceNoteStopResolve = null;
                 voiceNoteStopPromise = null;
