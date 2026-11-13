@@ -1,7 +1,8 @@
 import {
     saveEncryptedVoiceNote, loadEncryptedVoiceNotes,
     exportEncryptedVoiceNotes, restoreEncryptedVoiceNotes,
-    validateEncryptedVoiceNoteBackup, encryptVoiceNoteBlob, decryptVoiceNoteRecord
+    validateEncryptedVoiceNoteBackup, encryptVoiceNoteBlob, decryptVoiceNoteRecord,
+    quarantineLegacyWritingRecords
 } from './voice-note-store.js';
 import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-writing-migration.js';
 
@@ -101,26 +102,12 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
 
             const migrated=[];
             const quarantined=[];
-            const quarantineWrites=[];
-            const makeQuarantineKey=(kind,id)=>{
-                const base='dmp_legacy_quarantine_v1_'+kind+'_'+String(id||'unknown').replace(/[^a-zA-Z0-9_-]/g,'_');
-                let candidate=base,index=1;
-                while(localStorage.getItem(candidate)!==null)candidate=base+'_'+index++;
-                return candidate;
-            };
             const quarantine=(kind,id,dateString,record,error)=>{
-                const key=makeQuarantineKey(kind,id);
-                const value=JSON.stringify({
-                    version:1,kind,dateString:dateString||null,record,
-                    reason:String(error?.message||error||'Unspecified conversion error'),
-                    quarantinedAt:new Date().toISOString()
+                const reason=String(error?.message||error||'Unspecified conversion error');
+                quarantined.push({kind,id,dateString,record,reason});
+                console.error('[Diary migration] Record quarantined in local IndexedDB; original ciphertext preserved.',{
+                    kind,id,dateString,reason,error
                 });
-                quarantineWrites.push({key,value});
-                quarantined.push({kind,id,dateString,reason:String(error?.message||error||'Unspecified conversion error')});
-                console.error('[Diary migration] Record quarantined; original ciphertext preserved.',{
-                    kind,id,dateString,reason:error?.message||String(error||'Unknown error'),error
-                });
-                return key;
             };
 
             for(const dateStr of dates){
@@ -183,16 +170,12 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                 ...dates,
                 ...voiceRecords.map(record=>record?.dateString).filter(value=>typeof value==='string')
             ]);
-            const originalQuarantineValues=new Map();
             window.__faithFocusVaultMigration=true;
             try{
-                // Preserve every skipped ciphertext before removing it from the active
-                // Diary namespace. Quarantine values remain encrypted and are not synced
-                // as readable Diary records.
-                quarantineWrites.forEach(item=>{
-                    originalQuarantineValues.set(item.key,localStorage.getItem(item.key));
-                    localStorage.setItem(item.key,item.value);
-                });
+                // Store unreadable ciphertext in a separate IndexedDB quarantine
+                // object store before removing it from active Diary records. This
+                // avoids localStorage quota limits for large encrypted voice notes.
+                await quarantineLegacyWritingRecords(quarantined);
                 migrated.forEach(item=>{
                     if(item.quarantineDiary)localStorage.removeItem(item.diaryKey);
                     else if(item.nextDiary!==null)localStorage.setItem(item.diaryKey,item.nextDiary);
@@ -215,10 +198,6 @@ import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-wri
                     if(item.originalNotes===null)localStorage.removeItem(item.notesKey);
                     else localStorage.setItem(item.notesKey,item.originalNotes);
                 });
-                for(const [key,original] of originalQuarantineValues){
-                    if(original===null)localStorage.removeItem(key);
-                    else localStorage.setItem(key,original);
-                }
                 throw error;
             }finally{
                 window.__faithFocusVaultMigration=false;
