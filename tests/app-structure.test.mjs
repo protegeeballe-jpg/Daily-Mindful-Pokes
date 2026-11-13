@@ -123,6 +123,18 @@ test('account inactivity lock is two minutes and rechecks expired sessions after
  assert.match(vaultSync,/activeVaultRequestControllers\.forEach\(controller => controller\.abort\(\)\)/);
 });
 
+test('missed-card victory closes after seven seconds and returns to the current checklist',()=>{
+ assert.match(app,/MISSED_CARD_VICTORY_DELAY_MS = 7000/);
+ assert.match(app,/missedCardReviewContext = \{/);
+ assert.match(app,/missedCardReviewContext\.missedDate !== dateString/);
+ assert.match(app,/window\.setTimeout\(\(\) => \{/);
+ assert.match(app,/\}, MISSED_CARD_VICTORY_DELAY_MS\)/);
+ assert.match(app,/const today = getDeviceLocalDateString\(\)/);
+ assert.match(app,/await handleDateChange\(\);[\s\S]*?resetChecklistWizard\(\);[\s\S]*?showPage\('checklist'\)/);
+ assert.match(app,/context\.returnDate === today \? context\.returnStep : 1/);
+ assert.match(app,/if \(missedCardReviewContext && missedCardVictoryTimer\)/);
+});
+
 test('missed checklist cards are shown as actionable next-day in-app reminders',()=>{
  assert.match(html,/id="missed-card-notice"/);
  assert.match(html,/id="missed-card-list"/);

@@ -74,6 +74,9 @@ import {
         let diaryArchiveVoiceUrls = [];
         let diaryArchiveDateSummaries = [];
         let diaryViewingHistoricalDate = null;
+        const MISSED_CARD_VICTORY_DELAY_MS = 7000;
+        let missedCardReviewContext = null;
+        let missedCardVictoryTimer = null;
 
         // Request Persistent Storage to prevent automatic browser data clearing
         async function requestPersistentStorage() {
@@ -849,12 +852,20 @@ import {
 
             const dateInput = document.getElementById('currentDate');
             if (!dateInput) return;
+            if (missedCardVictoryTimer) window.clearTimeout(missedCardVictoryTimer);
+            missedCardVictoryTimer = null;
+            missedCardReviewContext = {
+                missedDate,
+                returnDate: getDeviceLocalDateString(),
+                returnStep: currentStep
+            };
             dateInput.value = missedDate;
             try {
                 await handleDateChange();
                 showPage('checklist');
                 if (currentStep !== cardNumber) changeStep(cardNumber - currentStep);
             } catch (error) {
+                missedCardReviewContext = null;
                 console.error('[Checklist] Could not open a missed card for review.', error);
                 const status = document.getElementById('finish-status');
                 if (status) {
@@ -862,6 +873,56 @@ import {
                     status.classList.remove('hidden');
                 }
             }
+        }
+
+        async function returnFromMissedCardReview() {
+            const context = missedCardReviewContext;
+            if (!context) return;
+
+            missedCardReviewContext = null;
+            if (missedCardVictoryTimer) window.clearTimeout(missedCardVictoryTimer);
+            missedCardVictoryTimer = null;
+
+            const dateInput = document.getElementById('currentDate');
+            if (!dateInput) return;
+            const today = getDeviceLocalDateString();
+            dateInput.value = today;
+
+            try {
+                await handleDateChange();
+                document.getElementById('grand-finale-overlay')?.classList.add('hidden');
+                resetChecklistWizard();
+
+                // Restore the current-day card position when returning on the
+                // same date. If midnight passed during the celebration, start
+                // the new day at Card 1.
+                const returnStep = context.returnDate === today ? context.returnStep : 1;
+                if (Number.isInteger(returnStep) && returnStep > 1 && returnStep <= 6) {
+                    changeStep(returnStep - 1);
+                }
+                showPage('checklist');
+            } catch (error) {
+                document.getElementById('grand-finale-overlay')?.classList.add('hidden');
+                showPage('checklist');
+                const status = document.getElementById('finish-status');
+                if (status) {
+                    status.textContent = 'Your missed-card celebration is complete, but today’s checklist could not be reloaded automatically. Your saved records remain unchanged. ' + (error?.message || '');
+                    status.classList.remove('hidden');
+                }
+            }
+        }
+
+        function scheduleMissedCardVictoryReturn(dateString) {
+            if (!missedCardReviewContext
+                || missedCardReviewContext.missedDate !== dateString
+                || missedCardVictoryTimer) return;
+
+            missedCardVictoryTimer = window.setTimeout(() => {
+                missedCardVictoryTimer = null;
+                returnFromMissedCardReview().catch(error => {
+                    console.error('[Checklist] Could not return to today after the missed-card celebration.', error);
+                });
+            }, MISSED_CARD_VICTORY_DELAY_MS);
         }
 
         function setLocationCheckinMessage(message, state = 'info') {
@@ -1817,6 +1878,7 @@ import {
                         localStorage.setItem(scoreAwardedKey, 'true');
                         updateScoreDisplay();
                     }
+                    scheduleMissedCardVictoryReturn(dateStr);
                 }
             } else {
                 trophyBanner.classList.add('hidden');
@@ -1826,6 +1888,15 @@ import {
 
         function closeGrandFinale() {
             document.getElementById('grand-finale-overlay').classList.add('hidden');
+            // If the user closes the missed-card celebration early, honor that
+            // action by returning to today's checklist immediately.
+            if (missedCardReviewContext && missedCardVictoryTimer) {
+                window.clearTimeout(missedCardVictoryTimer);
+                missedCardVictoryTimer = null;
+                returnFromMissedCardReview().catch(error => {
+                    console.error('[Checklist] Could not return to today after closing the celebration.', error);
+                });
+            }
         }
 
         function loadData() {
