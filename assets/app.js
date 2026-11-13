@@ -831,7 +831,7 @@ import {
         function dismissMissedCardNotifications() {
             const panel = document.getElementById('missed-card-notice');
             const missedDate = panel?.dataset.missedDate;
-            if (missedDate && /^\d{4}-\\d{2}-\\d{2}$/.test(missedDate)) {
+            if (missedDate && /^\d{4}-\d{2}-\d{2}$/.test(missedDate)) {
                 try {
                     localStorage.setItem(MISSED_CARD_DISMISS_PREFIX + missedDate, 'true');
                 } catch (error) {
@@ -844,7 +844,7 @@ import {
         async function reviewMissedCard(trigger) {
             const missedDate = trigger?.dataset?.missedDate;
             const cardNumber = Number(trigger?.dataset?.cardNumber);
-            if (!/^\d{4}-\\d{2}-\\d{2}$/.test(missedDate || '')
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(missedDate || '')
                 || !Number.isInteger(cardNumber) || cardNumber < 1 || cardNumber > 6) return;
 
             const dateInput = document.getElementById('currentDate');
