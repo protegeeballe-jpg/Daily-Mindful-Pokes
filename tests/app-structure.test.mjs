@@ -767,7 +767,7 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
 test('Diary migration recognizes account-key records and converts only legacy-key entries',()=>{
  const privateMigration=readFileSync(new URL('../assets/private-writing-migration.js',import.meta.url),'utf8');
  assert.match(writing,/hasEncryptedRecordsOutsideKey\(vaultPrimaryKey,voiceNotes\)/);
- assert.match(writing,/legacyMigrationRequired=legacyConfigExists&&encryptedRecordsNeedPreviousKey/);
+ assert.match(writing,/legacyMigrationRequired=encryptedRecordsNeedPreviousKey/);
  assert.match(writing,/legacyKeyUnavailable=!legacyConfigExists&&encryptedRecordsNeedPreviousKey/);
  assert.match(writing,/await migrateLegacyPrivateWriting\(writingCryptoKey\);[\s\S]*?await loadPrivateWritingForDate\(getCurrentWritingDate\(\)\);[\s\S]*?localStorage\.removeItem\(WRITING_CONFIG_KEY\)/);
  assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
@@ -782,8 +782,8 @@ test('legacy Diary migration permits direct encrypted-record checks when its ver
  assert.match(writing,/button\.disabled=false;button\.textContent='Try previous Diary passphrase'/);
  assert.match(writing,/hasLegacyEncryptedRecordReadableWithKey\(key\)/);
  assert.match(writing,/Incorrect previous Diary passphrase/);
- assert.match(writing,/key\.match\(\/\^dmp_diary_cipher_v1_\\d/);
- assert.match(writing,/key\.match\(\/\^dmp_notes_cipher_v1_\\d/);
+ assert.ok(writing.includes('key&&key.match(/^dmp_diary_cipher_v1_('));
+ assert.ok(writing.includes('key&&key.match(/^dmp_notes_cipher_v1_('));
  assert.doesNotMatch(writing,/if\(legacyKeyUnavailable\)\{\s*setWritingSecurityStatus\([^;]+;\s*return;/);
 });
 
