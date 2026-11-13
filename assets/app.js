@@ -44,6 +44,7 @@ import {
     loadLocationCheckinEntries, saveLocationCheckin
 } from './location-checkin.js';
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
+import { MAX_VOICE_NOTE_BYTES, isAllowedVoiceNoteMimeType } from './voice-note-store.js';
 import {
     WRITING_DIARY_PREFIX, writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
@@ -61,6 +62,8 @@ import {
         let activeTargetCheckboxId = null;
         let mediaRecorder, audioChunks = [];
         let activeVoiceNoteDate = null;
+        let activeVoiceNoteBytes = 0;
+        let activeVoiceNoteExceededLimit = false;
         let voiceRecorderStarting = null;
         let voiceNoteStopPromise = null;
         let voiceNoteStopResolve = null;
@@ -358,8 +361,8 @@ import {
             const instructions = document.getElementById('modal-instructions');
             const button = document.getElementById('modal-complete-btn');
             document.querySelector('#modal-content-box h2')?.remove();
-            target.innerHTML = '';
-            instructions.innerHTML = '';
+            target.replaceChildren();
+            instructions.replaceChildren();
             button.disabled = false;
             button.classList.remove('opacity-50','cursor-not-allowed');
             button.style.display = 'block';
@@ -371,16 +374,55 @@ import {
 
             if (type === 'clouds') {
                 activeModalAction = "close";
-                target.innerHTML = '<div class="cloud-intro-gallery">' +
-                    '<div class="cloud-intro-item cloud-cumulus"><span class="cloud-art" aria-hidden="true">☁️</span><span>Cumulus</span></div>' +
-                    '<div class="cloud-intro-item cloud-stratus"><span class="cloud-art" aria-hidden="true">🌫️</span><span>Stratus</span></div>' +
-                    '<div class="cloud-intro-item cloud-stratocumulus"><span class="cloud-art" aria-hidden="true">🌥️<span class="cloud-rain">💧💧</span></span><span>Stratocumulus</span></div>' +
-                    '</div><div class="guide-speech cloud-intro-copy">Meet the three clouds. Tap each one on your card and watch it drift away. After all three have been released, your completion checkbox will appear.</div>';
+                const gallery = document.createElement('div');
+                gallery.className = 'cloud-intro-gallery';
+                const cloudItems = [
+                    { className: 'cloud-intro-item cloud-cumulus', art: '☁️', label: 'Cumulus' },
+                    { className: 'cloud-intro-item cloud-stratus', art: '🌫️', label: 'Stratus' },
+                    { className: 'cloud-intro-item cloud-stratocumulus', art: '🌥️', rain: '💧💧', label: 'Stratocumulus' }
+                ];
+                cloudItems.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = item.className;
+                    const art = document.createElement('span');
+                    art.className = 'cloud-art';
+                    art.setAttribute('aria-hidden', 'true');
+                    art.textContent = item.art;
+                    if (item.rain) {
+                        const rain = document.createElement('span');
+                        rain.className = 'cloud-rain';
+                        rain.textContent = item.rain;
+                        art.append(rain);
+                    }
+                    const label = document.createElement('span');
+                    label.textContent = item.label;
+                    card.append(art, label);
+                    gallery.append(card);
+                });
+                const cloudCopy = document.createElement('div');
+                cloudCopy.className = 'guide-speech cloud-intro-copy';
+                cloudCopy.textContent = 'Meet the three clouds. Tap each one on your card and watch it drift away. After all three have been released, your completion checkbox will appear.';
+                target.append(gallery, cloudCopy);
                 instructions.textContent = 'Notice each feeling gently. You can release a cloud when you feel ready.';
                 button.textContent = 'Let’s release the clouds';
             } else if (guide.breathing) {
                 activeModalAction = 'start-breathing';
-                target.innerHTML = '<div class="flex flex-col items-center gap-3 w-full"><div id="breathing-orb" class="guide-breath-orb"></div><div id="breathing-phase" class="text-xl font-bold text-blue-800">Ready?</div><div id="breathing-tip" class="text-sm text-slate-600">We will take five gentle cycles together.</div><div id="breathing-count" class="guide-timer">5 cycles</div><div id="breathing-clock" class="text-xs text-blue-700 font-semibold">12 seconds per cycle</div></div>';
+                const breathingPanel = document.createElement('div');
+                breathingPanel.className = 'flex flex-col items-center gap-3 w-full';
+                [
+                    ['breathing-orb', 'guide-breath-orb', ''],
+                    ['breathing-phase', 'text-xl font-bold text-blue-800', 'Ready?'],
+                    ['breathing-tip', 'text-sm text-slate-600', 'We will take five gentle cycles together.'],
+                    ['breathing-count', 'guide-timer', '5 cycles'],
+                    ['breathing-clock', 'text-xs text-blue-700 font-semibold', '12 seconds per cycle']
+                ].forEach(([id, className, text]) => {
+                    const node = document.createElement('div');
+                    node.id = id;
+                    node.className = className;
+                    node.textContent = text;
+                    breathingPanel.append(node);
+                });
+                target.append(breathingPanel);
                 instructions.textContent = guide.line;
                 button.textContent = 'Start 5 breathing cycles';
             } else {
@@ -394,9 +436,30 @@ import {
                 else if (['end-4'].includes(checkboxId)) motionClass = 'boop';
                 else if (['sleep-3'].includes(checkboxId)) motionClass = 'thinking';
                 const propMotion = ['end-2'].includes(checkboxId) ? 'writing' : (['mid-5','cloud-checked'].includes(checkboxId) ? 'floating' : (checkboxId === 'sleep-3' ? 'screen-away' : ''));
-                target.innerHTML = (['start-3','mid-1'].includes(checkboxId) ? buildStretchingCartoon(false) : '<div class="guide-scene"><span class="guide-person '+motionClass+'">'+guide.person+'</span><span class="guide-prop '+(guide.drink?'guide-cup ':'')+propMotion+'">'+guide.prop+'</span></div>') + '<div class="guide-speech" id="guide-speech"></div><p class="text-xs text-slate-500 mt-3" id="guide-action"></p>';
-                document.getElementById('guide-speech').textContent = guide.line;
-                document.getElementById('guide-action').textContent = guide.action;
+                if (['start-3','mid-1'].includes(checkboxId)) {
+                    // This is a fixed, developer-authored SVG illustration; no user text is parsed as markup.
+                    target.innerHTML = buildStretchingCartoon(false);
+                } else {
+                    const scene = document.createElement('div');
+                    scene.className = 'guide-scene';
+                    const person = document.createElement('span');
+                    person.className = 'guide-person ' + motionClass;
+                    person.textContent = String(guide.person || '');
+                    const prop = document.createElement('span');
+                    prop.className = 'guide-prop ' + (guide.drink ? 'guide-cup ' : '') + propMotion;
+                    prop.textContent = String(guide.prop || '');
+                    scene.append(person, prop);
+                    target.append(scene);
+                }
+                const speech = document.createElement('div');
+                speech.className = 'guide-speech';
+                speech.id = 'guide-speech';
+                speech.textContent = String(guide.line || '');
+                const action = document.createElement('p');
+                action.className = 'text-xs text-slate-500 mt-3';
+                action.id = 'guide-action';
+                action.textContent = String(guide.action || '');
+                target.append(speech, action);
                 instructions.textContent = guide.drink ? "My turn... sip! Your turn next. Take your time." : "Let's do it at your own pace.";
                 if (guide.drink) {
                     activeModalAction = 'waiting-for-drink';
@@ -633,7 +696,13 @@ import {
                 const guideButton = document.createElement('button');
                 guideButton.type = 'button';
                 guideButton.className = 'guide-launch';
-                guideButton.innerHTML = '<span class="guide-play-icon" aria-hidden="true">▶</span><span>Show me</span>';
+                const playIcon = document.createElement('span');
+                playIcon.className = 'guide-play-icon';
+                playIcon.setAttribute('aria-hidden', 'true');
+                playIcon.textContent = '▶';
+                const guideLabel = document.createElement('span');
+                guideLabel.textContent = 'Show me';
+                guideButton.append(playIcon, guideLabel);
                 guideButton.setAttribute('aria-label','Show animated guide for '+id);
                 guideButton.addEventListener('click',() => openModal('guided',id));
                 row.insertBefore(guideButton,label);
@@ -1806,19 +1875,41 @@ import {
                 voiceNoteStopPromise = new Promise(resolve => {
                     voiceNoteStopResolve = resolve;
                 });
+                activeVoiceNoteBytes = 0;
+                activeVoiceNoteExceededLimit = false;
                 mediaRecorder.ondataavailable = event => {
-                    if (event.data?.size) audioChunks.push(event.data);
+                    if (!event.data?.size || activeVoiceNoteExceededLimit) return;
+                    if (activeVoiceNoteBytes + event.data.size > MAX_VOICE_NOTE_BYTES) {
+                        activeVoiceNoteExceededLimit = true;
+                        console.warn('[Diary Voice Note] Recording stopped at the configured size limit.', {
+                            maxBytes: MAX_VOICE_NOTE_BYTES,
+                            receivedBytes: activeVoiceNoteBytes + event.data.size
+                        });
+                        if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+                        return;
+                    }
+                    audioChunks.push(event.data);
+                    activeVoiceNoteBytes += event.data.size;
                 };
                 mediaRecorder.onstop = async () => {
                     const mimeType = mediaRecorder?.mimeType
                         || audioChunks.find(chunk => chunk.type)?.type
                         || 'audio/webm';
-                    const blob = new Blob(audioChunks, { type: mimeType });
                     stream?.getTracks().forEach(track => track.stop());
                     const dateString = activeVoiceNoteDate;
 
                     try {
+                        if (activeVoiceNoteExceededLimit) {
+                            throw new Error('Voice notes are limited to ' + Math.round(MAX_VOICE_NOTE_BYTES / 1024) + ' KB each. The recording was stopped and the oversized audio was discarded before encryption.');
+                        }
+                        if (!isAllowedVoiceNoteMimeType(mimeType)) {
+                            throw new Error('This browser produced an unsupported audio format (' + mimeType + '). Use a browser that records WebM, MP4, Ogg, WAV, AAC, or FLAC audio.');
+                        }
+                        const blob = new Blob(audioChunks, { type: mimeType });
                         if (!blob.size) throw new Error('The microphone did not produce any audio data.');
+                        if (blob.size > MAX_VOICE_NOTE_BYTES) {
+                            throw new Error('Voice notes are limited to ' + Math.round(MAX_VOICE_NOTE_BYTES / 1024) + ' KB each.');
+                        }
                         const saveStatus = document.getElementById('writing-save-status');
                         if (saveStatus) saveStatus.textContent = 'Encrypting and saving your voice note…';
                         await savePrivateVoiceNoteForDate(dateString, blob);
@@ -1830,6 +1921,8 @@ import {
                         setWritingSecurityStatus('The voice note could not be saved. ' + (error?.message || ''), 'error');
                     } finally {
                         audioChunks = [];
+                        activeVoiceNoteBytes = 0;
+                        activeVoiceNoteExceededLimit = false;
                         activeVoiceNoteDate = null;
                         mediaRecorder = null;
                         const recordBtn = document.getElementById('record-btn');
@@ -1845,7 +1938,7 @@ import {
                     }
                 };
 
-                mediaRecorder.start();
+                mediaRecorder.start(1000);
                 const recordBtn = document.getElementById('record-btn');
                 const recordText = document.getElementById('record-text');
                 if (recordText) recordText.textContent = 'Stop Recording';
@@ -1859,6 +1952,9 @@ import {
                 stream?.getTracks().forEach(track => track.stop());
                 mediaRecorder = null;
                 activeVoiceNoteDate = null;
+                audioChunks = [];
+                activeVoiceNoteBytes = 0;
+                activeVoiceNoteExceededLimit = false;
                 voiceNoteStopResolve?.();
                 voiceNoteStopResolve = null;
                 voiceNoteStopPromise = null;
