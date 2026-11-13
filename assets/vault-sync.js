@@ -604,8 +604,36 @@ export async function testVaultConnection() {
   cloudDebounceTimer = null;
   pendingCloudDates.clear();
 
-  // This performs the normal authenticated index pull, conflict-safe remote
-  // reconciliation, and upload of any genuinely dirty encrypted packets.
+  // Exercise a real conditional PUT using today's existing encrypted packet.
+  // The ciphertext is unchanged; the Worker write-token and updated-at guard
+  // still protect against overwriting a newer packet from the other device.
+  const today = getCurrentDateString();
+  let todayPacket = await getLocalDailyPacket(today);
+  if (todayPacket && !todayPacket.dirty) {
+    const remoteToday = await fetchRemoteDay(today);
+    const sameBase = remoteToday.packet
+      ? Boolean(todayPacket.remoteUpdatedAt && todayPacket.remoteUpdatedAt === remoteToday.updatedAt)
+      : !todayPacket.remoteUpdatedAt;
+    if (sameBase) {
+      await putLocalDailyPacket({ ...todayPacket, dirty: true });
+      console.log('[Vault Sync Test] Performing conditional encrypted packet push:', {
+        vaultId, dateString: today, packetKey: vaultId + ':' + today,
+        baseUpdatedAt: todayPacket.remoteUpdatedAt || null
+      });
+      await uploadDailyPacket(today);
+    } else {
+      console.warn('[Vault Sync Test] Skipping test PUT because the local packet has no current remote version baseline. No remote data was overwritten.', {
+        vaultId, dateString: today, localRemoteUpdatedAt: todayPacket.remoteUpdatedAt || null,
+        remoteUpdatedAt: remoteToday.updatedAt || null
+      });
+    }
+  } else if (todayPacket?.dirty) {
+    console.log('[Vault Sync Test] Today already has a pending local packet; normal sync will attempt its guarded upload.', {
+      vaultId, dateString: today, packetKey: vaultId + ':' + today
+    });
+  }
+
+  // Complete the normal pull/reconciliation pass, then verify the shared index again.
   await synchronizeVault();
   const index = await fetchRemoteIndex();
   const remoteDates = Object.keys(index).filter(isValidDateString).sort();
