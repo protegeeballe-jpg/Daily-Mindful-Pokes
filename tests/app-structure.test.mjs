@@ -824,5 +824,5 @@ test('same-day sync combines both devices without replacing private writing, voi
  assert.match(dailyMerge,/Both device copies remain preserved/);
  assert.match(writing,/export async function mergeEncryptedPrivateWritingRecords/);
  assert.match(writing,/mergePrivateWritingText/);
- assert.match(serviceWorker,/assets\\/daily-merge\\.js/);
+ assert.ok(serviceWorker.includes('./assets/daily-merge.js'));
 });
