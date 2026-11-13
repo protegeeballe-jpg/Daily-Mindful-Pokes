@@ -4,6 +4,20 @@ const VOICE_NOTE_STORE_NAME = 'voiceNotes';
 const LEGACY_QUARANTINE_STORE_NAME = 'legacyQuarantine';
 const VOICE_NOTE_ID_PATTERN = /^(\d{4}-\d{2}-\d{2})-([a-f0-9]{32})$/;
 const VOICE_NOTE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+export const MAX_VOICE_NOTE_BYTES = 256 * 1024;
+const ALLOWED_VOICE_NOTE_MIME_TYPES = new Set([
+    'audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg',
+    'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/aac',
+    'audio/3gpp', 'audio/3gpp2', 'audio/flac', 'audio/x-flac'
+]);
+
+export function isAllowedVoiceNoteMimeType(value) {
+    if (typeof value !== 'string' || value.length > 128 || /[\\r\\n]/.test(value)) return false;
+    const [mediaType, ...parameters] = value.toLowerCase().split(';').map(part => part.trim());
+    if (!ALLOWED_VOICE_NOTE_MIME_TYPES.has(mediaType)) return false;
+    return parameters.every(parameter => /^codecs=[a-z0-9._,-]+$/.test(parameter));
+}
+
 
 function isValidDateString(value) {
     if (typeof value !== 'string' || !VOICE_NOTE_DATE_PATTERN.test(value)) return false;
@@ -44,6 +58,9 @@ export async function encryptVoiceNoteBlob(blob, key, dateString, id, capturedAt
     if (!(blob instanceof Blob) || blob.size === 0) {
         throw new TypeError('A non-empty voice recording is required.');
     }
+    if (!isAllowedVoiceNoteMimeType(blob.type || 'audio/webm')) {
+        throw new TypeError('This voice-note format is not supported. Use WebM, MP4, Ogg, WAV, AAC, or FLAC audio.');
+    }
     if (!key || !isValidDateString(dateString)) {
         throw new TypeError('An unlocked Diary and valid date are required to save a voice note.');
     }
@@ -51,7 +68,7 @@ export async function encryptVoiceNoteBlob(blob, key, dateString, id, capturedAt
         throw new TypeError('The voice-note identifier is invalid.');
     }
 
-    const mimeType = blob.type || 'application/octet-stream';
+    const mimeType = blob.type || 'audio/webm';
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ciphertext = await crypto.subtle.encrypt({
         name: 'AES-GCM',
@@ -90,7 +107,7 @@ export function validateEncryptedVoiceNoteRecord(record) {
     const match = typeof record.id === 'string' ? VOICE_NOTE_ID_PATTERN.exec(record.id) : null;
     if (!match || match[1] !== record.dateString || !isValidDateString(record.dateString)) return false;
     if (record.version !== 1 || record.algorithm !== 'AES-256-GCM') return false;
-    if (typeof record.mimeType !== 'string' || !/^audio\/[a-z0-9.+-]+(?:;[^\r\n]*)?$/i.test(record.mimeType)) return false;
+    if (!isAllowedVoiceNoteMimeType(record.mimeType)) return false;
     if (typeof record.capturedAt !== 'string' || !Number.isFinite(Date.parse(record.capturedAt))) return false;
     if (typeof record.iv !== 'string' || typeof record.ciphertext !== 'string') return false;
     if (!/^[A-Za-z0-9+/]+={0,2}$/.test(record.iv)
@@ -148,6 +165,12 @@ function waitForRequest(request) {
 
 export async function saveEncryptedVoiceNote(dateString, blob, key) {
     if (!isValidDateString(dateString)) throw new TypeError('A valid Diary date is required.');
+    if (!(blob instanceof Blob) || blob.size === 0 || blob.size > MAX_VOICE_NOTE_BYTES) {
+        throw new RangeError('Each new voice note must contain between 1 byte and ' + Math.round(MAX_VOICE_NOTE_BYTES / 1024) + ' KB of audio.');
+    }
+    if (!isAllowedVoiceNoteMimeType(blob.type || 'audio/webm')) {
+        throw new TypeError('This voice-note format is not supported.');
+    }
     const id = makeVoiceNoteId(dateString);
     const record = await encryptVoiceNoteBlob(blob, key, dateString, id);
     const database = await openVoiceNoteDatabase();
