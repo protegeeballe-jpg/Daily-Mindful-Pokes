@@ -13,9 +13,11 @@ import {
 
 const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
 const APP_CLIENT = 'faith-focus-daily-armor-web/1';
-const SESSION_INACTIVITY_MS = 15 * 60 * 1000;
+const SESSION_INACTIVITY_MS = 2 * 60 * 1000;
+const SESSION_INACTIVITY_MESSAGE = 'Your account was locked after 2 minutes of inactivity. Please sign in again.';
 let activeCredentials = null;
 let inactivityTimer = null;
+let lastActivityAt = 0;
 let loginInProgress = false;
 let locking = false;
 let recoverySession = null;
@@ -100,18 +102,55 @@ function showLogin(message = 'Log in to your existing account and open all of it
   setStatus('vault-login-message', message, 'info');
 }
 
+function scheduleInactivityCheck() {
+  if (!activeCredentials || locking || !lastActivityAt) return;
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  const remaining = Math.max(0, SESSION_INACTIVITY_MS - (Date.now() - lastActivityAt));
+  inactivityTimer = window.setTimeout(checkInactivityDeadline, remaining);
+}
+
+function checkInactivityDeadline() {
+  if (!activeCredentials || locking || !lastActivityAt) return;
+  const elapsed = Date.now() - lastActivityAt;
+  if (elapsed >= SESSION_INACTIVITY_MS) {
+    lockAccount(SESSION_INACTIVITY_MESSAGE);
+    return;
+  }
+  scheduleInactivityCheck();
+}
+
 function resetInactivityTimer() {
   if (!activeCredentials || locking) return;
-  if (inactivityTimer) clearTimeout(inactivityTimer);
-  inactivityTimer = window.setTimeout(() => {
-    lockAccount('Your account was locked after 15 minutes of inactivity.');
-  }, SESSION_INACTIVITY_MS);
+  lastActivityAt = Date.now();
+  scheduleInactivityCheck();
+}
+
+function handleSessionActivity() {
+  if (!activeCredentials || locking) return;
+  // A throttled mobile-browser timer must not let a late interaction revive
+  // a session that has already exceeded its idle limit.
+  if (lastActivityAt && Date.now() - lastActivityAt >= SESSION_INACTIVITY_MS) {
+    checkInactivityDeadline();
+    return;
+  }
+  resetInactivityTimer();
+}
+
+function checkInactivityOnResume() {
+  // Returning to a backgrounded tab is not itself user activity. Check the
+  // elapsed idle time before allowing the session to continue.
+  checkInactivityDeadline();
 }
 
 function installSessionActivityListeners() {
-  ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(eventName => {
-    document.addEventListener(eventName, resetInactivityTimer, { passive: true });
+  ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel', 'scroll'].forEach(eventName => {
+    document.addEventListener(eventName, handleSessionActivity, { passive: true });
   });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkInactivityOnResume();
+  });
+  window.addEventListener('focus', checkInactivityOnResume);
+  window.addEventListener('pageshow', checkInactivityOnResume);
   window.addEventListener('faith-focus:lock-account', () => {
     lockAccount('Your account is locked.');
   });
@@ -542,11 +581,15 @@ export async function lockAccount(message = 'Your account is locked.') {
   locking = true;
   if (inactivityTimer) clearTimeout(inactivityTimer);
   inactivityTimer = null;
+  lastActivityAt = 0;
 
   try {
     await stopRegisteredVoiceNoteRecording();
     await flushAndSaveCurrentPrivateWriting();
-    await stopVaultSync();
+    // The encrypted IndexedDB packet is saved locally before credentials are
+    // cleared. Do not let a slow/offline cloud request delay the security lock;
+    // the queued packet will upload on the next successful sign-in.
+    await stopVaultSync({ flushRemote: false });
   } catch (error) {
     locking = false;
     resetInactivityTimer();
@@ -558,6 +601,7 @@ export async function lockAccount(message = 'Your account is locked.') {
   activeCredentials = null;
   clearVaultEncryptionKey();
   locking = false;
+  lastActivityAt = 0;
   showLogin(message);
 }
 
