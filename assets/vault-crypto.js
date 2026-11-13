@@ -15,6 +15,8 @@ const RECOVERY_KEY_AAD = 'FaithFocus|master-key|v1|recovery|';
 const LEGACY_VAULT_ID_DOMAIN = 'FaithFocus|VaultID|v1|';
 const LEGACY_VAULT_SALT_DOMAIN = 'FaithFocus|PBKDF2-Salt|v1|';
 const PACKET_AAD_DOMAIN = 'Faith & Focus|Vault Daily Packet|v1|';
+const MAX_DAILY_BUNDLE_BYTES = 2 * 1024 * 1024;
+const MAX_COMPRESSED_BUNDLE_BYTES = 700 * 1024;
 
 export function normalizeVaultUsername(value) {
   if (typeof value !== 'string') return '';
@@ -425,7 +427,13 @@ export async function encryptDailyBundle(bundle, encryptionKey, compressor, cryp
   }
   if (typeof compressor !== 'function') throw new TypeError('A daily packet compressor is required.');
   const serialized = JSON.stringify(bundle);
+  if (encoder.encode(serialized).byteLength > MAX_DAILY_BUNDLE_BYTES) {
+    throw new RangeError('The uncompressed daily bundle exceeds the 2 MiB frontend safety limit. Your local records remain unchanged.');
+  }
   const compressed = await compressor(serialized);
+  if (typeof compressed !== 'string' || encoder.encode(compressed).byteLength > MAX_COMPRESSED_BUNDLE_BYTES) {
+    throw new RangeError('This encrypted daily packet would exceed the safe Cloudflare upload size. Your local records remain saved; shorten or split the oversized voice-note content and try again.');
+  }
   const compression = compressed === serialized ? 'none' : 'gzip-base64';
   const iv = cryptoApi.getRandomValues(new Uint8Array(12));
   const aad = encoder.encode(PACKET_AAD_DOMAIN + bundle.dateString);
