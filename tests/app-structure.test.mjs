@@ -669,7 +669,7 @@ test('checklist controls remain compact and backup controls are comfortably size
  assert.match(gardenCss,/\.settings-modal \.drive-sync-panel \.garden-action-button/);
  assert.match(gardenCss,/min-height:\s*38px/);
  assert.match(html,/id="vault-export-button"/);
- assert.match(html,/id="vault-lock-button"/);
+ assert.doesNotMatch(html,/id="vault-lock-button"/);
  assert.match(html,/id="btn-prev"/);
  assert.match(html,/id="btn-next"/);
 });
@@ -783,7 +783,7 @@ test('encrypted vault sync and JSON backup live in collapsible Settings sections
  assert.match(settings,/<details id="vault-sync-settings"/);
  assert.match(settings,/<details id="local-backup-settings"/);
  assert.match(settings,/id="vault-sync-status"/);
- assert.match(settings,/id="vault-lock-button"/);
+ assert.doesNotMatch(settings,/id="vault-lock-button"/);
  assert.match(settings,/id="vault-export-button"/);
  assert.match(settings,/id="vault-import-button"/);
  assert.match(settings,/id="vault-import-file"/);
