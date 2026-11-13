@@ -30,6 +30,7 @@ function initializeGarden(root) {
 
     function saveGarden() {
         try {
+            if (garden) garden.updatedAt = new Date().toISOString();
             localStorage.setItem(GARDEN_STORAGE_KEY, JSON.stringify(garden));
             return true;
         } catch (error) {

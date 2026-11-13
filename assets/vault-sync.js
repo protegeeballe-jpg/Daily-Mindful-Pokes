@@ -10,7 +10,7 @@ import {
   exportEncryptedVoiceNotes, exportEncryptedVoiceNotesForDate, restoreEncryptedVoiceNotesForDate,
   validateEncryptedVoiceNoteRecord
 } from './voice-note-store.js';
-import { GARDEN_STORAGE_KEY } from './garden-model.js';
+import { GARDEN_STORAGE_KEY, GARDEN_DAILY_SYNC_PREFIX, mergeGardenStates, validateGardenState } from './garden-model.js';
 import { flushAndSaveCurrentPrivateWriting, stopRegisteredVoiceNoteRecording } from './writing-security.js';
 
 const WORKER_ORIGIN = 'https://faith-focus-proxy.nine-westhigh.workers.dev';
@@ -21,7 +21,8 @@ const DAILY_RECORD_PREFIXES = [
   'score_awarded_',
   'dmp_diary_cipher_v1_',
   'dmp_notes_cipher_v1_',
-  'faith_focus_location_checkins_v1_'
+  'faith_focus_location_checkins_v1_',
+  GARDEN_DAILY_SYNC_PREFIX
 ];
 const LEGACY_WRITING_CONFIG_KEY = 'dmp_private_writing_crypto_v1';
 
@@ -111,6 +112,14 @@ function validateDailyBundleForEncryption(bundle, expectedDate) {
     fail('the daily checklist record must contain a JSON object.');
   }
 
+  const gardenRecordKey = GARDEN_DAILY_SYNC_PREFIX + expectedDate;
+  if (Object.hasOwn(bundle.records, gardenRecordKey)) {
+    let gardenSnapshot;
+    try { gardenSnapshot = JSON.parse(bundle.records[gardenRecordKey]); }
+    catch { fail('the daily Garden snapshot is not valid JSON.'); }
+    if (!validateGardenState(gardenSnapshot)) fail('the daily Garden snapshot is invalid.');
+  }
+
   if (!Array.isArray(bundle.voiceNotes) || bundle.voiceNotes.length > 100) {
     fail('voice notes must be an array containing no more than 100 records.');
   }
@@ -181,6 +190,13 @@ async function buildDailyBundle(dateString) {
   });
   checklist.cloud_flow_version = 1;
   records[checklistKey] = JSON.stringify(checklist);
+
+  // Keep the current Garden snapshot inside every newly captured daily packet.
+  // It is merged independently from checklist records when a date conflict exists.
+  const gardenRecordKey = GARDEN_DAILY_SYNC_PREFIX + dateString;
+  const gardenSnapshot = localStorage.getItem(GARDEN_STORAGE_KEY);
+  if (gardenSnapshot !== null) records[gardenRecordKey] = gardenSnapshot;
+  else delete records[gardenRecordKey];
 
   const voiceNotes = await exportEncryptedVoiceNotesForDate(dateString);
   return {
@@ -356,6 +372,59 @@ function installLocalStorageHooks() {
   prototype.removeItem = wrappedRemoveItem;
 }
 
+function parseGardenSnapshot(value) {
+  if (typeof value !== 'string') return null;
+  try {
+    return validateGardenState(JSON.parse(value));
+  } catch {
+    return null;
+  }
+}
+
+function isUsableLegacyWritingConfig(value) {
+  if (typeof value !== 'string') return false;
+  try {
+    const config = JSON.parse(value);
+    if (!config || config.version !== 1 || config.algorithm !== 'AES-256-GCM'
+        || config.kdf !== 'PBKDF2-HMAC-SHA-256' || config.iterations !== 600000
+        || typeof config.salt !== 'string') return false;
+    return atob(config.salt).length === 16;
+  } catch {
+    return false;
+  }
+}
+
+function restoreSharedAppState(bundle, { replaceConfidence = false } = {}) {
+  if (!bundle || typeof bundle !== 'object') return;
+  applyingRemotePacket += 1;
+  try {
+    const localGardenRaw = localStorage.getItem(GARDEN_STORAGE_KEY);
+    let mergedGarden = parseGardenSnapshot(localGardenRaw);
+    const gardenRecord = bundle.records?.[GARDEN_DAILY_SYNC_PREFIX + bundle.dateString];
+    for (const candidate of [gardenRecord, bundle.appState?.garden]) {
+      const incomingGarden = parseGardenSnapshot(candidate);
+      if (incomingGarden) mergedGarden = mergeGardenStates(mergedGarden, incomingGarden);
+    }
+    if (mergedGarden && JSON.stringify(mergedGarden) !== JSON.stringify(parseGardenSnapshot(localGardenRaw))) {
+      localStorage.setItem(GARDEN_STORAGE_KEY, JSON.stringify(mergedGarden));
+    }
+
+    const remoteLegacyConfig = bundle.appState?.legacyWritingConfig;
+    const localLegacyConfig = localStorage.getItem(LEGACY_WRITING_CONFIG_KEY);
+    if (isUsableLegacyWritingConfig(remoteLegacyConfig) && !isUsableLegacyWritingConfig(localLegacyConfig)) {
+      localStorage.setItem(LEGACY_WRITING_CONFIG_KEY, remoteLegacyConfig);
+    }
+
+    const remoteConfidenceScore = bundle.appState?.confidenceScore;
+    if (typeof remoteConfidenceScore === 'string'
+        && (replaceConfidence || localStorage.getItem('user_confidence_score') === null)) {
+      localStorage.setItem('user_confidence_score', remoteConfidenceScore);
+    }
+  } finally {
+    applyingRemotePacket -= 1;
+  }
+}
+
 function canonicalBundle(bundle) {
   return JSON.stringify({
     dateString: bundle.dateString,
@@ -369,17 +438,10 @@ async function restoreDailyBundle(bundle) {
   applyingRemotePacket += 1;
   try {
     for (const [key, value] of Object.entries(bundle.records)) {
+      if (key.startsWith(GARDEN_DAILY_SYNC_PREFIX)) continue;
       if (isDailyRecordKey(key) && typeof value === 'string') localStorage.setItem(key, value);
     }
-    if (bundle.appState?.garden !== null && typeof bundle.appState?.garden === 'string') {
-      localStorage.setItem(GARDEN_STORAGE_KEY, bundle.appState.garden);
-    }
-    if (bundle.appState?.confidenceScore !== null && typeof bundle.appState?.confidenceScore === 'string') {
-      localStorage.setItem('user_confidence_score', bundle.appState.confidenceScore);
-    }
-    if (bundle.appState?.legacyWritingConfig !== null && typeof bundle.appState?.legacyWritingConfig === 'string') {
-      localStorage.setItem(LEGACY_WRITING_CONFIG_KEY, bundle.appState.legacyWritingConfig);
-    }
+    restoreSharedAppState(bundle, { replaceConfidence: true });
     await restoreEncryptedVoiceNotesForDate(bundle.dateString, bundle.voiceNotes);
   } finally {
     applyingRemotePacket -= 1;
@@ -434,6 +496,59 @@ async function uploadDailyPacket(dateString) {
   }
 }
 
+async function publishSharedStateMerge(dateString, remote, remoteBundle) {
+  if (!activeVault || !remote?.packet || !remoteBundle) return false;
+
+  const mergedBundle = {
+    ...remoteBundle,
+    createdAt: new Date().toISOString(),
+    records: { ...remoteBundle.records },
+    appState: { ...(remoteBundle.appState || {}) }
+  };
+  let changed = false;
+
+  const gardenRecordKey = GARDEN_DAILY_SYNC_PREFIX + dateString;
+  const remoteGarden = mergeGardenStates(
+    parseGardenSnapshot(mergedBundle.records[gardenRecordKey]),
+    parseGardenSnapshot(mergedBundle.appState.garden)
+  );
+  const localGarden = parseGardenSnapshot(localStorage.getItem(GARDEN_STORAGE_KEY));
+  const mergedGarden = mergeGardenStates(remoteGarden, localGarden);
+  if (mergedGarden && JSON.stringify(mergedGarden) !== JSON.stringify(remoteGarden)) {
+    const gardenText = JSON.stringify(mergedGarden);
+    mergedBundle.records[gardenRecordKey] = gardenText;
+    mergedBundle.appState.garden = gardenText;
+    changed = true;
+  }
+
+  const localLegacyConfig = localStorage.getItem(LEGACY_WRITING_CONFIG_KEY);
+  if (isUsableLegacyWritingConfig(localLegacyConfig)
+      && !isUsableLegacyWritingConfig(mergedBundle.appState.legacyWritingConfig)) {
+    mergedBundle.appState.legacyWritingConfig = localLegacyConfig;
+    changed = true;
+  }
+
+  if (!changed) return false;
+
+  const packet = await encryptDailyBundle(mergedBundle, activeVault.encryptionKey, compressData);
+  try {
+    const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
+      method: 'PUT',
+      body: { packet, baseUpdatedAt: remote.updatedAt || null },
+      baseUpdatedAt: remote.updatedAt || null
+    });
+    console.log('[Vault Sync] Shared account state merge accepted:', {
+      dateString,
+      updatedAt: result.updatedAt || null
+    });
+    return true;
+  } catch (error) {
+    // A concurrent update wins. The original remote and local daily records remain intact.
+    console.warn('[Vault Sync] Shared account state merge was not published:', error?.message || error);
+    return false;
+  }
+}
+
 async function reconcileDay(dateString, remoteUpdatedAt) {
   const local = await getLocalDailyPacket(dateString);
   if (!local) {
@@ -458,10 +573,18 @@ async function reconcileDay(dateString, remoteUpdatedAt) {
     const remoteBundle = await decryptDailyBundle(remote.packet, activeVault.encryptionKey, decompressData);
     const localBundle = await decryptDailyBundle(local.packet, activeVault.encryptionKey, decompressData);
     if (canonicalBundle(remoteBundle) === canonicalBundle(localBundle)) {
+      restoreSharedAppState(remoteBundle);
       await markLocalDailyPacketSynced(dateString, remote.updatedAt || remoteUpdatedAt, remote.packet);
       return false;
     }
-    status('Sync conflict for ' + dateString + '. This device has local changes and the cloud has a different version. Neither copy was overwritten.', 'error');
+    // Keep conflicting checklist/Diary records untouched. Merge and publish only
+    // the independently shared Garden state and a missing valid legacy-key setting.
+    restoreSharedAppState(remoteBundle);
+    await publishSharedStateMerge(dateString, remote, remoteBundle);
+    window.dispatchEvent(new CustomEvent('faith-focus:vault-data-restored', {
+      detail: { dateString, sharedStateOnly: true }
+    }));
+    status('Sync conflict for ' + dateString + '. Both date records are preserved; shared account state was checked separately.', 'error');
     return false;
   }
 
@@ -546,6 +669,11 @@ function scheduleCloudPush(dateString = null) {
 
 async function captureExistingLocalDates() {
   const dates = new Set(listLocalStorageDates());
+  if (localStorage.getItem(GARDEN_STORAGE_KEY) !== null
+      || localStorage.getItem(LEGACY_WRITING_CONFIG_KEY) !== null
+      || localStorage.getItem('user_confidence_score') !== null) {
+    dates.add(getCurrentDateString());
+  }
   const voiceNotes = await exportEncryptedVoiceNotes();
   voiceNotes.forEach(record => dates.add(record.dateString));
   for (const dateString of [...dates].sort()) await captureDailyPacket(dateString);

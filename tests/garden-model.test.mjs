@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     FLOWER_TYPES, GARDEN_STORAGE_KEY, TREE_TYPES, createGardenState, daysBetweenDates,
-    getFlowerStage, getPlantAgeDays, getTreeStage, isISODate, validateGardenState
+    getFlowerStage, getPlantAgeDays, getTreeStage, isISODate, mergeGardenStates, validateGardenState
 } from '../assets/garden-model.js';
 
 test('the first garden contains one supported fruit tree seed and one flower seed', () => {
@@ -87,4 +87,43 @@ test('saved garden data is normalized and unsafe fields are discarded', () => {
     assert.equal(Object.hasOwn(restored, 'unexpected'), false);
     assert.equal(validateGardenState({ ...restored, treeType: 'data:text/html' }), null);
     assert.equal(validateGardenState({ ...restored, version: 2 }), null);
+});
+
+test('Garden snapshots keep their update time and older snapshots cannot replace newer plants', () => {
+    const local = {
+        ...createGardenState('mango', 'sunflower', '2026-11-08'),
+        updatedAt: '2026-11-13T10:00:00.000Z',
+        wateringDates: ['2026-11-09']
+    };
+    const olderRemote = {
+        ...createGardenState('rambutan', 'cosmos', '2026-11-09'),
+        updatedAt: '2026-11-10T10:00:00.000Z'
+    };
+    const merged = mergeGardenStates(local, olderRemote);
+    assert.equal(merged.treeType, 'mango');
+    assert.equal(merged.flowerType, 'sunflower');
+    assert.equal(merged.updatedAt, local.updatedAt);
+    assert.deepEqual(merged.wateringDates, ['2026-11-09']);
+});
+
+test('Garden snapshots merge watering history for the same planting and accept a newer remote update', () => {
+    const local = {
+        version: 1, plantedOn: '2026-11-08', treeType: 'mango', flowerType: 'sunflower',
+        wateringDates: ['2026-11-09'], updatedAt: '2026-11-10T10:00:00.000Z'
+    };
+    const remote = {
+        version: 1, plantedOn: '2026-11-08', treeType: 'mango', flowerType: 'sunflower',
+        wateringDates: ['2026-11-11'], updatedAt: '2026-11-12T10:00:00.000Z'
+    };
+    const merged = mergeGardenStates(local, remote);
+    assert.deepEqual(merged.wateringDates, ['2026-11-09', '2026-11-11']);
+    assert.equal(merged.updatedAt, remote.updatedAt);
+});
+
+test('legacy Garden records without update timestamps remain readable', () => {
+    const legacy = validateGardenState({
+        version: 1, plantedOn: '2026-11-08', treeType: 'mango', flowerType: 'sunflower',
+        wateringDates: []
+    });
+    assert.equal(legacy.updatedAt, '2026-11-08T00:00:00.000Z');
 });

@@ -1,4 +1,5 @@
 export const GARDEN_STORAGE_KEY = 'daily_mindful_pokes_garden_v1';
+export const GARDEN_DAILY_SYNC_PREFIX = 'faith_focus_garden_state_';
 
 export const TREE_TYPES = Object.freeze({
     mango: Object.freeze({ name: 'Mango', fruit: '🥭' }),
@@ -106,7 +107,8 @@ export function createGardenState(treeType, flowerType, plantedOn) {
         plantedOn,
         treeType,
         flowerType,
-        wateringDates: []
+        wateringDates: [],
+        updatedAt: new Date().toISOString()
     };
 }
 
@@ -119,11 +121,43 @@ export function validateGardenState(value) {
         ? [...new Set(value.wateringDates.filter(isISODate))].slice(-3660)
         : [];
 
+    const parsedUpdatedAt = typeof value.updatedAt === 'string' ? Date.parse(value.updatedAt) : NaN;
+    const updatedAt = Number.isFinite(parsedUpdatedAt)
+        ? new Date(parsedUpdatedAt).toISOString()
+        : new Date(value.plantedOn + 'T00:00:00.000Z').toISOString();
+
     return {
         version: 1,
         plantedOn: value.plantedOn,
         treeType: value.treeType,
         flowerType: value.flowerType,
-        wateringDates
+        wateringDates,
+        updatedAt
     };
+}
+
+export function mergeGardenStates(currentValue, incomingValue) {
+    const current = validateGardenState(currentValue);
+    const incoming = validateGardenState(incomingValue);
+    if (!current) return incoming;
+    if (!incoming) return current;
+
+    const samePlanting = current.plantedOn === incoming.plantedOn
+        && current.treeType === incoming.treeType
+        && current.flowerType === incoming.flowerType;
+
+    if (samePlanting) {
+        const updatedAt = Date.parse(incoming.updatedAt) > Date.parse(current.updatedAt)
+            ? incoming.updatedAt
+            : current.updatedAt;
+        return {
+            ...current,
+            wateringDates: [...new Set([...current.wateringDates, ...incoming.wateringDates])].sort().slice(-3660),
+            updatedAt
+        };
+    }
+
+    return Date.parse(incoming.updatedAt) > Date.parse(current.updatedAt)
+        ? incoming
+        : current;
 }
