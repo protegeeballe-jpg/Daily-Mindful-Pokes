@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import {
+    buildPrivateWritingDiaryPayload,
     buildPrivateWritingNotesPayload,
     isCurrentPrivateWritingDate,
     mergeEncryptedPrivateWritingRecords
@@ -12,6 +13,7 @@ Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: tr
 const dateString = '2026-11-13';
 const encoder = new TextEncoder();
 const NOTE_META = '__privateNoteUpdatedAt';
+const DIARY_META = '__privateDiaryUpdatedAt';
 
 function toBase64(value) {
     return Buffer.from(value).toString('base64');
@@ -48,10 +50,12 @@ async function decryptPrivateRecord(kind, record, key) {
     return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
-test('Diary entries still merge, while reflection fields use their newest revision', async () => {
+test('the newest Diary revision replaces older cloud text while reflection fields use their newest revision', async () => {
     const key = await webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-    const localDiary = await encryptPrivateRecord('diary', 'Laptop diary entry', key);
-    const remoteDiary = await encryptPrivateRecord('diary', 'Phone diary entry', key);
+    const localDiaryValue = buildPrivateWritingDiaryPayload('Edited Diary text without the deleted passage', 'Original Diary text with deleted passage', 100, 300);
+    const localDiary = await encryptPrivateRecord('diary', localDiaryValue, key);
+    // Existing devices may still have the original string-only encrypted format.
+    const remoteDiary = await encryptPrivateRecord('diary', 'Original Diary text with deleted passage', key);
     const localNotes = await encryptPrivateRecord('notes', {
         'note-success': 'Laptop success',
         'note-priorities': 'Laptop priority',
@@ -73,13 +77,63 @@ test('Diary entries still merge, while reflection fields use their newest revisi
 
     const diary = await decryptPrivateRecord('diary', merged.diary, key);
     const notes = await decryptPrivateRecord('notes', merged.notes, key);
-    assert.ok(diary.includes('Laptop diary entry'));
-    assert.ok(diary.includes('Phone diary entry'));
+    assert.equal(diary.text, 'Edited Diary text without the deleted passage');
+    assert.equal(diary[DIARY_META], 300);
     assert.equal(notes['note-success'], 'Phone success edited later');
     assert.equal(notes['note-priorities'], 'Laptop priority');
     assert.equal(notes['note-gratitude-god'], 'Phone gratitude');
     assert.equal(notes[NOTE_META]['note-success'], 200);
-    assert.notEqual(merged.diary, 'Laptop diary entry');
+});
+
+test('a cleared Diary entry is a real revision and cannot be resurrected by a legacy cloud copy', async () => {
+    const key = await webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    const localDiaryValue = buildPrivateWritingDiaryPayload('', 'The Diary passage I deleted', 0, 400);
+    const localDiary = await encryptPrivateRecord('diary', localDiaryValue, key);
+    const remoteDiary = await encryptPrivateRecord('diary', 'The Diary passage I deleted', key);
+
+    const merged = await mergeEncryptedPrivateWritingRecords(
+        dateString,
+        { diary: localDiary },
+        { diary: remoteDiary },
+        key
+    );
+    const diary = await decryptPrivateRecord('diary', merged.diary, key);
+    assert.equal(diary.text, '');
+    assert.equal(diary[DIARY_META], 400);
+});
+
+test('saving a Diary replacement advances its revision, while an unchanged save keeps it', () => {
+    const edited = buildPrivateWritingDiaryPayload(
+        'Keep the remaining lines only',
+        'Original Diary entry with a line to delete',
+        100,
+        200
+    );
+    const unchanged = buildPrivateWritingDiaryPayload(
+        'Keep the remaining lines only',
+        'Keep the remaining lines only',
+        edited[DIARY_META],
+        300
+    );
+
+    assert.equal(edited.text, 'Keep the remaining lines only');
+    assert.equal(edited[DIARY_META], 200);
+    assert.equal(unchanged[DIARY_META], 200);
+});
+
+test('legacy Diary strings remain readable as revision zero and resolve deterministically', async () => {
+    const key = await webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    const localDiary = await encryptPrivateRecord('diary', 'Local legacy text', key);
+    const remoteDiary = await encryptPrivateRecord('diary', 'Remote legacy text', key);
+    const merged = await mergeEncryptedPrivateWritingRecords(
+        dateString,
+        { diary: localDiary },
+        { diary: remoteDiary },
+        key
+    );
+    const diary = await decryptPrivateRecord('diary', merged.diary, key);
+    assert.equal(diary.text, 'Remote legacy text');
+    assert.equal(diary[DIARY_META], 0);
 });
 
 test('a newer blank note is retained as a deletion instead of restoring stale text', async () => {

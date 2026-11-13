@@ -5,7 +5,6 @@ import {
     quarantineLegacyWritingRecords
 } from './voice-note-store.js';
 import { isRecordReadableWithKey, migrateRecordToTargetKey } from './private-writing-migration.js';
-import { mergePrivateWritingText } from './daily-merge.js';
 
         const WRITING_CONFIG_KEY='dmp_private_writing_crypto_v1';
         const WRITING_DIARY_PREFIX='dmp_diary_cipher_v1_';
@@ -14,8 +13,10 @@ import { mergePrivateWritingText } from './daily-merge.js';
         const WRITING_CHECK_TEXT='Daily Mindful Pokes private writing key check v1';
         const PRIVATE_NOTE_IDS=['note-success','note-priorities','note-gratitude-others','note-gratitude-god'];
         const PRIVATE_NOTE_META_KEY='__privateNoteUpdatedAt';
+        const PRIVATE_DIARY_META_KEY='__privateDiaryUpdatedAt';
         let writingCryptoKey=null,writingLoadedDate=null,writingSaveTimer=null,writingSavePromise=Promise.resolve();
         let writingLoadedNoteValues=null,writingLoadedNoteMeta={};
+        let writingLoadedDiaryValue=null,writingLoadedDiaryMeta=0;
         let vaultPrimaryKey=null,legacyMigrationRequired=false,legacyKeyUnavailable=false;
         let voiceNoteSavePromise=Promise.resolve();
         let voiceNoteStopHandler=async()=>{};
@@ -75,20 +76,20 @@ import { mergePrivateWritingText } from './daily-merge.js';
             legacyKeyUnavailable=!legacyConfigExists&&encryptedRecordsNeedPreviousKey;
             if(legacyMigrationRequired){
                 writingCryptoKey=null;
-                writingLoadedDate=null;
+                writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;
                 updatePrivateWritingAccess();
                 setWritingSecurityStatus('Some Diary records still use this device’s previous writing key. Enter the previous Diary passphrase once to migrate only those records. Entries already protected by your account key will be kept as they are.','info');
                 return {legacyMigrationRequired:true};
             }
             if(legacyKeyUnavailable){
                 writingCryptoKey=null;
-                writingLoadedDate=null;
+                writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;
                 updatePrivateWritingAccess();
                 setWritingSecurityStatus('Some encrypted Diary entries still need the previous Diary key, and its saved settings are missing on this device. Enter your previous Diary passphrase to try recovery. Your original encrypted entries remain untouched unless the correct key can open them.','info');
                 return {legacyMigrationRequired:false,legacyKeyUnavailable:true};
             }
             writingCryptoKey=vaultPrimaryKey;
-            writingLoadedDate=null;
+            writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;
             await migrateLegacyPrivateWriting(writingCryptoKey);
             await loadPrivateWritingForDate(getCurrentWritingDate());
             // Remove the obsolete verifier only after current-key records and
@@ -102,7 +103,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
         export function clearVaultEncryptionKey(){
             vaultPrimaryKey=null;
             writingCryptoKey=null;
-            writingLoadedDate=null;
+            writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;
             writingLoadedNoteValues=null;
             writingLoadedNoteMeta={};
             legacyMigrationRequired=false;
@@ -209,7 +210,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 if(voiceRecords.length)await restoreEncryptedVoiceNotes(nextVoiceRecords);
 
                 writingCryptoKey=targetKey;
-                writingLoadedDate=null;
+                writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;
                 legacyMigrationRequired=false;
             }catch(error){
                 migrated.forEach(item=>{
@@ -272,6 +273,45 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 meta[id]=revision;
             });
             return {notes,meta};
+        }
+
+        // Older encrypted Diary records contain a plain string. Accept those as
+        // revision 0, while new records preserve an explicit per-day edit revision.
+        function unpackPrivateWritingDiary(value){
+            if(typeof value==='string')return {text:value,revision:0};
+            if(!value||typeof value!=='object'||Array.isArray(value)||typeof value.text!=='string'){
+                throw new Error('The encrypted Diary entry has an unsupported format.');
+            }
+            const revision=value[PRIVATE_DIARY_META_KEY]===undefined?0:value[PRIVATE_DIARY_META_KEY];
+            if(!Number.isSafeInteger(revision)||revision<0){
+                throw new Error('The private Diary revision is invalid.');
+            }
+            return {text:value.text,revision};
+        }
+
+        export function buildPrivateWritingDiaryPayload(text,previousText='',previousRevision=0,updatedAt=Date.now()){
+            if(typeof text!=='string'||typeof previousText!=='string'
+                ||!Number.isSafeInteger(previousRevision)||previousRevision<0
+                ||!Number.isSafeInteger(updatedAt)||updatedAt<0){
+                throw new TypeError('A valid Diary entry and revision are required.');
+            }
+            const revision=text===previousText?previousRevision:Math.max(updatedAt,previousRevision+1);
+            if(!Number.isSafeInteger(revision))throw new RangeError('The Diary revision is outside the supported range.');
+            return {text,[PRIVATE_DIARY_META_KEY]:revision};
+        }
+
+        function mergePrivateWritingDiary(localValue,remoteValue){
+            const local=unpackPrivateWritingDiary(localValue);
+            const remote=unpackPrivateWritingDiary(remoteValue);
+            if(local.text===remote.text){
+                return {text:remote.text,[PRIVATE_DIARY_META_KEY]:Math.max(local.revision,remote.revision)};
+            }
+            // A newer edit replaces the previous text; it is never concatenated.
+            // Revision 0 is the legacy format. When two legacy entries conflict,
+            // keep the remote copy as the deterministic compatibility fallback.
+            return local.revision>remote.revision
+                ?{text:local.text,[PRIVATE_DIARY_META_KEY]:local.revision}
+                :{text:remote.text,[PRIVATE_DIARY_META_KEY]:remote.revision};
         }
 
         export function buildPrivateWritingNotesPayload(notes,previousValues={},previousMeta={},updatedAt=Date.now()){
@@ -348,9 +388,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
                     throw new Error('A private '+(kind==='diary'?'Diary':'reflection')+' record could not be decrypted for a safe merge. Both device copies remain preserved.');
                 }
                 const mergedValue=kind==='diary'
-                    ?(typeof localValue==='string'&&typeof remoteValue==='string'
-                        ?mergePrivateWritingText(localValue,remoteValue)
-                        :(()=>{throw new Error('The encrypted Diary entry has an unsupported format. Both device copies remain preserved.');})())
+                    ?mergePrivateWritingDiary(localValue,remoteValue)
                     :mergePrivateWritingNotes(localValue,remoteValue);
                 if(samePrivateWritingValue(mergedValue,remoteValue))return remoteRecord;
                 if(samePrivateWritingValue(mergedValue,localValue))return localRecord;
@@ -608,7 +646,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 const saveStatus=document.getElementById('writing-save-status');
                 if(saveStatus)saveStatus.textContent='Encrypted writing is unlocked for this session.';
             }catch(error){
-                writingCryptoKey=null;writingLoadedDate=null;updatePrivateWritingAccess();
+                writingCryptoKey=null;writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;updatePrivateWritingAccess();
                 console.error('[Diary migration] Migration failed after passphrase verification or during conversion:',error);
                 const message=previousPassphraseVerified
                     ?'Your previous Diary passphrase was accepted, but the migration could not finish safely. Original encrypted entries remain preserved. See the browser console for the exact failure reason.'
@@ -630,16 +668,21 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 ||!isCurrentPrivateWritingDate(dateStr))return;
             const key=writingCryptoKey,payload=getPrivateWritingPayload();
             const task=async()=>{
+                const diaryPayload=buildPrivateWritingDiaryPayload(
+                    payload.diary,typeof writingLoadedDiaryValue==='string'?writingLoadedDiaryValue:'',writingLoadedDiaryMeta
+                );
                 const notesPayload=buildPrivateWritingNotesPayload(
                     payload.notes,writingLoadedNoteValues||{},writingLoadedNoteMeta
                 );
-                const diary=await encryptPrivatePayload('diary',dateStr,payload.diary,key);
+                const diary=await encryptPrivatePayload('diary',dateStr,diaryPayload,key);
                 const notes=await encryptPrivatePayload('notes',dateStr,notesPayload,key);
                 localStorage.setItem(getSecureWritingStorageKey('diary',dateStr),diary);
                 localStorage.setItem(getSecureWritingStorageKey('notes',dateStr),notes);
+                writingLoadedDiaryValue=payload.diary;
+                writingLoadedDiaryMeta=diaryPayload[PRIVATE_DIARY_META_KEY];
                 writingLoadedNoteValues={...payload.notes};
                 writingLoadedNoteMeta={...notesPayload[PRIVATE_NOTE_META_KEY]};
-                window.dispatchEvent(new Event('faith-focus:local-data-changed'));
+                window.dispatchEvent(new CustomEvent('faith-focus:local-data-changed',{detail:{dateString:dateStr}}));
                 const status=document.getElementById('writing-save-status');
                 if(status&&writingCryptoKey)status.textContent='Saved securely on this device.';
             };
@@ -661,16 +704,20 @@ import { mergePrivateWritingText } from './daily-merge.js';
             const record=localStorage.getItem(getSecureWritingStorageKey('diary',dateStr));
             if(!record)return '';
             const value=await decryptPrivatePayload('diary',dateStr,record,writingCryptoKey);
-            return typeof value==='string'?value:'';
+            return unpackPrivateWritingDiary(value).text;
         }
 
         async function loadPrivateWritingForDate(dateStr){
             if(!writingCryptoKey)return;
             if(writingSaveTimer){clearTimeout(writingSaveTimer);writingSaveTimer=null;}
             await writingSavePromise;
-            let diaryText='',notes={},noteMeta={};
+            let diaryText='',diaryRevision=0,notes={},noteMeta={};
             const diaryRecord=localStorage.getItem(getSecureWritingStorageKey('diary',dateStr)),notesRecord=localStorage.getItem(getSecureWritingStorageKey('notes',dateStr));
-            if(diaryRecord)diaryText=await decryptPrivatePayload('diary',dateStr,diaryRecord,writingCryptoKey);
+            if(diaryRecord){
+                const diary=unpackPrivateWritingDiary(await decryptPrivatePayload('diary',dateStr,diaryRecord,writingCryptoKey));
+                diaryText=diary.text;
+                diaryRevision=diary.revision;
+            }
             if(notesRecord){
                 const unpacked=unpackPrivateWritingNotes(
                     await decryptPrivatePayload('notes',dateStr,notesRecord,writingCryptoKey)
@@ -678,8 +725,10 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 notes=unpacked.notes;
                 noteMeta=unpacked.meta;
             }
-            document.getElementById('private-diary-entry').value=typeof diaryText==='string'?diaryText:'';
+            document.getElementById('private-diary-entry').value=diaryText;
             PRIVATE_NOTE_IDS.forEach(id=>{const field=document.getElementById(id);if(field)field.value=typeof notes[id]==='string'?notes[id]:'';});
+            writingLoadedDiaryValue=diaryText;
+            writingLoadedDiaryMeta=diaryRevision;
             writingLoadedNoteValues={...notes};
             writingLoadedNoteMeta={...noteMeta};
             writingLoadedDate=dateStr;
@@ -697,7 +746,7 @@ import { mergePrivateWritingText } from './daily-merge.js';
                 await flushPrivateVoiceNoteQueue();
                 await savePrivateWritingForDate(writingLoadedDate);
                 await writingSavePromise;
-                writingCryptoKey=null;writingLoadedDate=null;writingLoadedNoteValues=null;writingLoadedNoteMeta={};updatePrivateWritingAccess();
+                writingCryptoKey=null;writingLoadedDate=null;writingLoadedDiaryValue=null;writingLoadedDiaryMeta=0;writingLoadedNoteValues=null;writingLoadedNoteMeta={};updatePrivateWritingAccess();
                 setWritingSecurityStatus('Locked. Your saved private writing and voice notes remain encrypted on this device.','info');
             }catch(error){setWritingSecurityStatus('Could not finish encrypted saving, so the writing remains unlocked. '+(error?.message||''),'error');}
         }

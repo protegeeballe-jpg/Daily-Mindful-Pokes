@@ -66,6 +66,14 @@ test('private-writing encryption remains separate and preserved',()=>{
  assert.match(writing,/PRIVATE_NOTE_IDS/);
  assert.match(app,/handleDiaryKeyAction/);
 });
+test('the main Diary paragraph uses versioned replacement semantics and remains backward compatible',()=>{
+ assert.match(writing,/PRIVATE_DIARY_META_KEY/);
+ assert.match(writing,/function unpackPrivateWritingDiary/);
+ assert.match(writing,/buildPrivateWritingDiaryPayload/);
+ assert.match(writing,/mergePrivateWritingDiary/);
+ assert.match(writing,/unpackPrivateWritingDiary\(value\)\.text/);
+ assert.doesNotMatch(writing,/mergePrivateWritingText\(localValue,remoteValue\)/);
+});
 test('ordinary progress storage is documented as not encrypted',()=>{
  assert.match(app,/mindful_pokes_data_/);
  assert.match(readme,/Checklist checkboxes/i);
@@ -828,7 +836,7 @@ test('Sign Up, Recovery and Legacy Upgrade use the same original 20-question sec
    assert.deepEqual(options.map(option=>option[2].replaceAll('&amp;','&')),questionTexts.map((question,i)=>`${i+1}. ${question}`));
   }
  }
- assert.match(serviceWorker,/faith-focus-shell-v14-one-time-victory/);
+ assert.match(serviceWorker,/faith-focus-shell-v15-current-diary-revision-merge/);
 });
 
 test('vault sync retries date-level conditional-write conflicts and Settings has no manual sync or lock buttons',()=>{
@@ -874,7 +882,7 @@ test('Diary migration recognizes account-key records and converts only legacy-ke
  assert.match(privateMigration,/if \(await isRecordReadableWithKey\(record, decryptTarget\)\) return record/);
  assert.match(privateMigration,/const plaintext = await decryptLegacy\(record\)/);
  assert.match(privateMigration,/return encryptTarget\(plaintext\)/);
- assert.match(serviceWorker,/faith-focus-shell-v14-one-time-victory/);
+ assert.match(serviceWorker,/faith-focus-shell-v15-current-diary-revision-merge/);
 });
 
 test('legacy Diary migration permits direct encrypted-record checks when its verifier is unavailable',()=>{
@@ -923,14 +931,15 @@ test('an unreadable same-day Diary conflict is deferred without blocking the acc
  assert.match(vaultSync,/return false;[\s\S]*?const mergedPacket = await encryptDailyBundle/);
 });
 
-test('same-day sync combines both devices without replacing private writing, voice notes, or location history',()=>{
+test('same-day sync uses type-specific reconciliation for private writing, voice notes, and location history',()=>{
  assert.match(dailyMerge,/mergeLocationCheckinRecordValues/);
  assert.match(dailyMerge,/mergeEncryptedVoiceNoteRecords/);
  assert.match(dailyMerge,/mergeChecklistRecordValues/);
  assert.match(dailyMerge,/mergeDailyBundles/);
  assert.match(dailyMerge,/Both device copies remain preserved/);
  assert.match(writing,/export async function mergeEncryptedPrivateWritingRecords/);
- assert.match(writing,/mergePrivateWritingText/);
+ assert.match(writing,/mergePrivateWritingDiary/);
+ assert.doesNotMatch(writing,/mergePrivateWritingText/);
  assert.ok(serviceWorker.includes('./assets/daily-merge.js'));
 });
 
