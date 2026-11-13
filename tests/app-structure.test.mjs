@@ -5,6 +5,7 @@ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
 const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
 const garden=readFileSync(new URL('../assets/garden.js',import.meta.url),'utf8');
+const gardenCss=readFileSync(new URL('../assets/garden.css',import.meta.url),'utf8');
 const writing=readFileSync(new URL('../assets/writing-security.js',import.meta.url),'utf8');
 const voiceNoteStore=readFileSync(new URL('../assets/voice-note-store.js',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
@@ -93,6 +94,20 @@ test('garden startup selector matches the actual overlay and enables scene navig
  assert.doesNotMatch(garden,/document\.getElementById\('-garden'\)/);
  assert.match(garden,/document\.addEventListener\('garden:open'/);
  assert.match(garden,/document\.addEventListener\('garden:show-scene'/);
+});
+
+test('Forge Room setup is top-aligned and the subtitle remains readable on mobile and desktop',()=>{
+ const roomLayout=gardenCss.slice(gardenCss.indexOf('/* Keep the Forge Room setup and navigation grouped'));
+ assert.match(roomLayout,/\.garden-overlay\.garden-room-home \.garden-room-card:not\(\.hidden\)\s*\{[^}]*justify-content:flex-start/s);
+ assert.match(roomLayout,/\.garden-overlay\.garden-room-home \.garden-room-card:not\(\.hidden\)\s*\{[^}]*padding:/s);
+ assert.match(roomLayout,/\.garden-overlay\.garden-room-home \.garden-room-scene\s*\{[^}]*flex:0 0 clamp\(/s);
+ assert.match(roomLayout,/\.garden-overlay\.garden-room-home \.garden-room-actions\s*\{[^}]*padding:/s);
+ assert.match(roomLayout,/\.garden-overlay\.garden-room-home \.garden-intro\s*\{[^}]*background:rgba\(255,255,255,/s);
+ assert.match(roomLayout,/backdrop-filter:blur\(6px\)/);
+ assert.match(roomLayout,/@media \(max-height:620px\)/);
+ assert.match(gardenCss,/@media \(max-width:620px\)/);
+ assert.match(html,/http-equiv="Content-Security-Policy"/);
+ assert.match(html,/type="module" src="\.\/assets\/garden\.js"/);
 });
 
 test('the product interface does not expose the private inspiration name',()=>{

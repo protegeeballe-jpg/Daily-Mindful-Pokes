@@ -792,3 +792,48 @@ input[type="reset"] {
 @media (prefers-reduced-motion: reduce) {
     .garden-settings-button { transition: none; }
 }
+
+/* Keep the Forge Room setup and navigation grouped at the top of the glass panel. */
+.garden-overlay.garden-room-home .garden-room-card:not(.hidden) {
+    justify-content:flex-start;
+    gap:.15rem;
+    padding:clamp(.5rem,1.2vh,.85rem) .55rem .55rem;
+}
+.garden-overlay.garden-room-home .garden-room-scene {
+    flex:0 0 clamp(48px,7vh,76px);
+    min-height:clamp(48px,7vh,76px);
+}
+.garden-overlay.garden-room-home .garden-planting-panel {
+    margin:.15rem auto .35rem;
+}
+.garden-overlay.garden-room-home .garden-room-actions {
+    gap:.45rem;
+    padding:.55rem .55rem clamp(.6rem,1vh,.85rem);
+}
+.garden-overlay.garden-room-home .garden-intro {
+    display:table;
+    max-width:min(92%,650px);
+    margin:.05rem auto .35rem;
+    padding:.28rem .8rem;
+    border:1px solid rgba(255,255,255,.62);
+    border-radius:999px;
+    background:rgba(255,255,255,.70);
+    color:#405b46;
+    text-shadow:0 1px 0 rgba(255,255,255,.85);
+    box-shadow:0 2px 9px rgba(37,59,43,.10);
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+}
+@media (max-height:620px) {
+    .garden-overlay.garden-room-home .garden-room-card:not(.hidden) {
+        padding-top:.4rem;
+    }
+    .garden-overlay.garden-room-home .garden-room-scene {
+        flex-basis:36px;
+        min-height:36px;
+    }
+    .garden-overlay.garden-room-home .garden-intro {
+        margin-bottom:.2rem;
+        padding:.2rem .65rem;
+    }
+}
