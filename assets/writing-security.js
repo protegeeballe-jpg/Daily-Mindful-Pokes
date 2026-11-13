@@ -246,6 +246,18 @@ import { mergePrivateWritingText } from './daily-merge.js';
             return JSON.parse(new TextDecoder().decode(plaintext));
         }
 
+        function samePrivateWritingValue(left,right){
+            const stable=value=>{
+                if(Array.isArray(value))return value.map(stable);
+                if(value&&typeof value==='object'){
+                    const sorted={};
+                    Object.keys(value).sort().forEach(key=>{sorted[key]=stable(value[key]);});
+                    return sorted;
+                }
+                return value;
+            };
+            return JSON.stringify(stable(left))===JSON.stringify(stable(right));
+        }
         function mergePrivateWritingNotes(localValue,remoteValue){
             if(!localValue||typeof localValue!=='object'||Array.isArray(localValue)
                 ||!remoteValue||typeof remoteValue!=='object'||Array.isArray(remoteValue)){
@@ -283,8 +295,8 @@ import { mergePrivateWritingText } from './daily-merge.js';
                         ?mergePrivateWritingText(localValue,remoteValue)
                         :(()=>{throw new Error('The encrypted Diary entry has an unsupported format. Both device copies remain preserved.');})())
                     :mergePrivateWritingNotes(localValue,remoteValue);
-                if(JSON.stringify(mergedValue)===JSON.stringify(remoteValue))return remoteRecord;
-                if(JSON.stringify(mergedValue)===JSON.stringify(localValue))return localRecord;
+                if(samePrivateWritingValue(mergedValue,remoteValue))return remoteRecord;
+                if(samePrivateWritingValue(mergedValue,localValue))return localRecord;
                 return encryptPrivatePayload(kind,dateStr,mergedValue,key);
             };
             const local=localRecords||{},remote=remoteRecords||{};
