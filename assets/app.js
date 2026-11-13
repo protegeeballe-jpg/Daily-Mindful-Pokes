@@ -46,6 +46,7 @@ import {
 import { GARDEN_STORAGE_KEY } from './garden-model.js';
 import { MAX_VOICE_NOTE_BYTES, isAllowedVoiceNoteMimeType } from './voice-note-store.js';
 import { installDeviceClockRefresh } from './device-clock.js';
+import { getMissedChecklistCards } from './missed-card-notifications.js';
 import {
     WRITING_DIARY_PREFIX, writingCryptoKey,writingLoadedDate,getSecureWritingStorageKey,getCurrentWritingDate,
     setWritingSecurityStatus,renderDiarySecurityUI,updatePrivateWritingAccess,
@@ -147,6 +148,7 @@ import {
             }
 
             if (pageId === 'checklist') {
+                renderMissedCardNotifications();
                 const checklistMain = document.querySelector('#view-checklist main');
                 if (checklistMain) checklistMain.scrollTop = 0;
                 resizeEcosystemCanvas();
@@ -738,6 +740,129 @@ import {
         }
 
         function getStorageKey(dateStr) { return 'mindful_pokes_data_' + dateStr; }
+
+        const MISSED_CARD_DISMISS_PREFIX = 'faith_focus_missed_card_notice_dismissed_';
+
+        function getPreviousDeviceDateString(dateString = getDeviceLocalDateString()) {
+            const [year, month, day] = dateString.split('-').map(Number);
+            const previous = new Date(year, month - 1, day, 12, 0, 0, 0);
+            previous.setDate(previous.getDate() - 1);
+            return getDeviceLocalDateString(previous);
+        }
+
+        function hideMissedCardNotifications() {
+            document.getElementById('missed-card-notice')?.classList.add('hidden');
+        }
+
+        function renderMissedCardNotifications() {
+            const panel = document.getElementById('missed-card-notice');
+            const dateInput = document.getElementById('currentDate');
+            if (!panel || dateInput?.value !== getDeviceLocalDateString()) {
+                hideMissedCardNotifications();
+                return;
+            }
+
+            const missedDate = getPreviousDeviceDateString();
+            const raw = localStorage.getItem(getStorageKey(missedDate));
+            if (!raw || localStorage.getItem(MISSED_CARD_DISMISS_PREFIX + missedDate) === 'true') {
+                hideMissedCardNotifications();
+                return;
+            }
+
+            let dailyData;
+            try {
+                dailyData = JSON.parse(raw);
+            } catch {
+                hideMissedCardNotifications();
+                return;
+            }
+
+            const sections = Array.from({ length: 6 }, (_, index) => {
+                const number = index + 1;
+                const card = document.getElementById('card-step-' + number);
+                const title = card?.querySelector('h2')?.textContent?.trim() || 'Card ' + number;
+                const ids = Array.from(document.querySelectorAll('.sec-' + number))
+                    .map(checkbox => checkbox.dataset.id)
+                    .filter(Boolean);
+                return { number, title, ids };
+            });
+            const missed = getMissedChecklistCards(dailyData, sections);
+            if (!missed.length) {
+                hideMissedCardNotifications();
+                return;
+            }
+
+            const dateLabel = new Intl.DateTimeFormat(undefined, {
+                weekday: 'long', month: 'long', day: 'numeric'
+            }).format(new Date(missedDate + 'T12:00:00'));
+            const count = document.getElementById('missed-card-count');
+            const dateText = document.getElementById('missed-card-date');
+            const list = document.getElementById('missed-card-list');
+            if (!list) {
+                hideMissedCardNotifications();
+                return;
+            }
+
+            panel.dataset.missedDate = missedDate;
+            if (count) count.textContent = missed.length + (missed.length === 1 ? ' card to revisit' : ' cards to revisit');
+            if (dateText) dateText.textContent = 'From ' + dateLabel;
+            list.replaceChildren();
+
+            missed.forEach(card => {
+                const item = document.createElement('li');
+                item.className = 'missed-card-item';
+                const title = document.createElement('span');
+                title.className = 'missed-card-item-title';
+                title.textContent = card.title;
+                const review = document.createElement('button');
+                review.type = 'button';
+                review.className = 'missed-card-review-button';
+                review.dataset.action = 'reviewMissedCard';
+                review.dataset.missedDate = missedDate;
+                review.dataset.cardNumber = String(card.number);
+                review.textContent = 'Review card';
+                item.append(title, review);
+                list.append(item);
+            });
+
+            panel.classList.remove('hidden');
+        }
+
+        function dismissMissedCardNotifications() {
+            const panel = document.getElementById('missed-card-notice');
+            const missedDate = panel?.dataset.missedDate;
+            if (missedDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(missedDate)) {
+                try {
+                    localStorage.setItem(MISSED_CARD_DISMISS_PREFIX + missedDate, 'true');
+                } catch (error) {
+                    console.warn('[Checklist] The reminder dismissal could not be saved on this device.', error);
+                }
+            }
+            hideMissedCardNotifications();
+        }
+
+        async function reviewMissedCard(trigger) {
+            const missedDate = trigger?.dataset?.missedDate;
+            const cardNumber = Number(trigger?.dataset?.cardNumber);
+            if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(missedDate || '')
+                || !Number.isInteger(cardNumber) || cardNumber < 1 || cardNumber > 6) return;
+
+            const dateInput = document.getElementById('currentDate');
+            if (!dateInput) return;
+            dateInput.value = missedDate;
+            try {
+                await handleDateChange();
+                showPage('checklist');
+                if (currentStep !== cardNumber) changeStep(cardNumber - currentStep);
+            } catch (error) {
+                console.error('[Checklist] Could not open a missed card for review.', error);
+                const status = document.getElementById('finish-status');
+                if (status) {
+                    status.textContent = 'This saved checklist date could not be opened. Your existing records remain unchanged. ' + (error?.message || '');
+                    status.classList.remove('hidden');
+                }
+            }
+        }
 
         function setLocationCheckinMessage(message, state = 'info') {
             const element = document.getElementById('location-checkin-message');
@@ -1732,6 +1857,7 @@ import {
             checkSectionCompletion();
             updateScoreDisplay();
             renderLocationCheckinDetails(dateStr);
+            renderMissedCardNotifications();
         }
 
         function saveData(e) {
@@ -2015,6 +2141,8 @@ import {
 
 
         const delegatedClickActions={
+            reviewMissedCard:el=>reviewMissedCard(el),
+            dismissMissedCardNotifications:()=>dismissMissedCardNotifications(),
             showPage:el=>showPage(el.dataset.page),
             openModal:el=>openModal(el.dataset.modal,el.dataset.target),
             openDiaryArchive:()=>openDiaryArchive(),
@@ -2064,7 +2192,9 @@ import {
         });
         window.addEventListener('faith-focus:vault-data-restored', async event => {
             const dateString = event.detail?.dateString;
-            if (!dateString || dateString !== document.getElementById('currentDate')?.value) return;
+            if (!dateString) return;
+            if (dateString === getPreviousDeviceDateString()) renderMissedCardNotifications();
+            if (dateString !== document.getElementById('currentDate')?.value) return;
             loadData();
             if (writingCryptoKey) {
                 try {
