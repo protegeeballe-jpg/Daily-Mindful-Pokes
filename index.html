@@ -832,7 +832,9 @@
                             <p>Your checklist, Diary, voice notes, location tags, and Garden data are compressed and encrypted on this device. Cloud sync runs automatically after changes.</p>
                         </div>
                         <p id="vault-sync-status" class="drive-sync-status" role="status" aria-live="polite">Sign in to connect your encrypted vault.</p>
+                        <p class="vault-sync-indicator" aria-live="polite"><span id="vault-sync-indicator" data-state="info">● Waiting for account</span></p>
                         <div class="drive-sync-controls">
+                            <button id="vault-test-sync-button" type="button" class="garden-action-button">Test Cloud Connection</button>
                             <button id="vault-lock-button" type="button" class="garden-action-button">Lock Account</button>
                         </div>
                     </section>
