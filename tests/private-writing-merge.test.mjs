@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { mergeEncryptedPrivateWritingRecords } from '../assets/writing-security.js';
 
-globalThis.crypto = webcrypto;
+Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
 
 const dateString = '2026-11-13';
 const encoder = new TextEncoder();
