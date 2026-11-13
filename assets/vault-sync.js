@@ -345,6 +345,10 @@ async function fetchRemoteDay(dateString) {
 async function uploadDailyPacket(dateString) {
   const local = await getLocalDailyPacket(dateString);
   if (!local?.dirty) return false;
+  console.log('[Vault Sync] Uploading encrypted daily packet:', {
+    vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+    baseUpdatedAt: local.remoteUpdatedAt || null
+  });
 
   try {
     const result = await vaultRequest('/vault/' + activeVault.vaultId + '/day/' + dateString, {
@@ -353,7 +357,11 @@ async function uploadDailyPacket(dateString) {
       baseUpdatedAt: local.remoteUpdatedAt || null
     });
     const syncResult = await markLocalDailyPacketSynced(dateString, result.updatedAt, local.packet, { requirePacketMatch: true });
-    if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush();
+    console.log('[Vault Sync] Encrypted daily packet upload accepted by Worker:', {
+      vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+      updatedAt: result.updatedAt, stillMatchesUploadedSnapshot: syncResult.stillMatchesUploadedSnapshot
+    });
+    if (!syncResult.stillMatchesUploadedSnapshot) scheduleCloudPush(dateString);
     return true;
   } catch (error) {
     if (error.code === 'VAULT_CONFLICT') {
@@ -367,6 +375,10 @@ async function uploadDailyPacket(dateString) {
 async function reconcileDay(dateString, remoteUpdatedAt) {
   const local = await getLocalDailyPacket(dateString);
   if (!local) {
+    console.log('[Vault Sync] Remote date has no local packet; fetching and restoring encrypted date:', {
+      vaultId: activeVault.vaultId, dateString, packetKey: activeVault.vaultId + ':' + dateString,
+      remoteUpdatedAt: remoteUpdatedAt || null
+    });
     const remote = await fetchRemoteDay(dateString);
     if (!remote.packet) return false;
     const bundle = await decryptDailyBundle(remote.packet, activeVault.encryptionKey, decompressData);
