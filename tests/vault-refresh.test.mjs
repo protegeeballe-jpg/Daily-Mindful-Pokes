@@ -51,23 +51,19 @@ test('refreshes the vault on foreground events and while visible', async () => {
 
     assert.deepEqual([...windowRef.intervals.values()].map(item => item.delay), [30_000]);
     windowRef.dispatch('focus');
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 1);
 
     windowRef.dispatch('pageshow');
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 2);
 
     documentRef.dispatch('visibilitychange');
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 3);
 
     windowRef.tickIntervals();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 4);
 
     cleanup();
@@ -94,14 +90,14 @@ test('does not refresh while hidden or when the caller has disabled refresh', as
     windowRef.dispatch('focus');
     documentRef.dispatch('visibilitychange');
     windowRef.tickIntervals();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 0);
 
     documentRef.visibilityState = 'visible';
     allowed = false;
     windowRef.dispatch('pageshow');
     windowRef.tickIntervals();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 0);
 
     cleanup();
@@ -130,11 +126,10 @@ test('coalesces overlapping foreground events into one refresh', async () => {
     assert.equal(refreshCount, 1);
 
     releaseRefresh();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
 
     windowRef.dispatch('focus');
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(refreshCount, 2);
     cleanup();
 });
