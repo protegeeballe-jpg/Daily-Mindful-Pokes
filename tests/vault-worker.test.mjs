@@ -435,6 +435,11 @@ test('Vault Coordinator does not initialize an empty index when KV is unavailabl
   assert.equal(storageMap.has('vault-index'), false);
 
   failures.get = false;
+  const initialized = await coordinator.fetch(coordinatorRequest('/admin/initialize', {
+    method: 'POST',
+    body: {}
+  }));
+  assert.equal(initialized.status, 200);
   const recovered = await coordinator.fetch(coordinatorRequest('/index'));
   assert.equal(recovered.status, 200);
   assert.deepEqual((await responseJson(recovered)).index, {});
