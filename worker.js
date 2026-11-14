@@ -741,17 +741,21 @@ export class VaultCoordinator {
     if (!this.initialized) {
       this.initialized = this.state.blockConcurrencyWhile(async () => {
         if (!(await this.state.storage.get("vault-index"))) {
-          let index = {};
-          try {
-            index = await this.env.VAULT_PACKETS.get(this.indexKey(), "json") || {};
-          } catch {
-            index = {};
-          }
-          await this.state.storage.put("vault-index", index);
+          // A KV read failure must not be mistaken for an empty vault index.
+          // Retry initialization on the next request instead of caching a blank index.
+          const index = await this.env.VAULT_PACKETS.get(this.indexKey(), "json");
+          await this.state.storage.put("vault-index", index || {});
         }
       });
     }
-    await this.initialized;
+    try {
+      await this.initialized;
+    } catch {
+      this.initialized = null;
+      return jsonResponse({
+        error: "The vault index is temporarily unavailable. Please retry; no data was changed."
+      }, 503);
+    }
     return this.serialized(async () => {
       const path = new URL(request.url).pathname;
 
@@ -813,7 +817,14 @@ export class VaultCoordinator {
       if (request.method === "GET") {
         let packet = await this.state.storage.get(packetStorageKey);
         if (!packet) {
-          const stored = await this.env.VAULT_PACKETS.get(this.packetKey(dateString), "json");
+          let stored;
+          try {
+            stored = await this.env.VAULT_PACKETS.get(this.packetKey(dateString), "json");
+          } catch {
+            return jsonResponse({
+              error: "This day's cloud backup is temporarily unavailable. Please retry; no data was changed."
+            }, 503);
+          }
           if (stored?.packet) {
             packet = stored.packet;
             await this.state.storage.put(packetStorageKey, packet);
@@ -850,11 +861,18 @@ export class VaultCoordinator {
       await this.enforceKvWriteSpacing(this.packetKey(dateString));
       const updatedAt = new Date(Math.max(Date.now(), Date.parse(currentVersion || "1970-01-01T00:00:00.000Z") + 1)).toISOString();
       const storedRecord = { packet: update.packet, updatedAt };
-      await this.env.VAULT_PACKETS.put(this.packetKey(dateString), JSON.stringify(storedRecord));
 
       const nextIndex = { ...index, [dateString]: updatedAt };
+      // Commit to Durable Object storage first. It is the live source of truth;
+      // KV is a secondary backup and must not be able to reject a valid save.
       await this.state.storage.put(packetStorageKey, update.packet);
       await this.state.storage.put("vault-index", nextIndex);
+
+      try {
+        await this.env.VAULT_PACKETS.put(this.packetKey(dateString), JSON.stringify(storedRecord));
+      } catch {
+        // Keep the committed Durable Object copy available while KV recovers.
+      }
 
       try {
         await this.enforceKvWriteSpacing(this.indexKey());

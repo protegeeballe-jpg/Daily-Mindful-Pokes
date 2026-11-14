@@ -58,6 +58,7 @@ test('Worker rejects requests larger than 1 MB before invoking the vault coordin
 function makeCoordinator() {
   const storageMap = new Map();
   const kvMap = new Map();
+  const failures = { get: false, put: false };
   const storage = {
     async get(key) { return storageMap.get(key); },
     async put(key, value) { storageMap.set(key, value); }
@@ -68,11 +69,17 @@ function makeCoordinator() {
   };
   const env = {
     VAULT_PACKETS: {
-      async get(key) { return kvMap.get(key) ?? null; },
-      async put(key, value) { kvMap.set(key, value); }
+      async get(key) {
+        if (failures.get) throw new Error('simulated KV read block');
+        return kvMap.get(key) ?? null;
+      },
+      async put(key, value) {
+        if (failures.put) throw new Error('simulated KV write block');
+        kvMap.set(key, value);
+      }
     }
   };
-  return { coordinator: new VaultCoordinator(state, env), storageMap, kvMap };
+  return { coordinator: new VaultCoordinator(state, env), storageMap, kvMap, failures };
 }
 
 function coordinatorRequest(path, { method = 'GET', token = WRITE_TOKEN, legacyToken, body } = {}) {
@@ -394,4 +401,58 @@ test('Vault Coordinator upgrades an existing legacy token only after verifying t
   }));
   assert.equal(newClaim.status, 200);
   assert.equal(typeof storageMap.get('upgraded-at'), 'string');
+});
+
+
+test('Vault Coordinator keeps a valid save when the KV packet write is temporarily blocked', async () => {
+  const { coordinator, storageMap, failures } = makeCoordinator();
+  await coordinator.fetch(coordinatorRequest('/admin/initialize', { method: 'POST', body: {} }));
+  failures.put = true;
+
+  const saved = await coordinator.fetch(coordinatorRequest('/day/' + dateString, {
+    method: 'PUT',
+    body: { packet, baseUpdatedAt: null }
+  }));
+  assert.equal(saved.status, 200);
+  const savedBody = await responseJson(saved);
+  assert.equal(typeof savedBody.updatedAt, 'string');
+  assert.deepEqual(storageMap.get('vault-packet:' + dateString), packet);
+  assert.equal(storageMap.get('vault-index')[dateString], savedBody.updatedAt);
+
+  const readBack = await coordinator.fetch(coordinatorRequest('/day/' + dateString));
+  assert.equal(readBack.status, 200);
+  const readBody = await responseJson(readBack);
+  assert.deepEqual(readBody.packet, packet);
+  assert.equal(readBody.updatedAt, savedBody.updatedAt);
+});
+
+test('Vault Coordinator does not initialize an empty index when KV is unavailable and retries cleanly', async () => {
+  const { coordinator, storageMap, failures } = makeCoordinator();
+  failures.get = true;
+
+  const blocked = await coordinator.fetch(coordinatorRequest('/index'));
+  assert.equal(blocked.status, 503);
+  assert.equal(storageMap.has('vault-index'), false);
+
+  failures.get = false;
+  const initialized = await coordinator.fetch(coordinatorRequest('/admin/initialize', {
+    method: 'POST',
+    body: {}
+  }));
+  assert.equal(initialized.status, 200);
+  const recovered = await coordinator.fetch(coordinatorRequest('/index'));
+  assert.equal(recovered.status, 200);
+  assert.deepEqual((await responseJson(recovered)).index, {});
+  assert.deepEqual(storageMap.get('vault-index'), {});
+});
+
+test('Vault Coordinator reports a temporary read failure instead of treating a missing KV packet as empty', async () => {
+  const { coordinator, storageMap, failures } = makeCoordinator();
+  await coordinator.fetch(coordinatorRequest('/admin/initialize', { method: 'POST', body: {} }));
+  failures.get = true;
+
+  const read = await coordinator.fetch(coordinatorRequest('/day/' + dateString));
+  assert.equal(read.status, 503);
+  assert.match((await responseJson(read)).error, /temporarily unavailable/);
+  assert.equal(storageMap.has('vault-packet:' + dateString), false);
 });
